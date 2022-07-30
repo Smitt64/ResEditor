@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>baseeditor.json</file>
+        <file>img/BScrol.png</file>
+        <file>img/Panel.png</file>
+        <file>img/Scrol.png</file>
+        <file>img/Unknown.png</file>
+        <file>img/Size.png</file>
+        <file>img/CursorPos.png</file>
+        <file>img/Filter.png</file>
+        <file>img/Redo.png</file>
+        <file>img/Undo.png</file>
+    </qresource>
+</RCC>
