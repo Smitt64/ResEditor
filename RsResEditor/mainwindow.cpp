@@ -6,6 +6,8 @@
 #include "rsrescore.h"
 #include "ResourceEditorInterface.h"
 #include "baseeditorwindow.h"
+#include "propertymodel/propertydockwidget.h"
+#include "propertymodel/propertymodel.h"
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QDebug>
@@ -18,7 +20,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     m_ResListDoc = new ResListDockWidget(this);
+    m_PropertyDoc = new PropertyDockWidget(this);
     addDockWidget(Qt::LeftDockWidgetArea, m_ResListDoc);
+    addDockWidget(Qt::RightDockWidgetArea, m_PropertyDoc);
 
     m_Mdi = new QMdiArea();
     m_Mdi->setDocumentMode(true);
@@ -56,6 +60,8 @@ void MainWindow::doubleResClicked(const QModelIndex &index)
         if (editor)
         {
             QMdiSubWindow *wnd = m_Mdi->addSubWindow(editor, Qt::SubWindow);
+            wnd->setAttribute(Qt::WA_DeleteOnClose);
+            connect(editor, &BaseEditorWindow::propertyModelChanged, m_PropertyDoc, &PropertyDockWidget::setPropertyModel);
             wnd->showMaximized();
         }
     }

@@ -2,12 +2,14 @@
 #define UNDOITEMMOVE_H
 
 #include <QUndoCommand>
+#include <QUuid>
 
 class CustomRectItem;
+class BaseScene;
 class UndoItemMove : public QUndoCommand
 {
 public:
-    UndoItemMove(CustomRectItem *item, QUndoCommand *parent = nullptr);
+    UndoItemMove(BaseScene *scene, const QUuid &uuid, QUndoCommand *parent = nullptr);
     virtual ~UndoItemMove();
 
     void setPositions(const QPointF &old, const QPointF &new_);
@@ -16,9 +18,10 @@ public:
     virtual void undo() Q_DECL_OVERRIDE;
 
 private:
-    CustomRectItem *m_pItem;
-    QPointF m_OldPos, m_NewPos, m_Delta;
+    BaseScene *m_pScene;
 
+    QUuid m_ItemId;
+    QPointF m_OldPos, m_NewPos, m_Delta;
 };
 
 #endif // UNDOITEMMOVE_H

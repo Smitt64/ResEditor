@@ -10,6 +10,8 @@ class QStatusBar;
 class StatusBarElement;
 class QHBoxLayout;
 class QLineEdit;
+class CustomRectItem;
+class QGraphicsItem;
 class StdPanelEditor : public BaseEditorWindow
 {
     Q_OBJECT
@@ -21,6 +23,7 @@ public:
 
 private slots:
     void sceneSelectionChanged();
+    void sceneDeleteItems();
 
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
@@ -29,6 +32,9 @@ protected:
 private:
     void updateSizeStatus();
     void setupNameLine();
+    void setupContrastAction();
+
+    void fillItemsToDelete(const QList<QGraphicsItem*> &selectedItems, QSet<CustomRectItem*> &realDelete);
     BaseEditorView *m_pView;
 
     ResPanel *m_pPanel;
@@ -39,6 +45,8 @@ private:
     QWidget *m_pStatusContainer;
     QHBoxLayout *m_pStatusContainerLayout;
     QLineEdit *m_pNameLineEdit;
+
+    QAction *m_pContrst, *m_pDelete;
 
     QToolBar *m_pToolBar;
 };

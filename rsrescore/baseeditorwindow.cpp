@@ -1,4 +1,5 @@
 #include "baseeditorwindow.h"
+#include "basescene.h"
 #include <QUndoStack>
 #include <QToolBar>
 #include <QToolButton>
@@ -66,4 +67,9 @@ void BaseEditorWindow::initUndoRedo(QToolBar *toolbar)
 QUndoStack *BaseEditorWindow::undoStack()
 {
     return m_pUndoStack;
+}
+
+void BaseEditorWindow::initpropertyModelSignals(BaseScene *scene)
+{
+    connect(scene, &BaseScene::propertyModelChanged, this, &BaseEditorWindow::propertyModelChanged);
 }

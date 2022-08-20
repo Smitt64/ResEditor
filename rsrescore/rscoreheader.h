@@ -8,6 +8,33 @@
 #define  dHRES_ITEM_NAME     101  // Длина наименования пункта меню (с
 #define  P_NAME2ALLOCED    0x00100000   // Рзмер поля name включён в общий размер панели. Флаг устанавливается в redit
                                     // при сохранении ресурса
+#define  RFP_REJREQ        0x00000004
+#define  RFP_UPDREQ        0x00000008
+#define  RFP_DELREQ        0x00000010
+
+#define  RFP_CHNGF         0x00000020   // ширина поля скроллинга была изменена
+                                        // динамически в EasyWin
+
+#define  RFP_NOCLOSE       0x00000040   // для EasyWin
+
+#define  RFP_RIGHTTEXT     0x00000080   // все тексты в панели имеют правое выравнивание
+#define  RFP_TRANSPARENT   0x00000100   // Не используется (см. RFP_CENTERED)
+#define  RFP_ANIMATED      0x00000200   // Не используется
+#define  RFP_FLOATING      0x00000400
+#define  RFP_PINX          0x00000800
+#define  RFP_PINY          0x00001000
+#define  RFP_NOAUTODIR     0x00002000
+#define  RFP_NOAUTONUM     0x00004000
+#define  RFP_NOSHADOW      0x00008000
+
+#define  RFP_CENTERED      0x00000100   // Вместо RFP_TRANSPARENT
+
+// This flags is used by BSCROL
+#define  RFP_AUTOFILL      0x00010000   // расширять панель и обл. скролинга до экрана
+#define  RFP_AUTOFIELDS    0x00020000   // автоматически устанавливать кординать полей в скролинге
+#define  RFP_AUTOHEAD      0x00040000   // генерировать заголовки колонок в скролинге
+#define  RFP_REVERSORDER   0x00080000   // обратный порядок записей
+#define  RFP_DENYSORT      0x01000000   // запретить сортировку скролинга
 
 enum TFVT
 {

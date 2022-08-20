@@ -26,10 +26,11 @@ typedef struct FieldStruct
     struct FieldR *_field;
 
     QString name, name2, formatStr, toolTip;
-    /*const qint8 &x() const;
+    const qint8 &x() const;
     const qint8 &y() const;
-    const qint16 &style() const;
-    qint16 len() const;*/
+    //const qint16 &style() const;
+    const qint8 &len() const;
+    const qint8 &height() const;
 }FieldStruct;
 typedef QList<FieldStruct> FieldStructList;
 
@@ -48,10 +49,16 @@ public:
     QSize size() const;
 
     QString title() const;
+    QString status() const;
+    QString status2() const;
     QString name() const;
+    quint32 helpPage() const;
 
     TextStructList::iterator textBegin();
     TextStructList::iterator textEnd();
+
+    FieldStructList::iterator fieldBegin();
+    FieldStructList::iterator fieldEnd();
 
 private:
     int readItems(struct PanelR *pp, ResLib *res, bool readName2);

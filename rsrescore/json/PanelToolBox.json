@@ -1,0 +1,23 @@
+{
+    "groups": [
+        "Standart"
+    ],
+
+    "elements": [
+        {
+            "mime": "toolbox/label",
+            "title": "Label",
+            "icon": "",
+
+            "content": [
+                {
+                    "class": "TextItem",
+                    "offset": [0,0],
+                    "properties": [
+                        { "property": "text", "value": "Label" }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,10 +1,12 @@
 #include "undoitemmove.h"
 #include "customrectitem.h"
+#include "basescene.h"
 #include <QMetaClassInfo>
 
-UndoItemMove::UndoItemMove(CustomRectItem *item, QUndoCommand *parent) :
+UndoItemMove::UndoItemMove(BaseScene *scene, const QUuid &uuid, QUndoCommand *parent) :
     QUndoCommand(parent),
-    m_pItem(item)
+    m_pScene(scene),
+    m_ItemId(uuid)
 {
 }
 
@@ -19,24 +21,38 @@ void UndoItemMove::setPositions(const QPointF &old, const QPointF &new_)
     m_NewPos = new_;
     m_Delta = new_ - old;
 
-    int typeID = m_pItem->metaObject()->indexOfClassInfo(CLASSINFO_UNDOREDO);
-    if (typeID >= 0)
+    CustomRectItem *pItem = m_pScene->findItem(m_ItemId);
+    if (pItem)
     {
-        QString objtype = m_pItem->metaObject()->classInfo(typeID).value();
-        setText(QObject::tr("%1: Изменение положения").arg(objtype));
+        int typeID = pItem->metaObject()->indexOfClassInfo(CLASSINFO_UNDOREDO);
+        if (typeID >= 0)
+        {
+            QString objtype = pItem->metaObject()->classInfo(typeID).value();
+            setText(QObject::tr("%1: Изменение положения").arg(objtype));
+        }
+        else
+            setText(QObject::tr("Изменение положения"));
     }
-    else
-        setText(QObject::tr(" Изменение положения"));
 }
 
 void UndoItemMove::redo()
 {
-    m_pItem->setPos(m_NewPos);
-    m_pItem->updateSizePos();
+    CustomRectItem *pItem = m_pScene->findItem(m_ItemId);
+
+    if (pItem)
+    {
+        pItem->setPos(m_NewPos);
+        pItem->updateSizePos();
+    }
 }
 
 void UndoItemMove::undo()
 {
-    m_pItem->setPos(m_OldPos);
-    m_pItem->updateSizePos();
+    CustomRectItem *pItem = m_pScene->findItem(m_ItemId);
+
+    if (pItem)
+    {
+        pItem->setPos(m_OldPos);
+        pItem->updateSizePos();
+    }
 }

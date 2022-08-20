@@ -3,6 +3,9 @@
 #include "panelitem.h"
 #include "respanel.h"
 #include "statusbarelement.h"
+#include "basescene.h"
+#include "baseeditorview.h"
+#include "undoredo/undoitemdelete.h"
 #include <QStatusBar>
 #include <QHBoxLayout>
 #include <QGraphicsSceneMouseEvent>
@@ -11,6 +14,75 @@
 #include <QLineEdit>
 #include <QFontMetrics>
 #include <QPalette>
+#include <QPainter>
+#include <QGraphicsItem>
+#include <QUndoStack>
+
+#define SHADOW_CODE 9617
+
+// ----------------------------------------------------
+
+class StdEditorScene : public BaseScene
+{
+public:
+    StdEditorScene(QObject *parent = nullptr) :
+        BaseScene(parent)
+    {
+
+    }
+
+    virtual ~StdEditorScene() {}
+
+protected:
+    virtual void drawBackground (QPainter* painter, const QRectF &rect) Q_DECL_OVERRIDE
+    {
+        BaseScene::drawBackground(painter, rect);
+
+        QList<QGraphicsItem*> totalItems = items(Qt::AscendingOrder);
+        for (QGraphicsItem *item : qAsConst(totalItems))
+        {
+            PanelItem *panel = dynamic_cast<PanelItem*>(item);
+
+            if (panel)
+            {
+                QSize grSize = getGridSize();
+                QRectF panelRect = panel->mapRectToScene(panel->boundingRect());
+                panelRect.translate(QPointF(grSize.width() * 2, grSize.height()));
+                painter->save();
+                painter->setPen(Qt::NoPen);
+                painter->setBrush(QBrush(Qt::Dense3Pattern));
+                painter->drawRect(panelRect);
+                painter->restore();
+                break;
+            }
+        }
+    }
+};
+
+// ----------------------------------------------------
+class StdEditorView : public BaseEditorView
+{
+public:
+    StdEditorView(QWidget *parent = nullptr) :
+        BaseEditorView(parent)
+    {
+
+    }
+
+    virtual ~StdEditorView()
+    {
+
+    }
+
+    virtual void setupScene() Q_DECL_OVERRIDE
+    {
+        BaseScene *Scene = new StdEditorScene(this);
+        setScene(Scene);
+        Scene->setSceneRect(QRectF(0, 0, width(), height()));
+    }
+};
+
+// ----------------------------------------------------
 
 StdPanelEditor::StdPanelEditor(QWidget *parent) :
     BaseEditorWindow(parent),
@@ -45,7 +117,7 @@ void StdPanelEditor::setupEditor()
     m_pToolBar = addToolBar(tr("Основная"));
     m_pToolBar->setIconSize(QSize(16, 16));
 
-    m_pView = new BaseEditorView(this);
+    m_pView = new StdEditorView(this);
     m_pView->setupScene();
     setCentralWidget(m_pView);
 
@@ -63,6 +135,28 @@ void StdPanelEditor::setupEditor()
     setupNameLine();
     m_pToolBar->addSeparator();
     initUndoRedo(m_pToolBar);
+    setupContrastAction();
+
+    m_pDelete = m_pToolBar->addAction(QIcon(":/img/Delete.png"), tr("Удалить"));
+
+    BaseScene *baseScene = dynamic_cast<BaseScene*>(m_pView->scene());
+    if (baseScene)
+        initpropertyModelSignals(baseScene);
+
+    connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
+}
+
+void StdPanelEditor::setupContrastAction()
+{
+    m_pToolBar->addSeparator();
+
+    m_pContrst = m_pToolBar->addAction(QIcon(":/img/EditBrightContrastHS.png"), tr("Контраст"));
+    m_pContrst->setCheckable(true);
+
+    connect(m_pContrst, &QAction::toggled, [this](bool toogled)
+    {
+        panelItem->setProperty(CONTRAST_PROPERTY, toogled);
+    });
 }
 
 void StdPanelEditor::setupNameLine()
@@ -135,4 +229,47 @@ void StdPanelEditor::updateSizeStatus()
 
         m_SizeText->setText(posText);
     }
+}
+
+void StdPanelEditor::fillItemsToDelete(const QList<QGraphicsItem*> &selectedItems, QSet<CustomRectItem*> &realDelete)
+{
+    for(auto item : qAsConst(selectedItems))
+    {
+        CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
+        if (!rectItem || !rectItem->parentItem())
+            continue;
+
+        QList<QGraphicsItem*> childItems = rectItem->childItems();
+        fillItemsToDelete(childItems, realDelete);
+
+        realDelete.insert(rectItem);
+    }
+}
+
+void StdPanelEditor::sceneDeleteItems()
+{
+    BaseScene *pScene = dynamic_cast<BaseScene*>(m_pView->scene());
+
+    if (!pScene)
+        return;
+
+    QList<QGraphicsItem*> selectedItems = pScene->selectedItems();
+    QSet<CustomRectItem*> realDelete;
+    fillItemsToDelete(selectedItems, realDelete);
+
+    if (realDelete.empty())
+        return;
+
+    if (realDelete.size() > 1)
+        undoStack()->beginMacro(tr("Удаление %1 элементов").arg(realDelete.size()));
+
+    for (auto delItem : qAsConst(realDelete))
+    {
+        UndoItemDelete *cmd = new UndoItemDelete(pScene, delItem->uuid());
+        undoStack()->push(cmd);
+    }
+
+    if (realDelete.size() > 1)
+        undoStack()->endMacro();
+
 }

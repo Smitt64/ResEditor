@@ -1,0 +1,12 @@
+{
+    "propertylist": [
+        {
+            "name" : "text",
+            "alias" : "Текст"
+        },
+        {
+            "name" : "textType",
+            "alias" : "Тип текста"
+        }
+    ]
+}

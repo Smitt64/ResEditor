@@ -1,0 +1,116 @@
+{
+    "colorStyles": [
+        {
+            "name" : "MainStyle",
+            "description": "Основной стиль",
+            "contrast": [128, 128, 0],
+            "colors": [
+                { "name": "Color_SceneBackground", "color": [192,192,192] },
+                { "name": "Color_ContainerBg", "color": [0, 0, 128] },
+                { "name": "Color_BorderColor", "color": [255, 255, 255] },
+                { "name": "Color_TextBg", "color": [0, 0, 128] },
+                { "name": "Color_Text", "color": [192, 192, 192] },
+                { "name": "Color_ControlBg", "color": [0, 0, 128] },
+                { "name": "Color_ControlText", "color": [255, 255, 255] }
+            ]
+        },
+        {
+            "name" : "SCOM",
+            "description": "Основной стиль",
+            "contrast": [128, 128, 0],
+            "colors": [
+                { "name": "Color_SceneBackground", "color": [192,192,192] },
+                { "name": "Color_ContainerBg", "color": [0, 0, 128] },
+                { "name": "Color_BorderColor", "color": [255, 255, 255] },
+                { "name": "Color_TextBg", "color": [0, 0, 128] },
+                { "name": "Color_Text", "color": [192, 192, 192] },
+                { "name": "Color_ControlBg", "color": [0, 0, 128] },
+                { "name": "Color_ControlText", "color": [255, 255, 255] }
+            ]
+        },
+        {
+            "name" : "SMES",
+            "description": "Стиль сообщений",
+            "contrast": [128, 128, 0],
+            "colors": [
+                { "name": "Color_SceneBackground", "color": [192,192,192] },
+                { "name": "Color_ContainerBg", "color": [192, 192, 192] },
+                { "name": "Color_BorderColor", "color": [255, 255, 255] },
+                { "name": "Color_TextBg", "color": [192, 192, 192] },
+                { "name": "Color_Text", "color": [0, 0, 0] },
+                { "name": "Color_ControlBg", "color": [192, 192, 192] },
+                { "name": "Color_ControlText", "color": [255, 255, 255] }
+            ]
+        },
+        {
+            "name" : "RMES",
+            "description": "Стиль аварийных сообщений",
+            "contrast": [128, 128, 0],
+            "colors": [
+                { "name": "Color_SceneBackground", "color": [192,192,192] },
+                { "name": "Color_ContainerBg", "color": [128, 0, 0] },
+                { "name": "Color_BorderColor", "color": [255, 255, 255] },
+                { "name": "Color_TextBg", "color": [128, 0, 0] },
+                { "name": "Color_Text", "color": [255, 255, 255] },
+                { "name": "Color_ControlBg", "color": [128, 0, 0] },
+                { "name": "Color_ControlText", "color": [0, 0, 0] }
+            ]
+        },
+        {
+            "name" : "SHLP",
+            "description": "Стиль помощи",
+            "contrast": [128, 128, 0],
+            "colors": [
+                { "name": "Color_SceneBackground", "color": [192,192,192] },
+                { "name": "Color_ContainerBg", "color": [0, 128, 128] },
+                { "name": "Color_BorderColor", "color": [0, 0, 0] },
+                { "name": "Color_TextBg", "color": [0, 128, 128] },
+                { "name": "Color_Text", "color": [0, 0, 0] },
+                { "name": "Color_ControlBg", "color": [0, 128, 128] },
+                { "name": "Color_ControlText", "color": [255, 255, 0] }
+            ]
+        },
+        {
+            "name" : "SMEN",
+            "description": "Стиль меню",
+            "contrast": [128, 128, 0],
+            "colors": [
+                { "name": "Color_SceneBackground", "color": [192,192,192] },
+                { "name": "Color_ContainerBg", "color": [192, 192, 192] },
+                { "name": "Color_BorderColor", "color": [0, 0, 0] },
+                { "name": "Color_TextBg", "color": [192, 192, 192] },
+                { "name": "Color_Text", "color": [0, 0, 128] },
+                { "name": "Color_ControlBg", "color": [192, 192, 192] },
+                { "name": "Color_ControlText", "color": [0, 0, 0] }
+            ]
+        },
+        {
+            "name" : "SBCM",
+            "description": "Стиль с яркой рамкой",
+            "contrast": [128, 128, 0],
+            "colors": [
+                { "name": "Color_SceneBackground", "color": [192,192,192] },
+                { "name": "Color_ContainerBg", "color": [0, 0, 128] },
+                { "name": "Color_BorderColor", "color": [255, 255, 0] },
+                { "name": "Color_TextBg", "color": [0, 0, 128] },
+                { "name": "Color_Text", "color": [192, 192, 192] },
+                { "name": "Color_ControlBg", "color": [0, 0, 128] },
+                { "name": "Color_ControlText", "color": [255, 255, 255] }
+            ]
+        },
+        {
+            "name" : "SCRL",
+            "description": "Стиль справочных скролингов",
+            "contrast": [128, 128, 0],
+            "colors": [
+                { "name": "Color_SceneBackground", "color": [192,192,192] },
+                { "name": "Color_ContainerBg", "color": [0, 128, 128] },
+                { "name": "Color_BorderColor", "color": [255, 255, 255] },
+                { "name": "Color_TextBg", "color": [0, 128, 128] },
+                { "name": "Color_Text", "color": [255, 255, 255] },
+                { "name": "Color_ControlBg", "color": [0, 128, 128] },
+                { "name": "Color_ControlText", "color": [0, 0, 0] }
+            ]
+        }
+    ]
+}

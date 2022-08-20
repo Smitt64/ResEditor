@@ -1,0 +1,59 @@
+{
+    "propertylist": [
+        {
+            "name" : "panelStyle",
+            "alias" : "Стиль панели",
+
+            "enum" : [
+                { "key" : "MainStyle", "alias" : "Основной" },
+                { "key" : "SCOM", "alias" : "SCOM Основной стиль" },
+                { "key" : "SMES", "alias" : "SMES Стиль сообщений" },
+                { "key" : "RMES", "alias" : "RMES Стиль аварийных сообщений" },
+                { "key" : "SHLP", "alias" : "SHLP Стиль помощи" },
+                { "key" : "SMEN", "alias" : "SMEN Стиль меню" },
+                { "key" : "SBCM", "alias" : "SBCM Стиль с яркой рамкой" },
+                { "key" : "SCRL", "alias" : "SCRL Стиль справочных скролингов" }
+            ]
+        },
+        {
+            "name" : "title",
+            "alias" : "Заголовок"
+        },
+        {
+            "name" : "status",
+            "alias" : "Статус"
+        },
+        {
+            "name" : "status2",
+            "alias" : "Доп. статус"
+        },
+        {
+            "name" : "isCentered",
+            "alias" : "Панель по центру",
+            "tooltip" : "Выводить панель по центру"
+        },
+        {
+            "name" : "isRightText",
+            "alias" : "Текст справа",
+            "tooltip" : "Выравнивание текста справа"
+        },
+        {
+            "name" : "panelExclude",
+            "alias" : "Исключить",
+
+            "enum" : [
+                { "key" : "ExcludeNavigation", "alias" : "Автоматический обход" },
+                { "key" : "ExcludeAutoNum", "alias" : "Автоматическую нумерацию полей" },
+                { "key" : "ExcludeShadow", "alias" : "Отображение тени" }
+            ]
+        },
+        {
+            "name" : "helpPage",
+            "alias" : "Страница помощи"
+        },     
+        {
+            "name" : "comment",
+            "alias" : "Комментарий"
+        }
+    ]
+}

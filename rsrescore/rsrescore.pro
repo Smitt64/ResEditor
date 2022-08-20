@@ -22,6 +22,15 @@ SOURCES += \
     controlitem.cpp \
     customrectitem.cpp \
     panelitem.cpp \
+    propertymodel/enumpropertytreeitem.cpp \
+    propertymodel/flagpropertytreeitem.cpp \
+    propertymodel/propertydockwidget.cpp \
+    propertymodel/propertygrouptreeitem.cpp \
+    propertymodel/propertymodel.cpp \
+    propertymodel/propertytreedelegate.cpp \
+    propertymodel/propertytreeitem.cpp \
+    propertymodel/propertytreeview.cpp \
+    propertymodel/rectpropertytreeitem.cpp \
     reslib.cpp \
     reslibdirmodel.cpp \
     reslistdockwidget.cpp \
@@ -31,7 +40,10 @@ SOURCES += \
     stdpaneleditor.cpp \
     styles/resstyle.cpp \
     textitem.cpp \
-    undoredo/undoitemmove.cpp
+    undoredo/undoitemdelete.cpp \
+    undoredo/undoitemmove.cpp \
+    undoredo/undoitemresize.cpp \
+    undoredo/undopropertychange.cpp
 
 HEADERS += \
     ResourceEditorInterface.h \
@@ -44,6 +56,15 @@ HEADERS += \
     controlitem.h \
     customrectitem.h \
     panelitem.h \
+    propertymodel/enumpropertytreeitem.h \
+    propertymodel/flagpropertytreeitem.h \
+    propertymodel/propertydockwidget.h \
+    propertymodel/propertygrouptreeitem.h \
+    propertymodel/propertymodel.h \
+    propertymodel/propertytreedelegate.h \
+    propertymodel/propertytreeitem.h \
+    propertymodel/propertytreeview.h \
+    propertymodel/rectpropertytreeitem.h \
     reslib.h \
     reslibdirmodel.h \
     reslistdockwidget.h \
@@ -55,7 +76,10 @@ HEADERS += \
     stdpaneleditor.h \
     styles/resstyle.h \
     textitem.h \
-    undoredo/undoitemmove.h
+    undoredo/undoitemdelete.h \
+    undoredo/undoitemmove.h \
+    undoredo/undoitemresize.h \
+    undoredo/undopropertychange.h
 
 # Default rules for deployment.
 unix {

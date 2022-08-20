@@ -2,6 +2,7 @@
 #include "reslib.h"
 #include "res_lbr.h"
 #include "rscoreheader.h"
+#include <QDebug>
 
 const qint8 &TextStruct::x() const
 {
@@ -34,6 +35,26 @@ FieldStruct::FieldStruct(const FieldStruct &other)
     name2 = other.name2;
     formatStr = other.formatStr;
     toolTip = other.toolTip;
+}
+
+const qint8 &FieldStruct::x() const
+{
+    return _field->x;
+}
+
+const qint8 &FieldStruct::y() const
+{
+    return _field->y;
+}
+
+const qint8 &FieldStruct::len() const
+{
+    return _field->l;
+}
+
+const qint8 &FieldStruct::height() const
+{
+    return _field->h;
 }
 
 // ----------------------------------------------------------------
@@ -225,8 +246,8 @@ int ResPanel::readItems(struct PanelR *pp, ResLib *res, bool readName2)
             if(element._field->FVt == FT_NUMERIC)
                element._field->FVp &= 0xFF;
 
-            char *s = (char*)malloc(sizeof(char)*(lens + 1));
-            memset(s, 0, lens + 1);
+            char *s = (char*)malloc(sizeof(char)*(element._field->lens + 1));
+            memset(s, 0, element._field->lens + 1);
             if(readName2 || !element._field->vfl)
             {
                 err = rds(res->fileHandle(), &s, 0, element._field->lens, nullptr);
@@ -275,6 +296,7 @@ int ResPanel::readItems(struct PanelR *pp, ResLib *res, bool readName2)
             }
         }
 
+        //qDebug() << "element._field->FVt: " << element._field->FVt;
         m_Fields.append(element);
     }
 
@@ -302,9 +324,24 @@ QString ResPanel::title() const
     return m_Title;
 }
 
+QString ResPanel::status() const
+{
+    return m_Status;
+}
+
+QString ResPanel::status2() const
+{
+    return m_StatusRD;
+}
+
 QString ResPanel::name() const
 {
     return m_Name;
+}
+
+quint32 ResPanel::helpPage() const
+{
+    return m_pPanel->PHelp;
 }
 
 TextStructList::iterator ResPanel::textBegin()
@@ -315,4 +352,14 @@ TextStructList::iterator ResPanel::textBegin()
 TextStructList::iterator ResPanel::textEnd()
 {
     return m_Texts.end();
+}
+
+FieldStructList::iterator ResPanel::fieldBegin()
+{
+    return m_Fields.begin();
+}
+
+FieldStructList::iterator ResPanel::fieldEnd()
+{
+    return m_Fields.end();
 }

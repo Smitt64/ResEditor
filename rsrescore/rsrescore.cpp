@@ -2,6 +2,9 @@
 #include "reslibdirmodel.h"
 #include "ResourceEditorInterface.h"
 #include "reslib.h"
+#include "controlitem.h"
+#include "textitem.h"
+#include "panelitem.h"
 #include <QPluginLoader>
 #include <QFontDatabase>
 
@@ -12,6 +15,12 @@ RsResCore::RsResCore()
 {
     loadPlugins();
     QFontDatabase::addApplicationFont("TerminalVector.ttf");
+
+    qRegisterMetaType<CustomRectItem*>();
+    qRegisterMetaType<ControlItem*>();
+    qRegisterMetaType<TextItem*>();
+    qRegisterMetaType<ContainerItem*>();
+    qRegisterMetaType<PanelItem*>();
 }
 
 RsResCore *RsResCore::inst()

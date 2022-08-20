@@ -2,6 +2,8 @@
 #define BASEEDITORWINDOW_H
 
 #include <QMainWindow>
+#include "rsrescore_global.h"
+#include "propertymodel/propertymodel.h"
 
 class QAction;
 class QMenu;
@@ -9,7 +11,8 @@ class QToolBar;
 class QUndoStack;
 class QToolButton;
 class UndoActionWidget;
-class BaseEditorWindow : public QMainWindow
+class BaseScene;
+class RSRESCORE_EXPORT BaseEditorWindow : public QMainWindow
 {
     Q_OBJECT
 public:
@@ -20,9 +23,11 @@ public:
     QUndoStack *undoStack();
 
 signals:
+    void propertyModelChanged(QAbstractItemModel *model);
 
 protected:
     void initUndoRedo(QToolBar *toolbar);
+    void initpropertyModelSignals(BaseScene *scene);
 
 private:
     QUndoStack *m_pUndoStack;

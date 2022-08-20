@@ -31,3 +31,9 @@ void BaseEditorView::resizeEvent(QResizeEvent *event)
     const QSize &sz = event->size();
     pScene->setSceneRect(QRectF(0, 0, sz.width(), sz.height()));
 }
+
+void BaseEditorView::setScene(BaseScene *scene)
+{
+    pScene = scene;
+    QGraphicsView::setScene(pScene);
+}

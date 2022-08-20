@@ -1,7 +1,10 @@
 #include "customrectitem.h"
 #include "basescene.h"
 #include "undoredo/undoitemmove.h"
+#include "undoredo/undoitemresize.h"
+#include "undoredo/undopropertychange.h"
 #include "styles/resstyle.h"
+#include "propertymodel/propertymodel.h"
 #include <QApplication>
 #include <QPainter>
 #include <QGraphicsView>
@@ -14,6 +17,12 @@
 #include <QStyle>
 #include <QStyleOption>
 #include <QPainterPath>
+#include <QMetaClassInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QMessageBox>
+#include <QFile>
 
 #define SEL_RECT_ZIZE 6
 #define PIE 3.1415926535897932384626433832795
@@ -33,6 +42,7 @@ CustomRectItem::CustomRectItem(const QRect& rect, QGraphicsItem* parent):
 
 void CustomRectItem::init()
 {
+    m_ItemId = QUuid::createUuid();
     m_ResizeHandles.fill(QRect(0, 0, 0, 0), 8); //initially empty handles
     m_MousePressed = false;
     m_IsResizing = false;
@@ -40,6 +50,8 @@ void CustomRectItem::init()
     m_HasRubberBand = false;
     pRubberBand = nullptr;
     m_pUndoStack = nullptr;
+    m_pPropertyModel = nullptr;
+    m_SkipUndoStack = false;
 
     setFlags(QGraphicsItem::ItemIsSelectable |
              QGraphicsItem::ItemIsMovable |
@@ -62,7 +74,17 @@ void CustomRectItem::init()
         setUndoStack(pParent->undoStack());
 }
 
-ResStyle *CustomRectItem::style()
+const QUuid &CustomRectItem::uuid() const
+{
+    return m_ItemId;
+}
+
+void CustomRectItem::setUuid(const QUuid &_uuid)
+{
+    m_ItemId = _uuid;
+}
+
+ResStyle *CustomRectItem::style() const
 {
     BaseScene* pScene = qobject_cast<BaseScene*> (scene());
 
@@ -232,9 +254,12 @@ void CustomRectItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
     if (event->button() == Qt::LeftButton)
     {
-        QList<QGraphicsItem*> items = scene()->selectedItems();
+        QList<QGraphicsItem*> items = scene()->items(event->scenePos());
         m_MousePressed = true;
-        m_MousePressPoint.clear();
+
+        if ((event->modifiers() & Qt::ControlModifier) != Qt::ControlModifier)
+            m_MousePressPoint.clear();
+
         m_IsResizing = mousePosOnHandles(event->scenePos()); //to check event on corners or not
         if (m_IsResizing)
             m_ActualRect = m_BoundingRect;
@@ -427,13 +452,14 @@ void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void CustomRectItem::insertUndoRedoMove()
 {
+    BaseScene* customScene = qobject_cast<BaseScene*> (scene());
     if (m_MousePressPoint.size() == 1)
     {
         auto mousePos = m_MousePressPoint.first();
         if (mousePos != pos() && undoStack())
         {
-            CustomRectItem *rectitem = dynamic_cast<CustomRectItem*>(m_MousePressPoint.firstKey());
-            UndoItemMove *undocmd = new UndoItemMove(rectitem);
+            //CustomRectItem *rectitem = dynamic_cast<CustomRectItem*>(m_MousePressPoint.firstKey());
+            UndoItemMove *undocmd = new UndoItemMove(customScene, uuid());
             undocmd->setPositions(mousePos, pos());
 
             undoStack()->push(undocmd);
@@ -443,7 +469,8 @@ void CustomRectItem::insertUndoRedoMove()
     {
         if (undoStack())
         {
-            undoStack()->beginMacro(tr("Перемещение группы элементов"));
+            using UndoTuple = std::tuple<QUuid, QPointF, QPointF>;
+            QVector<UndoTuple> undoData;
 
             QMapIterator<QGraphicsItem*, QPointF> items(m_MousePressPoint);
             while(items.hasNext())
@@ -451,12 +478,25 @@ void CustomRectItem::insertUndoRedoMove()
                 auto item = items.next();
 
                 CustomRectItem *rectitem = dynamic_cast<CustomRectItem*>(item.key());
-                UndoItemMove *undocmd = new UndoItemMove(rectitem);
-                undocmd->setPositions(item.value(), rectitem->pos());
+                UndoTuple tmp = std::make_tuple(rectitem->uuid(), item.value(), rectitem->pos());
 
-                undoStack()->push(undocmd);
+                if (std::get<1>(tmp) != std::get<2>(tmp))
+                    undoData.append(tmp);
             }
-            undoStack()->endMacro();
+
+            if (!undoData.isEmpty())
+            {
+                undoStack()->beginMacro(tr("Перемещение группы элементов"));
+                for (const auto &_tuple : undoData)
+                {
+                    UndoItemMove *undocmd = new UndoItemMove(customScene, std::get<0>(_tuple));
+                    undocmd->setPositions(std::get<1>(_tuple), std::get<2>(_tuple));
+
+                    undoStack()->push(undocmd);
+                }
+                undoStack()->endMacro();
+            }
+
         }
     }
 }
@@ -465,11 +505,17 @@ void CustomRectItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     if (m_IsResizing)
     {
+        BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+        UndoItemResize *undocmd = new UndoItemResize(customScene, uuid());
+
         QPointF dPos = m_BoundingRect.topLeft() - m_ActualRect.topLeft();
         moveBy(dPos.rx(), dPos.ry());
         QSizeF vsize = m_BoundingRect.size();
         m_BoundingRect.setTopLeft(QPointF(0, 0));
         m_BoundingRect.setSize(vsize);
+
+        undocmd->setSizes(m_ActualRect.size(), m_BoundingRect.size());
+        undoStack()->push(undocmd);
     }
     else
     {
@@ -565,6 +611,11 @@ bool CustomRectItem::childCanMove(const QPointF &newPos, CustomRectItem *item)
     return true;
 }
 
+const bool &CustomRectItem::isResizing() const
+{
+    return m_IsResizing;
+}
+
 const QBrush &CustomRectItem::getBrush() const
 {
     return m_brush;
@@ -641,6 +692,7 @@ void CustomRectItem::setCoord(const QPoint &coord)
 
     update();
     scene()->update();
+    emit geometryChanged();
 }
 
 void CustomRectItem::updateSizePos()
@@ -649,11 +701,17 @@ void CustomRectItem::updateSizePos()
 
     QSizeF tmpSize = m_BoundingRect.size();
     QSize gridSize = customScene->getGridSize();
+    QPointF tmpPos = pos();
 
     qreal xV = round(tmpSize.width() / gridSize.width());
     qreal yV = round(tmpSize.height() / gridSize.height());
 
+    qreal xP = round(tmpPos.x() / gridSize.width());
+    qreal yP = round(tmpPos.y() / gridSize.height());
+
     m_Size = QSize(xV, yV);
+    m_Coord = QPoint(xP, yP);
+    emit geometryChanged();
 }
 
 void CustomRectItem::setSize(const QSize &size)
@@ -671,6 +729,60 @@ void CustomRectItem::setSize(const QSize &size)
 
     update();
     scene()->update();
+    emit geometryChanged();
+}
+
+QRect CustomRectItem::geometry() const
+{
+    QRect rect(m_Coord, m_Size);
+    return rect;
+}
+
+void CustomRectItem::setGeometry(const QRect &_geometry)
+{
+    QSize grSize = style()->gridSize();
+    BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+    QPointF newPos(_geometry.x() * grSize.width(), _geometry.y() * grSize.height());
+    QSizeF newSize(_geometry.width() * grSize.width(), _geometry.height() * grSize.height());
+
+    if (undoStack() && !isSkipUndoStack())
+    {
+        UndoItemMove *undocmdpos = new UndoItemMove(customScene, uuid());
+        UndoItemResize *undocmdsize = new UndoItemResize(customScene, uuid());
+        undocmdpos->setPositions(pos(), newPos);
+        undocmdsize->setSizes(m_BoundingRect.size(), newSize);
+
+        undoStack()->beginMacro(tr("%1: Изменение геометрии").arg(undoRedoType()));
+        undoStack()->push(undocmdpos);
+        undoStack()->push(undocmdsize);
+        undoStack()->endMacro();
+    }
+    else
+    {
+        setPos(newPos);
+        setSize(newSize);
+        updateSizePos();
+    }
+}
+
+QString CustomRectItem::undoRedoType() const
+{
+    QString name;
+    int typeID = metaObject()->indexOfClassInfo(CLASSINFO_UNDOREDO);
+    if (typeID >= 0)
+        name = metaObject()->classInfo(typeID).value();
+
+    return name;
+}
+
+void CustomRectItem::setSize(const QSizeF &size)
+{
+    m_BoundingRect.setWidth(size.width());
+    m_BoundingRect.setHeight(size.height());
+
+    updateSizePos();
+    update();
+    scene()->update();
 }
 
 QSize CustomRectItem::getSize() const
@@ -678,8 +790,309 @@ QSize CustomRectItem::getSize() const
     return m_Size;
 }
 
+QPoint CustomRectItem::getPoint() const
+{
+    return m_Coord;
+}
+
 QSize CustomRectItem::gridSize() const
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
     return customScene->getGridSize();
+}
+
+PropertyModel *CustomRectItem::propertyModel()
+{
+    if (!m_pPropertyModel)
+        m_pPropertyModel = new PropertyModel(this);
+
+    return m_pPropertyModel;
+}
+
+bool CustomRectItem::setSkipUndoStack(const bool &value)
+{
+    bool old = m_SkipUndoStack;
+    m_SkipUndoStack = value;
+    return old;
+}
+
+const bool &CustomRectItem::isSkipUndoStack() const
+{
+    return m_SkipUndoStack;
+}
+
+void CustomRectItem::pushUndoPropertyData(const QString &propertyName, const QVariant &_newValue)
+{
+    BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+    UndoPropertyChange *undoprop = new UndoPropertyChange(customScene, uuid());
+    undoprop->setValues(property(propertyName.toLocal8Bit().data()), _newValue);
+    undoprop->setPropertyName(propertyName);
+    undoStack()->push(undoprop);
+}
+
+QString CustomRectItem::getClassInfo(const QMetaObject *obj, const char *name) const
+{
+    int index = obj->indexOfClassInfo(name);
+
+    if (index >= 0)
+        return obj->classInfo(index).value();
+
+    return QString();
+}
+
+void CustomRectItem::serializeProperty(QJsonObject &obj, const QMetaObject *meta, const QString &propertyName)
+{
+    int propertyId = meta->indexOfProperty(propertyName.toLocal8Bit().data());
+
+    if (propertyId >= 0)
+    {
+        QMetaProperty prop = meta->property(propertyId);
+        QVariant::Type type = prop.type();
+        QVariant value = property(propertyName.toLocal8Bit().data());
+
+        obj.insert("property", propertyName);
+        if (type == QVariant::Point)
+        {
+            QJsonArray arr;
+            QPoint point = value.toPoint();
+            arr.append(point.x());
+            arr.append(point.y());
+            obj.insert("value", arr);
+        }
+        else if (type == QVariant::PointF)
+        {
+            QJsonArray arr;
+            QPointF point = value.toPoint();
+            arr.append(point.x());
+            arr.append(point.y());
+            obj.insert("value", arr);
+        }
+        else if (type == QVariant::Size)
+        {
+            QJsonArray arr;
+            QSize point = value.toSize();
+            arr.append(point.width());
+            arr.append(point.height());
+            obj.insert("value", arr);
+        }
+        else if (type == QVariant::SizeF)
+        {
+            QJsonArray arr;
+            QSizeF point = value.toSizeF();
+            arr.append(point.width());
+            arr.append(point.height());
+            obj.insert("value", arr);
+        }
+        else if (type == QVariant::Rect)
+        {
+            QJsonArray arr;
+            QRect point = value.toRect();
+            arr.append(point.x());
+            arr.append(point.y());
+            arr.append(point.width());
+            arr.append(point.height());
+            obj.insert("value", arr);
+        }
+        else if (type == QVariant::RectF)
+        {
+            QJsonArray arr;
+            QRectF point = value.toRectF();
+            arr.append(point.x());
+            arr.append(point.y());
+            arr.append(point.width());
+            arr.append(point.height());
+            obj.insert("value", arr);
+        }
+        else if (type == QVariant::Int || prop.isEnumType())
+            obj.insert("value", value.toInt());
+        else if (type == qMetaTypeId<quint16>())
+            obj.insert("value", QJsonValue::fromVariant(value));
+        else if (type == QVariant::Double)
+            obj.insert("value", value.toDouble());
+        else if (type == QVariant::String)
+            obj.insert("value", value.toString());
+        else if (type == QVariant::Bool)
+            obj.insert("value", value.toBool());
+    }
+}
+
+template<class T>QVector<T> fromJsonArray(const QJsonArray &arr)
+{
+    QVector<T> result;
+    result.reserve(arr.size());
+
+    for (const auto &element : arr)
+    {
+        QVariant var = element.toVariant();
+        result.push_back(var.value<T>());
+    }
+
+    return result;
+}
+
+void CustomRectItem::serialize(QByteArray &data)
+{
+    QList<const QMetaObject*> metaobjects;
+    const QMetaObject *obj = metaObject();
+
+    do
+    {
+        metaobjects.append(obj);
+        obj = obj->superClass();
+    } while(obj);
+
+    QJsonArray propertyArray;
+    //std::reverse(metaobjects.begin(), metaobjects.end());
+
+    bool fCustomRectItemPassed = false;
+    QSet<QString> propertyList;
+
+    QSet<QString> processedProp;
+    for (auto metaobject : metaobjects)
+    {
+        int propCount = metaobject->propertyCount();
+        for (int i = 0; i < propCount; i++)
+        {
+            const QMetaProperty &prop = metaobject->property(i);
+
+            if (!fCustomRectItemPassed)
+            {
+                if (prop.isWritable())
+                    propertyList.insert(prop.name());
+            }
+            else
+                propertyList.remove(prop.name());
+        }
+        /*QString propertyString = getClassInfo(metaobject, CLASSINFO_SERIALIZE_PROP);
+        QStringList propertyList;// = propertyString.split(";");
+
+        if (!propertyString.contains(".json"))
+            propertyList = propertyString.split(";");
+        else
+        {
+            QFile f(propertyString);
+            if (f.open(QIODevice::ReadOnly))
+            {
+                QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+                QJsonObject obj = doc.object();
+
+                if (obj.contains("propertyList"))
+                    propertyList = fromJsonArray<QString>(obj["propertyList"].toArray());
+            }
+        }*/
+
+        /*for (const QString &propertyName : qAsConst(propertyList))
+        {
+            if (!propertyName.isEmpty() && !processedProp.contains(propertyName))
+            {
+                QJsonObject propObj;
+                serializeProperty(propObj, metaobject, propertyName);
+                propertyArray.append(propObj);
+                processedProp.insert(propertyName);
+            }
+        }*/
+
+        if (metaobject->className() == QString("CustomRectItem"))
+            fCustomRectItemPassed = true;
+    }
+
+    for (const QString &propertyName : qAsConst(propertyList))
+    {
+        if (!propertyName.isEmpty() && !processedProp.contains(propertyName))
+        {
+            QJsonObject propObj;
+            serializeProperty(propObj, metaObject(), propertyName);
+            propertyArray.append(propObj);
+            processedProp.insert(propertyName);
+        }
+    }
+
+    QJsonObject rootObj;
+    rootObj.insert("properties", propertyArray);
+    QJsonDocument doc(rootObj);
+
+    data = doc.toJson(QJsonDocument::Compact);
+}
+
+void CustomRectItem::deserialize(const QByteArray &data)
+{
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+
+    bool old = setSkipUndoStack(true);
+    readProperties(doc.object());
+    setSkipUndoStack(old);
+}
+
+void CustomRectItem::readProperties(const QJsonObject &obj)
+{
+    QJsonArray properties = obj["properties"].toArray();
+
+    for (const auto &prop : qAsConst(properties))
+    {
+        QJsonObject propObj = prop.toObject();
+        deserializeProperty(propObj);
+    }
+}
+
+void CustomRectItem::deserializeProperty(QJsonObject &obj)
+{
+    QString propertyName = obj["property"].toString();
+    QVariant value;
+
+    int propertyId = metaObject()->indexOfProperty(propertyName.toLocal8Bit().data());
+    if (propertyId >= 0)
+    {
+        QMetaProperty prop = metaObject()->property(propertyId);
+        QVariant::Type type = prop.type();
+
+        if (type == QVariant::Point)
+        {
+            QVector<int> val = fromJsonArray<int>(obj["value"].toArray());
+            QPoint pt(val[0], val[1]);
+            value = QVariant::fromValue(pt);
+        }
+        else if (type == QVariant::PointF)
+        {
+            QVector<qreal> val = fromJsonArray<qreal>(obj["value"].toArray());
+            QPointF pt(val[0], val[1]);
+            value = QVariant::fromValue(pt);
+        }
+        else if (type == QVariant::Size)
+        {
+            QVector<int> val = fromJsonArray<int>(obj["value"].toArray());
+            QSize pt(val[0], val[1]);
+            value = QVariant::fromValue(pt);
+        }
+        else if (type == QVariant::SizeF)
+        {
+            QVector<qreal> val = fromJsonArray<qreal>(obj["value"].toArray());
+            QSizeF pt(val[0], val[1]);
+            value = QVariant::fromValue(pt);
+        }
+        else if (type == QVariant::Rect)
+        {
+            QVector<int> val = fromJsonArray<int>(obj["value"].toArray());
+            QRect pt(val[0], val[1], val[2], val[3]);
+            value = QVariant::fromValue(pt);
+        }
+        else if (type == QVariant::RectF)
+        {
+            QVector<qreal> val = fromJsonArray<qreal>(obj["value"].toArray());
+            QRectF pt(val[0], val[1], val[2], val[3]);
+            value = QVariant::fromValue(pt);
+        }
+        else if (type == QVariant::Int || prop.isEnumType())
+            value = obj["value"].toInt();
+        else if (type == qMetaTypeId<quint16>())
+            value = obj["value"].toVariant();
+        else if (type == QVariant::Double)
+            value = obj["value"].toDouble();
+        else if (type == QVariant::String)
+            value = obj["value"].toString();
+        else if (type == QVariant::Bool)
+            value = obj["value"].toBool();
+    }
+
+    if (value.isValid())
+        setProperty(propertyName.toLocal8Bit().data(), value);
 }

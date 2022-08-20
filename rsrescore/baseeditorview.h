@@ -17,6 +17,7 @@ public:
     QSize gridSize() const;
 
 protected:
+    void setScene(BaseScene *scene);
     virtual void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
 
 private:

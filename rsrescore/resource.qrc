@@ -10,5 +10,15 @@
         <file>img/Filter.png</file>
         <file>img/Redo.png</file>
         <file>img/Undo.png</file>
+        <file>json/CustomRectItem.json</file>
+        <file>json/LabelItem.json</file>
+        <file>styles/PropertyTreeView.css</file>
+        <file>json/Container.json</file>
+        <file>json/Panel.json</file>
+        <file>json/ResStyleColoSheme.json</file>
+        <file>img/EditBrightContrastHS.png</file>
+        <file>json/Control.json</file>
+        <file>img/Delete.png</file>
+        <file>json/PanelSerializePropList.json</file>
     </qresource>
 </RCC>

@@ -11,6 +11,7 @@ QT_END_NAMESPACE
 class ResLib;
 class QMdiArea;
 class ResListDockWidget;
+class PropertyDockWidget;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -26,6 +27,7 @@ private:
     Ui::MainWindow *ui;
 
     ResListDockWidget *m_ResListDoc;
+    PropertyDockWidget *m_PropertyDoc;
     QMdiArea *m_Mdi;
 
     ResLib *m_Lib;
