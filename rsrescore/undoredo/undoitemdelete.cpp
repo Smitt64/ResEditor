@@ -1,7 +1,6 @@
 #include "undoitemdelete.h"
 #include "customrectitem.h"
 #include "basescene.h"
-#include "controlitem.h"
 #include <QDebug>
 #include <QMetaType>
 #include <QMetaClassInfo>

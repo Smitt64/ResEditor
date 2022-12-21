@@ -24,7 +24,6 @@ class ControlItem : public CustomRectItem
     Q_CLASSINFO(CLASSINFO_UNDOREDO, "CONTROL")
     Q_CLASSINFO(CLASSINFO_PROPERTYLIST, ":/json/Control.json")
     Q_CLASSINFO(CLASSINFO_PROPERTYGROUP, "Control")
-    Q_CLASSINFO(CLASSINFO_SERIALIZE_PROP, ":/json/PanelSerializePropList.json")
 public:
     enum FieldType
     {
@@ -124,6 +123,7 @@ protected:
 
 private:
     struct FieldStruct *m_pFieldStruct;
+    void updateCorners();
 
     FieldType m_FieldType;
     DataType m_DataType;

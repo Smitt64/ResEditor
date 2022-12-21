@@ -14,11 +14,6 @@ PropertyTreeView::PropertyTreeView(QWidget *parent) :
     setIndentation(10);
     setUniformRowHeights(true);
 
-    QFile styleSheet(":/styles/PropertyTreeView.css");
-
-    if (styleSheet.open(QIODevice::ReadOnly))
-        setStyleSheet(styleSheet.readAll());
-
     m_pDelegate = new PropertyTreeDelegate(this);
     setItemDelegate(m_pDelegate);
 }

@@ -26,3 +26,7 @@ RsResEditor/release/
 rsreslbrfn/debug/
 
 RsResEditor/ui_mainwindow.h
+
+.qtc_clangd/.cache/clangd/index/
+
+.qtc_clangd/

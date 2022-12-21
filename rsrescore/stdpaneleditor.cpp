@@ -6,6 +6,7 @@
 #include "basescene.h"
 #include "baseeditorview.h"
 #include "undoredo/undoitemdelete.h"
+#include "toolbox/toolboxmodel.h"
 #include <QStatusBar>
 #include <QHBoxLayout>
 #include <QGraphicsSceneMouseEvent>
@@ -17,6 +18,11 @@
 #include <QPainter>
 #include <QGraphicsItem>
 #include <QUndoStack>
+#include <QMenuBar>
+#include <QApplication>
+#include <QJsonArray>
+#include <QClipboard>
+#include <QJsonDocument>
 
 #define SHADOW_CODE 9617
 
@@ -112,8 +118,22 @@ StdPanelEditor::StdPanelEditor(QWidget *parent) :
     setMouseTracking(true);
 }
 
+void StdPanelEditor::setupMenus()
+{
+    m_pEditMenu = m_pMenuBar->addMenu(tr("Правка"));
+    m_pEditMenu->addAction(undoAction());
+    m_pEditMenu->addAction(redoAction());
+    m_pEditMenu->addSeparator();
+    m_pEditMenu->addAction(m_pCutAction);
+    m_pEditMenu->addAction(m_pCopyAction);
+    m_pEditMenu->addAction(m_pPasteAction);
+}
+
 void StdPanelEditor::setupEditor()
 {
+    m_pMenuBar = new QMenuBar(this);
+    setMenuBar(m_pMenuBar);
+
     m_pToolBar = addToolBar(tr("Основная"));
     m_pToolBar->setIconSize(QSize(16, 16));
 
@@ -135,13 +155,18 @@ void StdPanelEditor::setupEditor()
     setupNameLine();
     m_pToolBar->addSeparator();
     initUndoRedo(m_pToolBar);
+    setupCopyPaste();
     setupContrastAction();
 
     m_pDelete = m_pToolBar->addAction(QIcon(":/img/Delete.png"), tr("Удалить"));
+    m_pDelete->setShortcut(QKeySequence::Delete);
 
     BaseScene *baseScene = dynamic_cast<BaseScene*>(m_pView->scene());
     if (baseScene)
         initpropertyModelSignals(baseScene);
+
+    setupMenus();
+    loadToolBox();
 
     connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
 }
@@ -157,6 +182,7 @@ void StdPanelEditor::setupContrastAction()
     {
         panelItem->setProperty(CONTRAST_PROPERTY, toogled);
     });
+    m_pContrst->setChecked(true);
 }
 
 void StdPanelEditor::setupNameLine()
@@ -172,6 +198,21 @@ void StdPanelEditor::setupNameLine()
     m_pNameLineEdit->setFont(font);
     m_pNameLineEdit->setMaximumWidth(namewidth);
     m_pToolBar->addWidget(m_pNameLineEdit);
+}
+
+void StdPanelEditor::setupCopyPaste()
+{
+    m_pToolBar->addSeparator();
+    m_pCutAction = m_pToolBar->addAction(QIcon(":/img/CutHS.png"), tr("Вырезать"));
+    m_pCutAction->setShortcut(QKeySequence::Cut);
+
+    m_pCopyAction = m_pToolBar->addAction(QIcon(":/img/CopyHS.png"), tr("Копировать"));
+    m_pCopyAction->setShortcut(QKeySequence::Copy);
+
+    m_pPasteAction = m_pToolBar->addAction(QIcon(":/img/PasteHS.png"), tr("Вставить"));
+    m_pPasteAction->setShortcut(QKeySequence::Paste);
+
+    connect(m_pCopyAction, &QAction::triggered, this, &StdPanelEditor::sceneCopyItems);
 }
 
 void StdPanelEditor::setPanel(ResPanel *panel)
@@ -231,7 +272,7 @@ void StdPanelEditor::updateSizeStatus()
     }
 }
 
-void StdPanelEditor::fillItemsToDelete(const QList<QGraphicsItem*> &selectedItems, QSet<CustomRectItem*> &realDelete)
+void StdPanelEditor::fillItems(const QList<QGraphicsItem*> &selectedItems, QSet<CustomRectItem*> &result, const FillItemsChildMode &mode)
 {
     for(auto item : qAsConst(selectedItems))
     {
@@ -240,9 +281,14 @@ void StdPanelEditor::fillItemsToDelete(const QList<QGraphicsItem*> &selectedItem
             continue;
 
         QList<QGraphicsItem*> childItems = rectItem->childItems();
-        fillItemsToDelete(childItems, realDelete);
 
-        realDelete.insert(rectItem);
+        if (mode == FICMode_ChildBeforeParent)
+            fillItems(childItems, result, mode);
+
+        result.insert(rectItem);
+
+        if (mode == FICMode_ParentBeforeChild)
+            fillItems(childItems, result, mode);
     }
 }
 
@@ -255,7 +301,7 @@ void StdPanelEditor::sceneDeleteItems()
 
     QList<QGraphicsItem*> selectedItems = pScene->selectedItems();
     QSet<CustomRectItem*> realDelete;
-    fillItemsToDelete(selectedItems, realDelete);
+    fillItems(selectedItems, realDelete, FICMode_ChildBeforeParent);
 
     if (realDelete.empty())
         return;
@@ -271,5 +317,37 @@ void StdPanelEditor::sceneDeleteItems()
 
     if (realDelete.size() > 1)
         undoStack()->endMacro();
+}
 
+void StdPanelEditor::sceneCopyItems()
+{
+    QClipboard *pClipboard = QApplication::clipboard();
+    BaseScene *pScene = dynamic_cast<BaseScene*>(m_pView->scene());
+
+    if (!pScene)
+        return;
+
+    QList<QGraphicsItem*> selectedItems = pScene->selectedItems();
+    QSet<CustomRectItem*> realCopy;
+    fillItems(selectedItems, realCopy, FICMode_ParentBeforeChild);
+
+    if (realCopy.empty())
+        return;
+
+    QJsonObject rootObj;
+    QJsonArray items;
+
+    for (auto item : qAsConst(realCopy))
+    {
+        QJsonObject itemData;
+        item->serialize(itemData);
+        items.append(itemData);
+    }
+
+    rootObj.insert("items", items);
+
+    QJsonDocument doc;
+    doc.setObject(rootObj);
+
+    pClipboard->setText(doc.toJson());
 }

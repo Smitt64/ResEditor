@@ -1,6 +1,7 @@
 #include "resstyle.h"
 #include "customrectitem.h"
 #include "rscoreheader.h"
+#include "basescene.h"
 #include <QMetaClassInfo>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -56,7 +57,10 @@ void ResStyleOption::init(CustomRectItem *item)
     if (!item)
         return;
 
+    BaseScene* customScene = qobject_cast<BaseScene*> (item->scene());
+
     rect = item->boundingRect();
+    gridSize = customScene->getGridSize();
     alignment = Qt::AlignLeft | Qt::AlignVCenter;
 
     panelStyle = readProperty<ResStyle::PanelStyle>(item, "panelStyle", ResStyle::SCOM);
@@ -277,6 +281,11 @@ QString ResStyle::controlDefaultText(const ControlType &type)
     case Control_Double:
         text = QString("0.00");
         break;
+    case Control_Unknown:
+    case Control_Label:
+    case Control_Panel:
+    case Control_Button:
+        break;
     }
     return text;
 }
@@ -385,6 +394,30 @@ void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleO
         painter->save();
         painter->fillRect(option->rect, color(Color_TextBg, option));
         drawText(painter, option->rect, option->text, option->alignment, color(Color_Text, option));
+        painter->restore();
+    }
+    else if (type == Control_Button)
+    {
+        painter->save();
+        QRectF rc = option->rect;
+        rc.setWidth(rc.width() - option->gridSize.width());
+        rc.setHeight(rc.height() - option->gridSize.height());
+        painter->fillRect(rc, color(Color_Button, option));
+
+        QColor shadowColor = color(Color_ButtonShadow, option);
+        QRectF botomShadow(option->rect.topLeft(), option->rect.size());
+        botomShadow.setTop(option->gridSize.height());
+        botomShadow.setLeft(option->gridSize.width());
+        botomShadow.setHeight(option->gridSize.height() / 2);
+
+        QRectF rightShadow(option->rect.topLeft(), option->rect.size());
+        rightShadow.setTop(option->gridSize.height() / 2);
+        rightShadow.setLeft(rc.width());
+        rightShadow.setHeight(option->gridSize.height() / 2);
+
+        painter->fillRect(botomShadow, shadowColor);
+        painter->fillRect(rightShadow, shadowColor);
+        drawText(painter, rc, option->text, option->alignment | Qt::AlignVCenter, color(Color_ButtonText, option));
         painter->restore();
     }
     else

@@ -12,7 +12,6 @@ class ContainerItem : public CustomRectItem
     Q_CLASSINFO(CLASSINFO_UNDOREDO, "CONTAINER")
     Q_CLASSINFO(CLASSINFO_PROPERTYLIST, ":/json/Container.json")
     Q_CLASSINFO(CLASSINFO_PROPERTYGROUP, "Container")
-    Q_CLASSINFO(CLASSINFO_SERIALIZE_PROP, "borderStyle")
 public:
     Q_INVOKABLE ContainerItem(CustomRectItem* parent = nullptr);
     ContainerItem(const QRect& rect, CustomRectItem* parent = nullptr);

@@ -4,6 +4,8 @@
 #include <containeritem.h>
 #include "styles/resstyle.h"
 
+#define MIMETYPE_TOOLBOX "application/toolboxitem"
+
 class ResPanel;
 class QTextDocument;
 class PanelItem : public ContainerItem
@@ -81,7 +83,14 @@ protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
     virtual bool event(QEvent *e) Q_DECL_OVERRIDE;
 
+    virtual void dragEnterEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
+    virtual void dragMoveEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
+    virtual void dropEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
+    virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
+
 private:
+    void setChildsVisible(const bool &value);
+
     ResPanel *m_Panel;
     ResStyle::PanelStyle m_PanelStyle;
     QString m_Title, m_Status, m_Status2, m_Comment;
@@ -89,6 +98,9 @@ private:
     quint32 m_HelpPage;
 
     bool m_isCentered, m_isRightText;
+
+    QRectF m_DragHighlightedRect;
+    QPixmap *m_DragPixmap, *m_DragControl;
 };
 
 Q_DECLARE_OPAQUE_POINTER(PanelItem)

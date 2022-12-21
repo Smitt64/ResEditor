@@ -1,0 +1,443 @@
+{
+    "groups": [
+        {
+            "id": 1,
+            "title": "Элементы отображения"
+        },
+        {
+            "id": 2,
+            "title": "Элементы ввода"
+        },
+        {
+            "id": 4,
+            "title": "Кнопки"
+        },
+        {
+            "id": 3,
+            "title": "Cтатический текст"
+        }
+    ],
+    
+    "templates": [
+        {
+            "alias": "Метка",
+            "icon": ":/img/Label_24x.png",
+            "tooltip": "Используются для вывода текста, который недоступен для изменения",
+            "mimetype": "application/toolboxitem",
+            "groups": [1],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "TextItem",
+                        "parent": "",
+                        "uuid": "{f5f646e3-e722-4a2b-a01d-99113ad7fb9a}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [1, 1]
+                            },
+                            {
+                                "property": "text",
+                                "value": "Label"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Горизонтальная линия",
+            "icon": ":/img/Label_horline24x.png",
+            "tooltip": "Используются для вывода текста, который недоступен для изменения",
+            "mimetype": "application/toolboxitem",
+            "groups": [1],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "TextItem",
+                        "parent": "",
+                        "uuid": "{5ef918f3-90e6-4629-8523-9a4288c393e5}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [5, 1]
+                            },
+                            {
+                                "property": "text",
+                                "value": "─────"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Редактируемое поле (int16)",
+            "icon": ":/img/TextBoxI16_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{c6a30d34-1ac3-40d7-9ded-b1aa1dcde520}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 0
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Редактируемое поле (int32)",
+            "icon": ":/img/TextBoxI32_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{7228866e-af2f-42dd-9c20-9c5d0c14091c}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 1
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Редактируемое поле (String)",
+            "icon": ":/img/TextBox_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{f35b8253-eadb-4437-89b5-2cd4cb9c1f1c}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 7
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Редактируемое поле (Date)",
+            "icon": ":/img/DatePicker_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{35027c5c-9b28-4ee9-819d-275d13a39f95}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [10, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 9
+                            },
+                            {
+                                "property": "dataLength",
+                                "value": "10"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Редактируемое поле (Time)",
+            "icon": ":/img/TimePicker_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{08ba088a-ba3f-4f23-ac5c-b3620d350158}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [8, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 10
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Многострочное редактируемое поле",
+            "icon": ":/img/MultyLineTextBox_24x.png",
+            "tooltip": "Редактируемое поле данных на нескольких строка с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{7e808018-4273-4743-8800-0d019632f796}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [8, 2]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 4
+                            },
+                            {
+                                "property": "dataLength",
+                                "value": 0
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 7
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Переключатель (Кнопка справа)",
+            "icon": ":/img/RadioButton_24x.png",
+            "tooltip": "Реализация выбора из нескольких значений",
+            "mimetype": "application/toolboxitem",
+            "groups": [4],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "TextItem",
+                        "parent": "",
+                        "uuid": "{620e4004-7f78-11ed-a1eb-0242ac120002}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [15, 1]
+                            },
+                            {
+                                "property": "text",
+                                "value": "RadioButton ( )"
+                            }
+                        ]
+                    },
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{6840f980-7f78-11ed-a1eb-0242ac120002}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [13, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [1, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 2
+                            },
+                            {
+                                "property": "dataLength",
+                                "value": 0
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 12
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Переключатель (Кнопка слева)",
+            "icon": ":/img/RadioButton_24x.png",
+            "tooltip": "Реализация выбора из нескольких значений",
+            "mimetype": "application/toolboxitem",
+            "groups": [4],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "TextItem",
+                        "parent": "",
+                        "uuid": "{620e4004-7f78-11ed-a1eb-0242ac120002}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [15, 1]
+                            },
+                            {
+                                "property": "text",
+                                "value": "( ) RadioButton"
+                            }
+                        ]
+                    },
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{6840f980-7f78-11ed-a1eb-0242ac120002}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [1, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [1, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 2
+                            },
+                            {
+                                "property": "dataLength",
+                                "value": 0
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 12
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Кнопка с тенью",
+            "icon": ":/img/ButtonClick_24x.png",
+            "tooltip": "Можно щелкнуть мышью, клавишей ВВОД или ПРОБЕЛ, если кнопка имеет фокус",
+            "mimetype": "application/toolboxitem",
+            "groups": [4],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{7e808018-4273-4743-8800-0d019632f796}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [11, 2]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 3
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 7
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

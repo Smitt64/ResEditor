@@ -12,6 +12,8 @@ class ResLib;
 class QMdiArea;
 class ResListDockWidget;
 class PropertyDockWidget;
+class ToolBoxDockWidget;
+class QMdiSubWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -22,12 +24,14 @@ public:
 
 private slots:
     void doubleResClicked(const QModelIndex &index);
+    void subWindowActivated(QMdiSubWindow *window);
 
 private:
     Ui::MainWindow *ui;
 
-    ResListDockWidget *m_ResListDoc;
-    PropertyDockWidget *m_PropertyDoc;
+    ResListDockWidget *m_ResListDock;
+    PropertyDockWidget *m_PropertyDock;
+    ToolBoxDockWidget *m_ToolBoxDock;
     QMdiArea *m_Mdi;
 
     ResLib *m_Lib;

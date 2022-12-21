@@ -23,22 +23,29 @@ void UndoPropertyChange::setValues(const QVariant &old, const QVariant &new_)
     m_NewValue = new_;
 }
 
+QString UndoPropertyChange::ChangePropertyMsg(const QString &property, const QMetaObject *obj)
+{
+    if (obj)
+    {
+        int typeID = obj->indexOfClassInfo(CLASSINFO_UNDOREDO);
+
+        if (typeID >= 0)
+        {
+            QString objtype = obj->classInfo(typeID).value();
+            return QObject::tr("%1: Изменение свойства [%2]").arg(objtype, property);
+        }
+    }
+
+    return QObject::tr("Изменение свойства [%1]").arg(property);
+}
+
 void UndoPropertyChange::setPropertyName(const QString &name)
 {
     m_PropertyName = name;
 
     CustomRectItem *pItem = m_pScene->findItem(m_ItemId);
-    if (pItem)
-    {
-        int typeID = pItem->metaObject()->indexOfClassInfo(CLASSINFO_UNDOREDO);
-        if (typeID >= 0)
-        {
-            QString objtype = pItem->metaObject()->classInfo(typeID).value();
-            setText(QObject::tr("%1: Изменение свойства [%2]").arg(objtype, m_PropertyName));
-        }
-        else
-            setText(QObject::tr("Изменение свойства [%1]").arg(m_PropertyName));
-    }
+    QString msg = ChangePropertyMsg(m_PropertyName, pItem->metaObject());
+    setText(msg);
 }
 
 void UndoPropertyChange::redo()

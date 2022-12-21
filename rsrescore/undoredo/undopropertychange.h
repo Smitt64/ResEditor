@@ -19,6 +19,8 @@ public:
     virtual void redo() Q_DECL_OVERRIDE;
     virtual void undo() Q_DECL_OVERRIDE;
 
+    static QString ChangePropertyMsg(const QString &property, const QMetaObject *obj);
+
 private:
     BaseScene *m_pScene;
 

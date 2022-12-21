@@ -3,6 +3,8 @@
 #include "textitem.h"
 #include "controlitem.h"
 #include "styles/resstyle.h"
+#include "basescene.h"
+#include "undoredo/undoitemadd.h"
 #include <QPainter>
 #include <QFont>
 #include <QFontMetrics>
@@ -11,7 +13,9 @@
 #include <QMetaObject>
 #include <QMetaProperty>
 #include <QEvent>
+#include <QMimeData>
 #include <QDynamicPropertyChangeEvent>
+#include <QGraphicsSceneDragDropEvent>
 
 PanelItem::PanelItem(CustomRectItem *parent) :
     ContainerItem(parent),
@@ -20,10 +24,13 @@ PanelItem::PanelItem(CustomRectItem *parent) :
     m_PanelExclude(PanelExcludeFlags()),
     m_HelpPage(0),
     m_isCentered(false),
-    m_isRightText(false)
+    m_isRightText(false),
+    m_DragPixmap(nullptr),
+    m_DragControl(nullptr)
 {
     setAvailableCorners(RIGHT | BOTTOM_RIGHT | BOTTOM);
     setRubberBand(true);
+    setAcceptDrops(true);
     setFlag(QGraphicsItem::ItemIsPanel);
 
     m_PanelExclude = ExcludeAutoNum | ExcludeShadow;
@@ -84,16 +91,46 @@ void PanelItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
     opt.text = m_Panel->title();
     opt.borderStyle = borderStyle();
 
-    style()->drawControl(ResStyle::Control_Panel, painter, &opt);
+    if (!m_DragHighlightedRect.isValid())
+    {
+        style()->drawControl(ResStyle::Control_Panel, painter, &opt);
 
-    painter->save();
-    painter->drawRect(QRectF(opt.rect.bottomRight().x(), opt.rect.bottomRight().y(), 20, 20));
-    painter->restore();
+        painter->save();
+        painter->drawRect(QRectF(opt.rect.bottomRight().x(), opt.rect.bottomRight().y(), 20, 20));
+        painter->restore();
+    }
+    else
+    {
+        // Для режима перетаскивания элемента с панели инструментов
+        painter->save();
+        painter->drawPixmap(boundingRect().toRect(), *m_DragPixmap);
+        painter->restore();
+    }
 
     painter->save();
     QColor br = style()->color(ResStyle::Color_TextBg, &opt);
-    paintBevel(painter, QColor::fromRgb(255 - br.red(), 255 - br.green(), 255 - br.blue()));
+    QColor inverceColor = QColor::fromRgb(255 - br.red(), 255 - br.green(), 255 - br.blue());
+    paintBevel(painter, inverceColor);
     painter->restore();
+
+    if (m_DragHighlightedRect.isValid())
+    {
+        painter->save();
+        painter->drawPixmap(m_DragHighlightedRect.toRect(), *m_DragControl);
+        painter->restore();
+
+        painter->save();
+        QPen pens;
+        pens.setCosmetic(true);
+        pens.setColor(inverceColor);
+        pens.setStyle(Qt::DotLine);
+        painter->setPen(pens);
+
+        //QRectF rc = m_DragHighlightedRect;
+        //rc.setSize(QSizeF(m_DragHighlightedRect.width() - 2, m_DragHighlightedRect.height() - 2));
+        painter->drawRect(m_DragHighlightedRect);
+        painter->restore();
+    }
 }
 
 const ResStyle::PanelStyle &PanelItem::panelStyle() const
@@ -256,4 +293,106 @@ void PanelItem::setHelpPage(const quint32 &val)
     }
     else
         pushUndoPropertyData("helpPage", val);
+}
+
+void PanelItem::dragEnterEvent(QGraphicsSceneDragDropEvent *event)
+{
+    if (event->mimeData()->hasFormat(MIMETYPE_TOOLBOX))
+    {
+        if (!m_DragHighlightedRect.isValid())
+        {
+            QList<QGraphicsItem*> items;
+            renderToPixmap(&m_DragPixmap);
+            createFromJson(this, event->mimeData()->data(MIMETYPE_TOOLBOX), items);
+
+            QRectF rc = items.first()->boundingRect();
+            for (const QGraphicsItem *item : qAsConst(items))
+                rc = rc.united(item->boundingRect());
+            m_DragControl = new QPixmap(rc.toRect().size());
+            m_DragControl->fill(Qt::transparent);
+            m_DragHighlightedRect.setWidth(rc.width());
+            m_DragHighlightedRect.setHeight(rc.height());
+
+            for (QGraphicsItem *item : qAsConst(items))
+            {
+                CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
+
+                QPointF coord = ewCoordToReal(rectItem->getPoint());
+                rectItem->renderToPixmap(&m_DragControl, coord);
+            }
+
+            update();
+            scene()->update();
+
+            qDeleteAll(items);
+        }
+
+        setChildsVisible(false);
+        event->acceptProposedAction();
+    }
+    else
+        event->ignore();
+}
+
+void PanelItem::dragMoveEvent(QGraphicsSceneDragDropEvent *event)
+{
+    if (event->mimeData()->hasFormat(MIMETYPE_TOOLBOX))
+    {
+        QPointF newPos = event->pos();
+        BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+        QSize gridSize = customScene->getGridSize();
+
+        qreal xV = round(newPos.x() / gridSize.width()) * gridSize.width();
+        qreal yV = round(newPos.y() / gridSize.height()) * gridSize.height();
+        m_DragHighlightedRect.moveTo(QPointF(xV, yV));
+
+        update();
+    }
+    else
+    {
+        dragLeaveEvent(nullptr);
+
+        event->ignore();
+    }
+}
+
+void PanelItem::dropEvent(QGraphicsSceneDragDropEvent *event)
+{
+    if (event->mimeData()->hasFormat(MIMETYPE_TOOLBOX))
+    {
+        BaseScene *pScene = dynamic_cast<BaseScene*>(scene());
+        UndoItemAdd *pUndo = new UndoItemAdd(pScene);
+        pUndo->setData(event->mimeData()->data(MIMETYPE_TOOLBOX));
+        pUndo->setOffset(realCoordToEw(event->pos()));
+
+        undoStack()->push(pUndo);
+
+        dragLeaveEvent(nullptr);
+        event->accept();
+    }
+    else
+    {
+        dragLeaveEvent(nullptr);
+        event->ignore();
+    }
+}
+
+void PanelItem::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
+{
+    m_DragHighlightedRect = QRectF();
+    delete m_DragPixmap;
+    delete m_DragControl;
+    m_DragPixmap = nullptr;
+    m_DragControl = nullptr;
+    setChildsVisible(true);
+
+    update();
+    scene()->update();
+}
+
+void PanelItem::setChildsVisible(const bool &value)
+{
+    QList<QGraphicsItem*> childs = childItems();
+    for (QGraphicsItem *child : qAsConst(childs))
+        child->setVisible(value);
 }

@@ -4,8 +4,10 @@
 #include <QColor>
 #include "respanel.h"
 #include "styles/resstyle.h"
+#include "undoredo/undopropertychange.h"
 #include "rscoreheader.h"
 #include <QGraphicsScene>
+#include <QUndoStack>
 
 ControlItem::ControlItem(QGraphicsItem *parent) :
     CustomRectItem(parent),
@@ -20,12 +22,34 @@ ControlItem::ControlItem(QGraphicsItem *parent) :
     m_HelpPage(0)
 {
     setBrush(QBrush(Qt::darkBlue));
+    updateCorners();
 }
 
 ControlItem::~ControlItem()
 {
     if (m_pFieldStruct)
         delete m_pFieldStruct;
+}
+
+void ControlItem::updateCorners()
+{
+    ResizeCornersFlags flags = ALL_NO_ROTATE;
+
+    flags.setFlag(LEFT, false);
+    flags.setFlag(TOP, false);
+    flags.setFlag(TOP_LEFT, false);
+    flags.setFlag(BOTTOM_LEFT, false);
+    flags.setFlag(TOP_RIGHT, false);
+    flags.setFlag(BOTTOM, false);
+    flags.setFlag(BOTTOM_RIGHT, false);
+
+    if (m_FieldType == FWR || m_FieldType == FVW)
+    {
+        flags.setFlag(BOTTOM, true);
+        flags.setFlag(BOTTOM_RIGHT, true);
+    }
+
+    setAvailableCorners(flags);
 }
 
 void ControlItem::setFieldStruct(struct FieldStruct *value)
@@ -41,6 +65,8 @@ void ControlItem::setFieldStruct(struct FieldStruct *value)
     m_ValueTemplate = m_pFieldStruct->formatStr;
     m_ControlGroup = m_pFieldStruct->_field->group;
     m_HelpPage = m_pFieldStruct->_field->FHelp;
+
+    updateCorners();
 }
 
 int ControlItem::lines() const
@@ -55,6 +81,9 @@ void ControlItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
     opt.init(this);
     opt.ftype = style()->controlFromFvt(m_DataType);
     opt.text = style()->controlDefaultText(opt.ftype);
+
+    if (m_FieldType == FBS)
+        opt.ftype = ResStyle::Control_Button;
 
     if (m_Style != ResStyle::MainStyle)
         opt.panelStyle = m_Style;
@@ -79,15 +108,27 @@ const ControlItem::FieldType &ControlItem::fieldType() const
 
 void ControlItem::setFieldType(const ControlItem::FieldType &val)
 {
+    checkPropSame("fieldType", val);
+
     if (isSkipUndoStack())
     {
         m_FieldType = val;
+        updateCorners();
         emit fieldTypeChanged();
         update();
         scene()->update();
     }
     else
+    {
+        QRect sz = geometry();
+        sz.setHeight(1);
+        QString msg = UndoPropertyChange::ChangePropertyMsg("fieldType", metaObject());
+
+        undoStack()->beginMacro(msg);
         pushUndoPropertyData("fieldType", val);
+        pushUndoPropertyData("geometry", sz);
+        undoStack()->endMacro();
+    }
 }
 
 const ControlItem::DataType &ControlItem::dataType() const
@@ -97,6 +138,8 @@ const ControlItem::DataType &ControlItem::dataType() const
 
 void ControlItem::setDataType(const ControlItem::DataType &val)
 {
+    checkPropSame("dataType", val);
+
     if (isSkipUndoStack())
     {
         m_DataType = val;
@@ -115,6 +158,8 @@ const quint16 &ControlItem::dataLength() const
 
 void ControlItem::setDataLength(const quint16 &val)
 {
+    checkPropSame("dataLength", val);
+
     if (isSkipUndoStack())
     {
         m_DataLength = val;
@@ -138,6 +183,8 @@ const bool &ControlItem::fdm() const
 
 void ControlItem::setFdm(const bool &val)
 {
+    checkPropSame("fdm", val);
+
     if (isSkipUndoStack())
     {
         m_Fdm = val;
@@ -156,6 +203,8 @@ const bool &ControlItem::isText() const
 
 void ControlItem::setIsText(const bool &val)
 {
+    checkPropSame("isText", val);
+
     if (isSkipUndoStack())
     {
         m_IsText = val;
@@ -174,6 +223,8 @@ const QString &ControlItem::controlName() const
 
 void ControlItem::setControlName(const QString &val)
 {
+    checkPropSame("controlName", val);
+
     if (isSkipUndoStack())
     {
         m_ControlName = val;
@@ -192,6 +243,8 @@ const ResStyle::PanelStyle &ControlItem::controlStyle() const
 
 void ControlItem::setControlStyle(const ResStyle::PanelStyle &val)
 {
+    checkPropSame("controlStyle", val);
+
     if (isSkipUndoStack())
     {
         m_Style = val;
@@ -210,6 +263,8 @@ const QString &ControlItem::valueTemplate() const
 
 void ControlItem::setValueTemplate(const QString &val)
 {
+    checkPropSame("valueTemplate", val);
+
     if (isSkipUndoStack())
     {
         m_ValueTemplate = val;
@@ -228,6 +283,8 @@ const quint16 &ControlItem::controlGroup() const
 
 void ControlItem::setControlGroup(const quint16 &val)
 {
+    checkPropSame("controlGroup", val);
+
     if (isSkipUndoStack())
     {
         m_ControlGroup = val;
@@ -246,6 +303,8 @@ const quint16 &ControlItem::helpPage() const
 
 void ControlItem::setHelpPage(const quint16 &val)
 {
+    checkPropSame("helpPage", val);
+
     if (isSkipUndoStack())
     {
         m_HelpPage = val;

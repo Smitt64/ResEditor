@@ -40,6 +40,12 @@ SOURCES += \
     stdpaneleditor.cpp \
     styles/resstyle.cpp \
     textitem.cpp \
+    toolbox/toolboxdockwidget.cpp \
+    toolbox/toolboxmodel.cpp \
+    toolbox/toolboxtreeitem.cpp \
+    toolbox/toolboxtreeview.cpp \
+    toolbox/toolboxwidgetinterface.cpp \
+    undoredo/undoitemadd.cpp \
     undoredo/undoitemdelete.cpp \
     undoredo/undoitemmove.cpp \
     undoredo/undoitemresize.cpp \
@@ -76,6 +82,12 @@ HEADERS += \
     stdpaneleditor.h \
     styles/resstyle.h \
     textitem.h \
+    toolbox/toolboxdockwidget.h \
+    toolbox/toolboxmodel.h \
+    toolbox/toolboxtreeitem.h \
+    toolbox/toolboxtreeview.h \
+    toolbox/toolboxwidgetinterface.h \
+    undoredo/undoitemadd.h \
     undoredo/undoitemdelete.h \
     undoredo/undoitemmove.h \
     undoredo/undoitemresize.h \

@@ -11,7 +11,9 @@
                 { "name": "Color_TextBg", "color": [0, 0, 128] },
                 { "name": "Color_Text", "color": [192, 192, 192] },
                 { "name": "Color_ControlBg", "color": [0, 0, 128] },
-                { "name": "Color_ControlText", "color": [255, 255, 255] }
+                { "name": "Color_Button", "color": [0, 128, 0] },
+                { "name": "Color_ButtonShadow", "color": [0, 0, 0] },
+                { "name": "Color_ButtonText", "color": [0, 0, 0] }
             ]
         },
         {
@@ -25,7 +27,10 @@
                 { "name": "Color_TextBg", "color": [0, 0, 128] },
                 { "name": "Color_Text", "color": [192, 192, 192] },
                 { "name": "Color_ControlBg", "color": [0, 0, 128] },
-                { "name": "Color_ControlText", "color": [255, 255, 255] }
+                { "name": "Color_ControlText", "color": [255, 255, 255] },
+                { "name": "Color_Button", "color": [0, 128, 0] },
+                { "name": "Color_ButtonShadow", "color": [0, 0, 0] },
+                { "name": "Color_ButtonText", "color": [0, 0, 0] }
             ]
         },
         {
@@ -39,7 +44,10 @@
                 { "name": "Color_TextBg", "color": [192, 192, 192] },
                 { "name": "Color_Text", "color": [0, 0, 0] },
                 { "name": "Color_ControlBg", "color": [192, 192, 192] },
-                { "name": "Color_ControlText", "color": [255, 255, 255] }
+                { "name": "Color_ControlText", "color": [255, 255, 255] },
+                { "name": "Color_Button", "color": [0, 128, 0] },
+                { "name": "Color_ButtonShadow", "color": [0, 0, 0] },
+                { "name": "Color_ButtonText", "color": [0, 0, 0] }
             ]
         },
         {
@@ -53,7 +61,10 @@
                 { "name": "Color_TextBg", "color": [128, 0, 0] },
                 { "name": "Color_Text", "color": [255, 255, 255] },
                 { "name": "Color_ControlBg", "color": [128, 0, 0] },
-                { "name": "Color_ControlText", "color": [0, 0, 0] }
+                { "name": "Color_ControlText", "color": [0, 0, 0] },
+                { "name": "Color_Button", "color": [0, 128, 0] },
+                { "name": "Color_ButtonShadow", "color": [0, 0, 0] },
+                { "name": "Color_ButtonText", "color": [0, 0, 0] }
             ]
         },
         {
@@ -67,7 +78,10 @@
                 { "name": "Color_TextBg", "color": [0, 128, 128] },
                 { "name": "Color_Text", "color": [0, 0, 0] },
                 { "name": "Color_ControlBg", "color": [0, 128, 128] },
-                { "name": "Color_ControlText", "color": [255, 255, 0] }
+                { "name": "Color_ControlText", "color": [255, 255, 0] },
+                { "name": "Color_Button", "color": [0, 128, 0] },
+                { "name": "Color_ButtonShadow", "color": [0, 0, 0] },
+                { "name": "Color_ButtonText", "color": [0, 0, 0] }
             ]
         },
         {
@@ -81,7 +95,10 @@
                 { "name": "Color_TextBg", "color": [192, 192, 192] },
                 { "name": "Color_Text", "color": [0, 0, 128] },
                 { "name": "Color_ControlBg", "color": [192, 192, 192] },
-                { "name": "Color_ControlText", "color": [0, 0, 0] }
+                { "name": "Color_ControlText", "color": [0, 0, 0] },
+                { "name": "Color_Button", "color": [0, 128, 0] },
+                { "name": "Color_ButtonShadow", "color": [0, 0, 0] },
+                { "name": "Color_ButtonText", "color": [0, 0, 0] }
             ]
         },
         {
@@ -95,7 +112,10 @@
                 { "name": "Color_TextBg", "color": [0, 0, 128] },
                 { "name": "Color_Text", "color": [192, 192, 192] },
                 { "name": "Color_ControlBg", "color": [0, 0, 128] },
-                { "name": "Color_ControlText", "color": [255, 255, 255] }
+                { "name": "Color_ControlText", "color": [255, 255, 255] },
+                { "name": "Color_Button", "color": [0, 128, 0] },
+                { "name": "Color_ButtonShadow", "color": [0, 0, 0] },
+                { "name": "Color_ButtonText", "color": [0, 0, 0] }
             ]
         },
         {
@@ -109,7 +129,10 @@
                 { "name": "Color_TextBg", "color": [0, 128, 128] },
                 { "name": "Color_Text", "color": [255, 255, 255] },
                 { "name": "Color_ControlBg", "color": [0, 128, 128] },
-                { "name": "Color_ControlText", "color": [0, 0, 0] }
+                { "name": "Color_ControlText", "color": [0, 0, 0] },
+                { "name": "Color_Button", "color": [0, 128, 0] },
+                { "name": "Color_ButtonShadow", "color": [0, 0, 0] },
+                { "name": "Color_ButtonText", "color": [0, 0, 0] }
             ]
         }
     ]

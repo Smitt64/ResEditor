@@ -1,12 +1,14 @@
 #include "textitem.h"
 #include <QColor>
+#include "qgraphicsscene.h"
 #include "respanel.h"
+#include "styles/resstyle.h"
+#include "undoredo/undopropertychange.h"
 #include <QPainter>
 #include <QFont>
 #include <QDebug>
-#include "styles/resstyle.h"
 #include <QGraphicsSceneMouseEvent>
-//#include <QGraphicsTextItem>
+#include <QUndoStack>
 
 #define CHECK_STR "[ ]"
 #define RADIO_STR "( )"
@@ -164,10 +166,31 @@ QString TextItem::text() const
 
 void TextItem::setText(const QString &txt)
 {
-    m_Value = txt;
+    checkPropSame("text", txt);
+
+    QRect sz = geometry();
+    sz.setWidth(txt.length());
+
+    if (isSkipUndoStack())
+    {
+        m_Value = txt;
+        setGeometry(sz);
+
+        emit textChanged();
+        emit geometryChanged();
+
+        update();
+        scene()->update();
+    }
+    else
+    {
+        QRect sz = geometry();
+        sz.setWidth(txt.length());
+        QString msg = UndoPropertyChange::ChangePropertyMsg("text", metaObject());
+
+        undoStack()->beginMacro(msg);
+        pushUndoPropertyData("text", txt);
+        pushUndoPropertyData("geometry", sz);
+        undoStack()->endMacro();
+    }
 }
-
-/*void TextItem::serialize(QByteArray &data)
-{
-
-}*/

@@ -1,6 +1,7 @@
 #include "basescene.h"
 #include "styles/resstyle.h"
 #include "customrectitem.h"
+#include "propertymodel/propertymodel.h"
 #include <QPainter>
 
 BaseScene::BaseScene(QObject *parent)
@@ -59,4 +60,29 @@ CustomRectItem *BaseScene::findItem(const QUuid &uuid) const
     }
 
     return foundItem;
+}
+
+CustomRectItem *BaseScene::findTopLevelItem() const
+{
+    CustomRectItem *foundItem = nullptr;
+    QList<QGraphicsItem*> elements = items();
+
+    for (auto element : qAsConst(elements))
+    {
+        CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(element);
+
+        if (rectItem && !rectItem->parentItem())
+        {
+            foundItem = rectItem;
+            break;
+        }
+    }
+
+    return foundItem;
+}
+
+void BaseScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
+{
+    qDebug() << "BaseScene::mousePressEvent";
+    QGraphicsScene::mousePressEvent(mouseEvent);
 }

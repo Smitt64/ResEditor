@@ -7,7 +7,7 @@
 #include "ResourceEditorInterface.h"
 #include "baseeditorwindow.h"
 #include "propertymodel/propertydockwidget.h"
-#include "propertymodel/propertymodel.h"
+#include "toolbox/toolboxdockwidget.h"
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QDebug>
@@ -19,10 +19,17 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    m_ResListDoc = new ResListDockWidget(this);
-    m_PropertyDoc = new PropertyDockWidget(this);
-    addDockWidget(Qt::LeftDockWidgetArea, m_ResListDoc);
-    addDockWidget(Qt::RightDockWidgetArea, m_PropertyDoc);
+    m_ResListDock = new ResListDockWidget(this);
+    m_PropertyDock = new PropertyDockWidget(this);
+    m_ToolBoxDock = new ToolBoxDockWidget(this);
+
+    addDockWidget(Qt::LeftDockWidgetArea, m_ResListDock);
+    addDockWidget(Qt::LeftDockWidgetArea, m_ToolBoxDock);
+    addDockWidget(Qt::RightDockWidgetArea, m_PropertyDock);
+
+    tabifyDockWidget(m_ToolBoxDock, m_ResListDock);
+    setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::West);
+    setTabShape(QTabWidget::Triangular);
 
     m_Mdi = new QMdiArea();
     m_Mdi->setDocumentMode(true);
@@ -38,9 +45,10 @@ MainWindow::MainWindow(QWidget *parent)
     QString filename = dir.absoluteFilePath("BANK.lbr");
     m_Lib->open(filename);
 
-    m_ResListDoc->setModel(m_Lib->model());
+    m_ResListDock->setModel(m_Lib->model());
 
-    connect(m_ResListDoc, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
+    connect(m_ResListDock, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
+    connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
 }
 
 MainWindow::~MainWindow()
@@ -61,9 +69,25 @@ void MainWindow::doubleResClicked(const QModelIndex &index)
         {
             QMdiSubWindow *wnd = m_Mdi->addSubWindow(editor, Qt::SubWindow);
             wnd->setAttribute(Qt::WA_DeleteOnClose);
-            connect(editor, &BaseEditorWindow::propertyModelChanged, m_PropertyDoc, &PropertyDockWidget::setPropertyModel);
+            connect(editor, &BaseEditorWindow::propertyModelChanged, m_PropertyDock, &PropertyDockWidget::setPropertyModel);
             wnd->showMaximized();
         }
     }
+}
+
+void MainWindow::subWindowActivated(QMdiSubWindow *window)
+{
+    if (!window)
+    {
+        m_ToolBoxDock->setModel(nullptr);
+        return;
+    }
+
+    BaseEditorWindow *wnd = dynamic_cast<BaseEditorWindow*>(window->widget());
+
+    if (!wnd)
+        m_ToolBoxDock->setModel(nullptr);
+    else
+        m_ToolBoxDock->setModel(wnd->toolBox());
 }
 

@@ -28,6 +28,9 @@ public:
         Color_Text,
         Color_ControlBg,
         Color_ControlText,
+        Color_Button,
+        Color_ButtonShadow,
+        Color_ButtonText,
 
         Color_Count
     };
@@ -58,6 +61,7 @@ public:
         Control_Float,
         Control_Money,
         Control_Double,
+        Control_Button,
     };
 
     enum PanelStyle
@@ -128,6 +132,7 @@ public:
     void init(CustomRectItem *item);
 
     QRectF rect;
+    QSize gridSize;
     QString text;
     ResStyle::BorderStyle borderStyle;
     ResStyle::ControlType ftype;

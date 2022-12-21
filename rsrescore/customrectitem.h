@@ -9,7 +9,8 @@
 #define CLASSINFO_UNDOREDO "UNDOREDO"
 #define CLASSINFO_PROPERTYLIST "PROPERTYLIST"
 #define CLASSINFO_PROPERTYGROUP "PROPERTYGROUP"
-#define CLASSINFO_SERIALIZE_PROP "PROPERTYSERIALIZE"
+
+#define checkPropSame(name,value) if (checkPropSameValue(name,value)) return
 
 class QRubberBand;
 class QUndoStack;
@@ -24,22 +25,27 @@ class CustomRectItem : public QGraphicsObject
 
     Q_CLASSINFO(CLASSINFO_PROPERTYLIST, ":/json/CustomRectItem.json")
     Q_CLASSINFO(CLASSINFO_PROPERTYGROUP, "Common")
-    Q_CLASSINFO(CLASSINFO_SERIALIZE_PROP, "size;point")
 
     friend class UndoItemMove;
+    friend class UndoItemAdd;
     friend class UndoPropertyChange;
 public:
     enum ResizeCorners
     {
-      TOP_LEFT = 1 << 1,
-      TOP = 1 << 2,
-      TOP_RIGHT = 1 << 3,
-      RIGHT = 1 << 4,
-      BOTTOM_RIGHT = 1 << 5,
-      BOTTOM = 1 << 6,
-      BOTTOM_LEFT = 1 << 7,
-      LEFT = 1 << 8,
-      ROTATE = 1 << 9
+        TOP_LEFT = 1 << 1,
+        TOP = 1 << 2,
+        TOP_RIGHT = 1 << 3,
+        RIGHT = 1 << 4,
+        BOTTOM_RIGHT = 1 << 5,
+        BOTTOM = 1 << 6,
+        BOTTOM_LEFT = 1 << 7,
+        LEFT = 1 << 8,
+        ROTATE = 1 << 9,
+
+        ALL_NO_ROTATE = TOP_LEFT | TOP | TOP_RIGHT | RIGHT |
+            BOTTOM_RIGHT | BOTTOM | BOTTOM_LEFT |
+            LEFT,
+        ALL = ALL_NO_ROTATE | ROTATE
     };
     Q_DECLARE_FLAGS(ResizeCornersFlags, ResizeCorners)
 
@@ -51,6 +57,7 @@ public:
     void setRubberBand(bool value);
 
     void setAvailableCorners(ResizeCornersFlags flags);
+    const ResizeCornersFlags &availableCorners() const;
 
     QRect geometry() const;
     void setGeometry(const QRect &_geometry);
@@ -74,7 +81,14 @@ public:
     PropertyModel *propertyModel();
 
     virtual void serialize(QByteArray &data);
+    virtual void serialize(QJsonObject &data);
     virtual void deserialize(const QByteArray &data);
+    virtual void deserialize(const QJsonObject &data);
+
+    void renderToPixmap(QPixmap **pix, const QPointF &offset = QPointF());
+
+    QPoint realCoordToEw(const QPointF &point);
+    QPointF ewCoordToReal(const QPoint &point);
 
 signals:
     void geometryChanged();
@@ -90,6 +104,7 @@ protected:
 
     virtual bool childCanMove(const QPointF &newPos, CustomRectItem *item);
     virtual bool canResize(const QRectF &newRect, const ResizeCorners &corner) const;
+    virtual bool checkPropSameValue(const QString &propertyName, const QVariant &value);
 
     const QBrush &getBrush() const;
     const bool &isResizing() const;
@@ -102,6 +117,8 @@ protected:
     QSize gridSize() const;
     QString getClassInfo(const QMetaObject *obj, const char *name) const;
     void readProperties(const QJsonObject &obj);
+
+    void createFromJson(CustomRectItem *parent, const QByteArray &data, QList<QGraphicsItem*> &items);
 
 private:
     void init();

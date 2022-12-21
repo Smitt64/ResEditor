@@ -3,22 +3,23 @@
 
 #include "customrectitem.h"
 
+#define TEXTITEM_HORIZONTAL "─"
 class TextItem : public CustomRectItem
 {
     Q_OBJECT
-    Q_PROPERTY(QString text READ text WRITE setText)
-    Q_PROPERTY(TextItemType textType READ textType)
+    Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
+    Q_PROPERTY(TextItemType textType READ textType NOTIFY textTypeChanged)
 
     Q_CLASSINFO(CLASSINFO_UNDOREDO, "TEXT")
     Q_CLASSINFO(CLASSINFO_PROPERTYLIST, ":/json/LabelItem.json")
     Q_CLASSINFO(CLASSINFO_PROPERTYGROUP, "Label")
-    Q_CLASSINFO(CLASSINFO_SERIALIZE_PROP, "text")
 public:
     enum TextItemType
     {
         TypeLabel = 0,
         TypeCheck,
-        TypeRadio
+        TypeRadio,
+        TypeHorizontal,
     };
     Q_ENUM(TextItemType)
     Q_INVOKABLE TextItem(QGraphicsItem* parent = nullptr);
@@ -32,6 +33,10 @@ public:
     void setText(const QString &txt);
 
     //virtual void serialize(QByteArray &data) Q_DECL_OVERRIDE;
+
+signals:
+    void textChanged();
+    void textTypeChanged();
 
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
