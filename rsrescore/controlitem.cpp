@@ -49,6 +49,11 @@ void ControlItem::updateCorners()
         flags.setFlag(BOTTOM_RIGHT, true);
     }
 
+    if ((m_DataType == CHAR || m_DataType == UCHAR) && !m_DataLength)
+        flags.setFlag(RIGHT, false);
+    else
+        flags.setFlag(RIGHT, true);
+
     setAvailableCorners(flags);
 }
 
@@ -90,6 +95,12 @@ void ControlItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
 
     if (lines() != 1)
         opt.alignment = Qt::AlignLeft | Qt::AlignTop;
+
+    if (style()->isNumeric(m_DataType))
+    {
+        opt.alignment &= ~Qt::AlignLeft;
+        opt.alignment |= Qt::AlignRight;
+    }
 
     style()->drawControl(opt.ftype, painter, &opt);
     CustomRectItem::paint(painter, option, widget);
@@ -143,6 +154,7 @@ void ControlItem::setDataType(const ControlItem::DataType &val)
     if (isSkipUndoStack())
     {
         m_DataType = val;
+        updateCorners();
         emit dataTypeChanged();
         update();
         scene()->update();

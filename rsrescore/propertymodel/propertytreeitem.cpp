@@ -1,12 +1,12 @@
 #include "propertytreeitem.h"
-#include "customrectitem.h"
 #include "propertymodel.h"
 #include <QMetaObject>
 #include <QMetaProperty>
+#include <QColor>
 
-PropertyTreeItem::PropertyTreeItem(CustomRectItem *rectItem, QObject *parent)
+PropertyTreeItem::PropertyTreeItem(QObject *object, QObject *parent)
     : QObject{parent},
-      m_pItem(rectItem),
+      m_pItem(object),
       m_TypeItem(TypeItem_Data),
       m_ItemGroup(0),
       m_parentItem(nullptr),
@@ -24,7 +24,7 @@ const int &PropertyTreeItem::group() const
     return m_ItemGroup;
 }
 
-void PropertyTreeItem::connectNotify()
+void PropertyTreeItem::ConnectNotify()
 {
     if (!m_pItem)
         return;
@@ -140,9 +140,14 @@ QString PropertyTreeItem::propertyName() const
     return m_PropertyName;
 }
 
-CustomRectItem *PropertyTreeItem::item()
+QObject *PropertyTreeItem::object()
 {
     return m_pItem;
+}
+
+void PropertyTreeItem::setObject(QObject *object)
+{
+    m_pItem = object;
 }
 
 QString PropertyTreeItem::propertyAlias() const
@@ -159,7 +164,7 @@ void PropertyTreeItem::appendChild(PropertyTreeItem *item)
 void PropertyTreeItem::setPropertyName(const QString &name)
 {
     m_PropertyName = name;
-    connectNotify();
+    ConnectNotify();
 }
 
 void PropertyTreeItem::setPropertyAlias(const QString &name)
@@ -222,3 +227,17 @@ bool PropertyTreeItem::setModelData(QWidget *editor, QAbstractItemModel *model, 
     return false;
 }
 
+void PropertyTreeItem::initFromJson(const QJsonObject &obj)
+{
+
+}
+
+PropertyTreeItem::PropertyTreeItemList::iterator PropertyTreeItem::begin()
+{
+    return m_childItems.begin();
+}
+
+PropertyTreeItem::PropertyTreeItemList::iterator PropertyTreeItem::end()
+{
+    return m_childItems.end();
+}

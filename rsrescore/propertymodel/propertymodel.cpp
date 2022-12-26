@@ -11,10 +11,13 @@
 #include <QMetaObject>
 #include <QMetaClassInfo>
 #include <QMetaProperty>
+#include <QMetaType>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+
+#include "ewtextstylepropertytreeitem.h"
 
 PropertyModel::PropertyModel(CustomRectItem *item, QObject *parent)
     : QAbstractItemModel{parent},
@@ -64,7 +67,19 @@ QVariant PropertyModel::data(const QModelIndex &index, int role) const
              role == PropertyTreeItem::RoleTypeItem ||
              role == PropertyTreeItem::RoleGroup ||
              role == Qt::ForegroundRole)
+    {
+        EwTextStylePropertyTreeItem *tmp = qobject_cast<EwTextStylePropertyTreeItem*>(item);
+
+        if (tmp)
+        {
+            QVariant tmpcolor = tmp->data(Qt::BackgroundRole);
+
+            if (!tmpcolor.isValid())
+                tmpcolor = tmp->data(Qt::BackgroundRole);
+        }
+
         return item->data(role);
+    }
 
     return QVariant();
 }
@@ -221,6 +236,7 @@ void PropertyModel::addProperty(const QJsonObject &obj, const QMetaObject *meta,
 {
     QString name = obj["name"].toString();
     QString alias = obj["alias"].toString();
+    QString viewClass = obj["viewclass"].toString();
     int propertyId = meta->indexOfProperty(name.toLocal8Bit().data());
 
     if (propertyId >= 0)
@@ -228,7 +244,28 @@ void PropertyModel::addProperty(const QJsonObject &obj, const QMetaObject *meta,
         QMetaProperty prop = meta->property(propertyId);
 
         PropertyTreeItem *itemBase = nullptr;
-        if (prop.type() == QVariant::Rect)
+        if (!viewClass.isEmpty())
+        {
+            viewClass += "*";
+            int id = QMetaType::type(viewClass.toLocal8Bit());
+
+            if (id != QMetaType::UnknownType)
+            {
+                const QMetaObject *viewMetaObject = QMetaType::metaObjectForType(id);
+                QObject *pInstance = viewMetaObject->newInstance(Q_ARG(CustomRectItem*, m_pItem), Q_ARG(QObject*, this));
+                PropertyTreeItem *pTreeItem = qobject_cast<PropertyTreeItem*>(pInstance);
+
+                if (pTreeItem)
+                {
+                    pTreeItem->initFromJson(obj);
+                    pTreeItem->setPropertyAlias(alias);
+                    pTreeItem->setGroup(group);
+                    pTreeItem->setPropertyName(name);
+                    itemBase = pTreeItem;
+                }
+            }
+        }
+        else if (prop.type() == QVariant::Rect)
         {
             RectPropertyTreeItem *item = new RectPropertyTreeItem(m_pItem, RectPropertyTreeItem::SubTypeRootRect, this);
             item->setPropertyName(name);

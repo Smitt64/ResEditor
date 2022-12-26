@@ -1,8 +1,7 @@
 #include "rectpropertytreeitem.h"
-#include "customrectitem.h"
-#include "propertymodel.h"
+#include <QRect>
 
-RectPropertyTreeItem::RectPropertyTreeItem(CustomRectItem *rectItem, const NodeSubType &type, QObject *parent)
+RectPropertyTreeItem::RectPropertyTreeItem(QObject *rectItem, const NodeSubType &type, QObject *parent)
     : PropertyTreeItem{rectItem, parent},
       m_SubType(type)
 {
@@ -45,11 +44,11 @@ QString RectPropertyTreeItem::propertyAlias() const
 
 QVariant RectPropertyTreeItem::data(const int &role) const
 {
-    CustomRectItem *item = m_pItem;
+    QObject *item = m_pItem;
     RectPropertyTreeItem *pThis = const_cast<RectPropertyTreeItem*>(this);
     if (m_SubType != SubTypeRootRect)
     {
-        item = pThis->parentItem()->item();
+        item = pThis->parentItem()->object();
         pThis = dynamic_cast<RectPropertyTreeItem*>(pThis->parentItem());
     }
 

@@ -44,6 +44,8 @@ void UndoItemMove::redo()
         pItem->setPos(m_NewPos);
         pItem->updateSizePos();
     }
+
+    m_pScene->update();
 }
 
 void UndoItemMove::undo()
@@ -55,4 +57,6 @@ void UndoItemMove::undo()
         pItem->setPos(m_OldPos);
         pItem->updateSizePos();
     }
+
+    m_pScene->update();
 }

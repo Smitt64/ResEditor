@@ -1,0 +1,20 @@
+{
+    "enum": [
+        { "key" : "dBACK_STYLE_WHITE", "alias" : "Без фона" },
+        { "key" : "dBACK_STYLE_BLUE", "alias" : "Blue" },
+        { "key" : "dBACK_STYLE_GREEN", "alias" : "Green" },
+        { "key" : "dBACK_STYLE_CYAN", "alias" : "Cyan" },
+        { "key" : "dBACK_STYLE_RED", "alias" : "Red" },
+        { "key" : "dBACK_STYLE_MAGENTA", "alias" : "Magenta" },
+        { "key" : "dBACK_STYLE_BROWN", "alias" : "Brown" },
+        { "key" : "dBACK_STYLE_LTGRAY", "alias" : "Light Gray" },
+        { "key" : "dBACK_STYLE_DKGRAY", "alias" : "Dark Gray" },
+        { "key" : "dBACK_STYLE_LTBLUE", "alias" : "Light Blue" },
+        { "key" : "dBACK_STYLE_LTGREEN", "alias" : "Light Green" },
+        { "key" : "dBACK_STYLE_LTCYAN", "alias" : "Light Cyan" },
+        { "key" : "dBACK_STYLE_LTRED", "alias" : "Light Red" },
+        { "key" : "dBACK_STYLE_LTMAGENTA", "alias" : "Light Magenta" },
+        { "key" : "dBACK_STYLE_YELLOW", "alias" : "Yellow" },
+        { "key" : "dBACK_STYLE_BLACK", "alias" : "Black" }
+    ]
+}

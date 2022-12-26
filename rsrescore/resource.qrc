@@ -32,5 +32,13 @@
         <file>img/MultyLineTextBox_24x.png</file>
         <file>img/RadioButton_24x.png</file>
         <file>img/ButtonClick_24x.png</file>
+        <file>img/TextBoxMoney_24x.png</file>
+        <file>img/Checkbox_24x.png</file>
+        <file>img/TextCenter_16x.png</file>
+        <file>img/TextLeftJustify_16x.png</file>
+        <file>img/TextRightJustify_16x.png</file>
+        <file>json/TextColorEnum.json</file>
+        <file>ui/TextStyleTest.ui</file>
+        <file>json/TextBackEnum.json</file>
     </qresource>
 </RCC>

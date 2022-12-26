@@ -12,6 +12,8 @@ class PropertyTreeItem : public QObject
 {
     Q_OBJECT
 public:
+    typedef QVector<PropertyTreeItem*> PropertyTreeItemList;
+
     enum TypeItem
     {
         TypeItem_Data,
@@ -25,7 +27,7 @@ public:
     };
     Q_ENUM(PropertyTreeItemRole)
     Q_ENUM(TypeItem)
-    PropertyTreeItem(CustomRectItem *rectItem, QObject *parent = nullptr);
+    PropertyTreeItem(QObject *object, QObject *parent = nullptr);
     virtual ~PropertyTreeItem();
 
     int childCount() const;
@@ -42,7 +44,8 @@ public:
     virtual QString propertyName() const;
     virtual QString propertyAlias() const;
 
-    CustomRectItem *item();
+    QObject *object();
+    virtual void setObject(QObject *object);
 
     QModelIndex index() const;
 
@@ -51,10 +54,14 @@ public:
     bool isEnabled() const;
     void setEnabled(const bool &v);
 
+    PropertyTreeItemList::iterator begin();
+    PropertyTreeItemList::iterator end();
+
     virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
     virtual bool setEditorData(QWidget *editor, const QModelIndex &index) const;
     virtual bool setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
 
+    virtual void initFromJson(const QJsonObject &obj);
 signals:
     void dataChanged();
 
@@ -64,14 +71,14 @@ public slots:
     virtual void setGroup(const int &group);
 
 protected:
-    void connectNotify();
+    void ConnectNotify();
     QString m_PropertyName, m_PropertyAlias;
-    CustomRectItem *m_pItem;
+    QObject *m_pItem;
 
     TypeItem m_TypeItem;
 
 private:
-    QVector<PropertyTreeItem*> m_childItems;
+    PropertyTreeItemList m_childItems;
     int m_ItemGroup;
     QVariant m_isEditable;
     PropertyTreeItem *m_parentItem;

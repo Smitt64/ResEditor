@@ -256,31 +256,15 @@ void CustomRectItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
 
 void CustomRectItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    qDebug() << "CustomRectItem::mousePressEvent";
     QGraphicsItem::mousePressEvent(event);
 
     if (event->button() == Qt::LeftButton)
     {
-        QList<QGraphicsItem*> items = scene()->items(event->scenePos());
         m_MousePressed = true;
-
-        if ((event->modifiers() & Qt::ControlModifier) != Qt::ControlModifier && items.size() == 1)
-            m_MousePressPoint.clear();
 
         m_IsResizing = mousePosOnHandles(event->scenePos()); //to check event on corners or not
         if (m_IsResizing)
             m_ActualRect = m_BoundingRect;
-
-        if (!items.empty())
-        {
-            for (QGraphicsItem *selected : qAsConst(items))
-            {
-                CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(selected);
-                m_MousePressPoint.insert(rectItem, selected->pos());
-            }
-        }
-        else
-            m_MousePressPoint.insert(this, pos());
     }
     else if (event->button() == Qt::RightButton)
     {
@@ -293,7 +277,6 @@ void CustomRectItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
             rubberBand()->show();
 
             m_IsSelection = true;
-            m_MousePressPoint.clear();
 
             scene()->views()[0]->setCursor(Qt::CrossCursor);
         }
@@ -302,7 +285,7 @@ void CustomRectItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+    BaseScene *customScene = qobject_cast<BaseScene*> (scene());
     QSize gridSize = customScene->getGridSize();
 
     if (m_IsResizing)
@@ -443,12 +426,13 @@ void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
             QRectF rc = mapRectFromScene(rubberBand()->geometry()).normalized();
             QList<QGraphicsItem*> items = childItems();
+            CustomRectItem *pTopItem = customScene->findTopLevelItem();
             QListIterator<QGraphicsItem*> iterator(items);
             while (iterator.hasNext())
             {
                 QGraphicsItem *item = iterator.next();
 
-                if (item != this)
+                if (item != pTopItem)
                 {
                     QRectF bound = item->mapRectToParent(item->boundingRect()).normalized();
                     bool intersects = bound.intersects(rc);
@@ -456,12 +440,8 @@ void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
                     if (intersects)
                     {
-                        if (!m_MousePressPoint.contains(item))
-                        {
-                            CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
-                            qDebug() << rectItem->metaObject()->className() << item->pos();
-                        }
-                        m_MousePressPoint.insert(item, item->pos());
+                        CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
+                        customScene->insertMousePressPoint(rectItem);
                     }
                 }
                 setSelected(false);
@@ -478,33 +458,32 @@ void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 void CustomRectItem::insertUndoRedoMove()
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+    BaseScene::CustomRectItemPoints MousePressPoint = customScene->mousePressPoints();
     CustomRectItem *pTopItem = customScene->findTopLevelItem();
 
-    if (pTopItem != this)
-        m_MousePressPoint = pTopItem->m_MousePressPoint;
-
-    if (m_MousePressPoint.size() == 1)
+    int size = MousePressPoint.size();
+    if (size <= 2)
     {
-        auto mousePos = m_MousePressPoint.first();
+        if (size == 2)
+            MousePressPoint.remove(pTopItem);
+
+        auto mousePos = MousePressPoint.first();
         if (mousePos != pos() && undoStack())
         {
-            //CustomRectItem *rectitem = dynamic_cast<CustomRectItem*>(m_MousePressPoint.firstKey());
             UndoItemMove *undocmd = new UndoItemMove(customScene, uuid());
             undocmd->setPositions(mousePos, pos());
 
             undoStack()->push(undocmd);
         }
-
-        m_MousePressPoint.clear();
     }
-    else if (!m_MousePressPoint.empty())
+    else if (!MousePressPoint.empty())
     {
         if (undoStack())
         {
             using UndoTuple = std::tuple<QUuid, QPointF, QPointF>;
             QVector<UndoTuple> undoData;
 
-            QMapIterator<QGraphicsItem*, QPointF> items(m_MousePressPoint);
+            QMapIterator<CustomRectItem*, QPointF> items(MousePressPoint);
             while(items.hasNext())
             {
                 auto item = items.next();
@@ -889,8 +868,8 @@ void CustomRectItem::pushUndoPropertyData(const QString &propertyName, const QVa
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
     UndoPropertyChange *undoprop = new UndoPropertyChange(customScene, uuid());
-    undoprop->setValues(property(propertyName.toLocal8Bit().data()), _newValue);
     undoprop->setPropertyName(propertyName);
+    undoprop->setValues(property(propertyName.toLocal8Bit().data()), _newValue);
     undoStack()->push(undoprop);
 }
 
@@ -983,6 +962,14 @@ void CustomRectItem::serializeProperty(QJsonObject &obj, const QMetaObject *meta
             obj.insert("value", value.toString());
         else if (type == QVariant::Bool)
             obj.insert("value", value.toBool());
+        else
+        {
+            if (QMetaType::hasRegisteredConverterFunction(value.userType(), QMetaType::QJsonObject))
+            {
+                QJsonObject tmp = value.toJsonObject();
+                obj.insert("value", tmp);
+            }
+        }
     }
 }
 

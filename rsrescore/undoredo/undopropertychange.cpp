@@ -3,6 +3,8 @@
 #include "basescene.h"
 #include <QMetaObject>
 #include <QMetaClassInfo>
+#include <QMetaType>
+#include <QDebug>
 
 UndoPropertyChange::UndoPropertyChange(BaseScene *scene, const QUuid &uuid, QUndoCommand *parent) :
     QUndoCommand(parent),

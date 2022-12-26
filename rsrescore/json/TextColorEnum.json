@@ -1,0 +1,20 @@
+{
+    "enum": [
+        { "key" : "dTEXT_STYLE_BLACK", "alias" : "Black" },
+        { "key" : "dTEXT_STYLE_BLUE", "alias" : "Blue" },
+        { "key" : "dTEXT_STYLE_GREEN", "alias" : "Green" },
+        { "key" : "dTEXT_STYLE_CYAN", "alias" : "Cyan" },
+        { "key" : "dTEXT_STYLE_RED", "alias" : "Red" },
+        { "key" : "dTEXT_STYLE_MAGENTA", "alias" : "Magenta" },
+        { "key" : "dTEXT_STYLE_BROWN", "alias" : "Brown" },
+        { "key" : "dTEXT_STYLE_LTGRAY", "alias" : "Light Gray" },
+        { "key" : "dTEXT_STYLE_DKGRAY", "alias" : "Dark Gray" },
+        { "key" : "dTEXT_STYLE_LTBLUE", "alias" : "Light Blue" },
+        { "key" : "dTEXT_STYLE_LTGREEN", "alias" : "Light Green" },
+        { "key" : "dTEXT_STYLE_LTCYAN", "alias" : "Light Cyan" },
+        { "key" : "dTEXT_STYLE_LTRED", "alias" : "Light Red" },
+        { "key" : "dTEXT_STYLE_LTMAGENTA", "alias" : "Light Magenta" },
+        { "key" : "dTEXT_STYLE_YELLOW", "alias" : "Yellow" },
+        { "key" : "dTEXT_STYLE_WHITE", "alias" : "White" }
+    ]
+}

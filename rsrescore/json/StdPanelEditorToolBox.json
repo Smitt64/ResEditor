@@ -182,6 +182,40 @@
             }
         },
         {
+            "alias": "Редактируемое поле (Money)",
+            "icon": ":/img/TextBoxMoney_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{f35b8253-eadb-4437-89b5-2cd4cb9c1f1c}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 6
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
             "alias": "Редактируемое поле (Date)",
             "icon": ":/img/DatePicker_24x.png",
             "tooltip": "Редактируемое поле данных с поддержкой clipboard",
@@ -349,6 +383,63 @@
             }
         },
         {
+            "alias": "Флажок (Кнопка справа)",
+            "icon": ":/img/Checkbox_24x.png",
+            "tooltip": "Реализация выбора из нескольких значений",
+            "mimetype": "application/toolboxitem",
+            "groups": [4],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "TextItem",
+                        "parent": "",
+                        "uuid": "{620e4004-7f78-11ed-a1eb-0242ac120002}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [15, 1]
+                            },
+                            {
+                                "property": "text",
+                                "value": "CheckBox [ ]"
+                            }
+                        ]
+                    },
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{6840f980-7f78-11ed-a1eb-0242ac120002}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [10, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [1, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 2
+                            },
+                            {
+                                "property": "dataLength",
+                                "value": 0
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 12
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
             "alias": "Переключатель (Кнопка слева)",
             "icon": ":/img/RadioButton_24x.png",
             "tooltip": "Реализация выбора из нескольких значений",
@@ -372,6 +463,63 @@
                             {
                                 "property": "text",
                                 "value": "( ) RadioButton"
+                            }
+                        ]
+                    },
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{6840f980-7f78-11ed-a1eb-0242ac120002}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [1, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [1, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 2
+                            },
+                            {
+                                "property": "dataLength",
+                                "value": 0
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 12
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Флажок (Кнопка слева)",
+            "icon": ":/img/Checkbox_24x.png",
+            "tooltip": "Реализация выбора из нескольких значений",
+            "mimetype": "application/toolboxitem",
+            "groups": [4],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "TextItem",
+                        "parent": "",
+                        "uuid": "{620e4004-7f78-11ed-a1eb-0242ac120002}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [15, 1]
+                            },
+                            {
+                                "property": "text",
+                                "value": "[ ] CheckBox"
                             }
                         ]
                     },

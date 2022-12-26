@@ -18,6 +18,8 @@ TextItem::TextItem(QGraphicsItem* parent) :
     m_Type(TypeLabel),
     m_CheckRadioPos(-1)
 {
+    m_TextStyle = new EwTextStyle(this);
+
     setBrush(QBrush(Qt::darkBlue));
     setAvailableCorners(0);
 }
@@ -192,5 +194,28 @@ void TextItem::setText(const QString &txt)
         pushUndoPropertyData("text", txt);
         pushUndoPropertyData("geometry", sz);
         undoStack()->endMacro();
+    }
+}
+
+EwTextStyle TextItem::textStyle()
+{
+    return m_TextStyle;
+}
+
+void TextItem::setTextStyle(const EwTextStyle &style)
+{
+    checkPropSame("textStyle", QVariant::fromValue(style));
+
+    if (isSkipUndoStack())
+    {
+        m_TextStyle = style;
+        emit textStyleChanged();
+
+        update();
+        scene()->update();
+    }
+    else
+    {
+        pushUndoPropertyData("textStyle", QVariant::fromValue(style));
     }
 }

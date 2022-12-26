@@ -105,6 +105,8 @@ public:
 
     ControlType controlFromFvt(const quint8 &fvt) const;
     virtual QString controlDefaultText(const ControlType &type);
+    bool isNumeric(const quint8 &fvt) const;
+
 protected:
     typedef struct ColorScheme
     {

@@ -15,12 +15,13 @@ public:
         SubTypeFlag,
     };
 
-    explicit FlagPropertyTreeItem(CustomRectItem *rectItem, const NodeSubType &type = SubTypeRoot, QObject *parent = nullptr);
+    explicit FlagPropertyTreeItem(QObject *rectItem, const NodeSubType &type = SubTypeRoot, QObject *parent = nullptr);
     virtual ~FlagPropertyTreeItem();
 
     virtual void setData(const QVariant &value) Q_DECL_OVERRIDE;
     virtual QVariant data(const int &role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
     virtual QString propertyAlias() const Q_DECL_OVERRIDE;
+    virtual void setObject(QObject *object) Q_DECL_OVERRIDE;
 
     void loadEnumAlias(const QJsonArray &array);
 

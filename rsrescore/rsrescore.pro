@@ -1,4 +1,4 @@
-QT += widgets
+QT += widgets uitools
 
 TEMPLATE = lib
 DEFINES += RSRESCORE_LIBRARY
@@ -21,8 +21,11 @@ SOURCES += \
     containeritem.cpp \
     controlitem.cpp \
     customrectitem.cpp \
+    easywinini.cpp \
     panelitem.cpp \
+    propertymodel/enumlistmodel.cpp \
     propertymodel/enumpropertytreeitem.cpp \
+    propertymodel/ewtextstylepropertytreeitem.cpp \
     propertymodel/flagpropertytreeitem.cpp \
     propertymodel/propertydockwidget.cpp \
     propertymodel/propertygrouptreeitem.cpp \
@@ -31,6 +34,7 @@ SOURCES += \
     propertymodel/propertytreeitem.cpp \
     propertymodel/propertytreeview.cpp \
     propertymodel/rectpropertytreeitem.cpp \
+    propertymodel/textstyledlg.cpp \
     reslib.cpp \
     reslibdirmodel.cpp \
     reslistdockwidget.cpp \
@@ -38,6 +42,7 @@ SOURCES += \
     rsrescore.cpp \
     statusbarelement.cpp \
     stdpaneleditor.cpp \
+    styles/extextstyle.cpp \
     styles/resstyle.cpp \
     textitem.cpp \
     toolbox/toolboxdockwidget.cpp \
@@ -61,8 +66,11 @@ HEADERS += \
     containeritem.h \
     controlitem.h \
     customrectitem.h \
+    easywinini.h \
     panelitem.h \
+    propertymodel/enumlistmodel.h \
     propertymodel/enumpropertytreeitem.h \
+    propertymodel/ewtextstylepropertytreeitem.h \
     propertymodel/flagpropertytreeitem.h \
     propertymodel/propertydockwidget.h \
     propertymodel/propertygrouptreeitem.h \
@@ -71,6 +79,7 @@ HEADERS += \
     propertymodel/propertytreeitem.h \
     propertymodel/propertytreeview.h \
     propertymodel/rectpropertytreeitem.h \
+    propertymodel/textstyledlg.h \
     reslib.h \
     reslibdirmodel.h \
     reslistdockwidget.h \
@@ -80,6 +89,7 @@ HEADERS += \
     rsrescore.h \
     statusbarelement.h \
     stdpaneleditor.h \
+    styles/extextstyle.h \
     styles/resstyle.h \
     textitem.h \
     toolbox/toolboxdockwidget.h \
@@ -123,3 +133,6 @@ else:unix: LIBS += -L$$OUT_PWD/../rsreslbrfn/ -lrsreslbrfn
 
 INCLUDEPATH += $$PWD/../rsreslbrfn
 DEPENDPATH += $$PWD/../rsreslbrfn
+
+FORMS += \
+    propertymodel/textstyledlg.ui

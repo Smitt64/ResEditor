@@ -3,6 +3,8 @@
 #include "customrectitem.h"
 #include "propertymodel/propertymodel.h"
 #include <QPainter>
+#include <QMapIterator>
+#include <QGraphicsSceneMouseEvent>
 
 BaseScene::BaseScene(QObject *parent)
     : QGraphicsScene{parent}
@@ -81,8 +83,59 @@ CustomRectItem *BaseScene::findTopLevelItem() const
     return foundItem;
 }
 
-void BaseScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
+void BaseScene::insertMousePressPoint(CustomRectItem *rectItem)
 {
-    qDebug() << "BaseScene::mousePressEvent";
-    QGraphicsScene::mousePressEvent(mouseEvent);
+    if (m_MousePressPoint.contains(rectItem))
+        return;
+
+    m_MousePressPoint.insert(rectItem, rectItem->pos());
+}
+
+void BaseScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    qDebug() << "BaseScene::mousePressEvent" << event->scenePos();
+    QGraphicsScene::mousePressEvent(event);
+
+    if (event->button() == Qt::LeftButton)
+    {
+        QList<QGraphicsItem*> itemsAboutPos = items(event->scenePos());
+        CustomRectItem *pTopItem = findTopLevelItem();
+
+        if ((event->modifiers() & Qt::ControlModifier) != Qt::ControlModifier)
+        {
+            bool NeedClear = true;
+            for (QGraphicsItem *itemAtPos : qAsConst(itemsAboutPos))
+            {
+                CustomRectItem *rectitem = dynamic_cast<CustomRectItem*>(itemAtPos);
+
+                if (pTopItem != rectitem && m_MousePressPoint.contains(rectitem))
+                {
+                    NeedClear = false;
+                    break;
+                }
+            }
+
+            if (NeedClear)
+                clearMousePressPoints();
+        }
+
+        if (!itemsAboutPos.empty())
+        {
+            for (QGraphicsItem *selected : qAsConst(itemsAboutPos))
+            {
+                CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(selected);
+                m_MousePressPoint.insert(rectItem, selected->pos());
+            }
+        }
+    }
+}
+
+const BaseScene::CustomRectItemPoints &BaseScene::mousePressPoints() const
+{
+    return m_MousePressPoint;
+}
+
+void BaseScene::clearMousePressPoints()
+{
+    m_MousePressPoint.clear();
 }

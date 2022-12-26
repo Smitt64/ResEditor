@@ -4,6 +4,7 @@
 #include "rsrescore_global.h"
 #include <QGraphicsScene>
 #include <QUuid>
+#include <QMap>
 
 class QPainter;
 class ResStyle;
@@ -12,7 +13,9 @@ class QAbstractItemModel;
 class RSRESCORE_EXPORT BaseScene : public QGraphicsScene
 {
     Q_OBJECT
+    friend class CustomRectItem;
 public:
+    typedef QMap<CustomRectItem*, QPointF> CustomRectItemPoints;
     explicit BaseScene(QObject *parent = nullptr);
     QSize getGridSize() const;
 
@@ -20,6 +23,10 @@ public:
 
     CustomRectItem *findItem(const QUuid &uuid) const;
     CustomRectItem *findTopLevelItem() const;
+
+    void insertMousePressPoint(CustomRectItem *rectItem);
+    const CustomRectItemPoints &mousePressPoints() const;
+    void clearMousePressPoints();
 
 signals:
     void propertyModelChanged(QAbstractItemModel *model);
@@ -30,6 +37,8 @@ protected:
 
 private:
     ResStyle *m_pStyle;
+
+    CustomRectItemPoints m_MousePressPoint;
 };
 
 #endif // BASESCENE_H

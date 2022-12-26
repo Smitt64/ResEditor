@@ -1,10 +1,9 @@
 #include "flagpropertytreeitem.h"
-#include "customrectitem.h"
 #include <QMetaObject>
 #include <QMetaProperty>
 #include <QMetaEnum>
 
-FlagPropertyTreeItem::FlagPropertyTreeItem(CustomRectItem *rectItem, const NodeSubType &type, QObject *parent)
+FlagPropertyTreeItem::FlagPropertyTreeItem(QObject *rectItem, const NodeSubType &type, QObject *parent)
     : PropertyTreeItem{rectItem, parent},
       m_SubType(type)
 {
@@ -54,6 +53,17 @@ QString FlagPropertyTreeItem::propertyAlias() const
     return PropertyTreeItem::propertyAlias();
 }
 
+void FlagPropertyTreeItem::setObject(QObject *object)
+{
+    PropertyTreeItem::setObject(object);
+
+    if (m_SubType == SubTypeRoot)
+    {
+        for (PropertyTreeItem *child : *this)
+            child->setObject(object);
+    }
+}
+
 void FlagPropertyTreeItem::setData(const QVariant &value)
 {
     if (!m_pItem)
@@ -74,7 +84,12 @@ void FlagPropertyTreeItem::setData(const QVariant &value)
             quint32 flag = metaenum.keyToValue(m_flagName.toLocal8Bit().data());
 
             if (value.toBool())
-                propflags |= flag;
+            {
+                if (flag)
+                    propflags |= flag;
+                else
+                    propflags = flag;
+            }
             else
                 propflags &= ~flag;
 
@@ -87,8 +102,6 @@ void FlagPropertyTreeItem::setData(const QVariant &value)
 
 QVariant FlagPropertyTreeItem::data(const int &role) const
 {
-    //CustomRectItem *item = m_pItem;
-    //FlagPropertyTreeItem *pThis = const_cast<FlagPropertyTreeItem*>(this);
     const QMetaObject *metaobject = m_pItem->metaObject();
     int propIndex = metaobject->indexOfProperty(m_PropertyName.toLocal8Bit().data());
 

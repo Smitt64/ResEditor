@@ -17,7 +17,7 @@ public:
         SubTypeHeight
     };
 
-    explicit RectPropertyTreeItem(CustomRectItem *rectItem, const NodeSubType &type = SubTypeRootRect, QObject *parent = nullptr);
+    explicit RectPropertyTreeItem(QObject *rectItem, const NodeSubType &type = SubTypeRootRect, QObject *parent = nullptr);
     virtual ~RectPropertyTreeItem();
 
     virtual QVariant data(const int &role = Qt::DisplayRole) const Q_DECL_OVERRIDE;

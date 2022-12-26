@@ -1,10 +1,11 @@
 #include "rsrescore.h"
-#include "reslibdirmodel.h"
 #include "ResourceEditorInterface.h"
 #include "reslib.h"
 #include "controlitem.h"
 #include "textitem.h"
 #include "panelitem.h"
+#include "propertymodel/ewtextstylepropertytreeitem.h"
+#include "styles/extextstyle.h"
 #include <QPluginLoader>
 #include <QFontDatabase>
 
@@ -21,6 +22,12 @@ RsResCore::RsResCore()
     qRegisterMetaType<TextItem*>();
     qRegisterMetaType<ContainerItem*>();
     qRegisterMetaType<PanelItem*>();
+    qRegisterMetaType<EwTextStyle>();
+    qRegisterMetaType<EwTextStylePropertyTreeItem*>();
+    qRegisterMetaType<QJsonObject>();
+
+    QMetaType::registerComparators<EwTextStyle>();
+    QMetaType::registerConverter<EwTextStyle, QJsonObject>(EwTextStyle::toJsonObject);
 }
 
 RsResCore *RsResCore::inst()

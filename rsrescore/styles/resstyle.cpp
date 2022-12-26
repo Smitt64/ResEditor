@@ -252,6 +252,30 @@ ResStyle::ControlType ResStyle::controlFromFvt(const quint8 &fvt) const
     return type;
 }
 
+bool ResStyle::isNumeric(const quint8 &fvt) const
+{
+    bool hr = false;
+
+    switch(fvt)
+    {
+    case FT_INT16:
+    case FT_INT32:
+    case FT_INT64:
+    case FT_FLOAT:
+    case FT_FLOATG:
+    case FT_MONEY:
+    case FT_NUMERIC:
+    case FT_DOUBLE:
+    case FT_DOUBLEG:
+        hr = true;
+        break;
+    default:
+        hr = false;
+    }
+
+    return hr;
+}
+
 QString ResStyle::controlDefaultText(const ControlType &type)
 {
     QString text;
