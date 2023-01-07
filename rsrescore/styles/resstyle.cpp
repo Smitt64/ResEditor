@@ -229,6 +229,9 @@ ResStyle::ControlType ResStyle::controlFromFvt(const quint8 &fvt) const
     case FT_TIME:
         type = Control_Time;
         break;
+    case FT_SHTM:
+        type = Control_ShortTime;
+        break;
     case FT_CHAR:
         type = Control_Char;
         break;
@@ -287,6 +290,9 @@ QString ResStyle::controlDefaultText(const ControlType &type)
         break;
     case Control_Time:
         text = QString("00:00:00");
+        break;
+    case Control_ShortTime:
+        text = QString("00:00");
         break;
     case Control_String:
         text = QString("String");
@@ -411,6 +417,13 @@ void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleO
 
         QString text = option->borderStyle == BorderStyle::Border_NoLine ? "" : option->text;
         drawBorder(painter, (BorderStyle)option->borderStyle, option->rect, text, option);
+        painter->restore();
+    }
+    else if (type == Control_Frame)
+    {
+        painter->save();
+        painter->fillRect(option->rect, Qt::transparent);
+        drawBorder(painter, (BorderStyle)option->borderStyle, option->rect, QString(), option);
         painter->restore();
     }
     else if (type == Control_Label)

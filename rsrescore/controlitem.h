@@ -17,6 +17,7 @@ class ControlItem : public CustomRectItem
     Q_PROPERTY(bool isText READ isText WRITE setIsText NOTIFY isTextChanged)
     Q_PROPERTY(QString controlName READ controlName WRITE setControlName NOTIFY controlNameChanged)
     Q_PROPERTY(QString valueTemplate READ valueTemplate WRITE setValueTemplate NOTIFY valueTemplateChanged)
+    Q_PROPERTY(QString toolTip READ toolTip WRITE setToolTip NOTIFY toolTipChanged)
     Q_PROPERTY(ResStyle::PanelStyle controlStyle READ controlStyle WRITE setControlStyle NOTIFY controlStyleChanged)
     Q_PROPERTY(quint16 controlGroup READ controlGroup WRITE setControlGroup NOTIFY controlGroupChanged)
     Q_PROPERTY(quint16 helpPage READ helpPage WRITE setHelpPage NOTIFY helpPageChanged)
@@ -24,6 +25,8 @@ class ControlItem : public CustomRectItem
     Q_CLASSINFO(CLASSINFO_UNDOREDO, "CONTROL")
     Q_CLASSINFO(CLASSINFO_PROPERTYLIST, ":/json/Control.json")
     Q_CLASSINFO(CLASSINFO_PROPERTYGROUP, "Control")
+
+    friend class TextItem;
 public:
     enum FieldType
     {
@@ -92,6 +95,9 @@ public:
     const QString &controlName() const;
     void setControlName(const QString &val);
 
+    const QString &toolTip() const;
+    void setToolTip(const QString &val);
+
     const ResStyle::PanelStyle &controlStyle() const;
     void setControlStyle(const ResStyle::PanelStyle &val);
 
@@ -103,6 +109,8 @@ public:
 
     const quint16 &helpPage() const;
     void setHelpPage(const quint16 &val);
+
+    virtual QVariant userAction(const qint32 &action, const QVariant &param = QVariant()) Q_DECL_OVERRIDE;
 
 signals:
     void fieldTypeChanged();
@@ -117,9 +125,11 @@ signals:
     void valueTemplateChanged();
     void controlGroupChanged();
     void helpPageChanged();
+    void toolTipChanged();
 
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
+    virtual bool isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const Q_DECL_OVERRIDE;
 
 private:
     struct FieldStruct *m_pFieldStruct;
@@ -130,7 +140,7 @@ private:
     quint16 m_DataLength;
     bool m_Fdm, m_IsText;
 
-    QString m_ControlName, m_ValueTemplate;
+    QString m_ControlName, m_ValueTemplate, m_ToolTip;
     ResStyle::PanelStyle m_Style;
 
     quint16 m_ControlGroup;

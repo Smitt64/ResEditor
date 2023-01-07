@@ -5,6 +5,8 @@
 #include "styles/resstyle.h"
 #include "basescene.h"
 #include "undoredo/undoitemadd.h"
+#include "panelpropertysdlg.h"
+#include <QGraphicsView>
 #include <QPainter>
 #include <QFont>
 #include <QFontMetrics>
@@ -16,6 +18,7 @@
 #include <QMimeData>
 #include <QDynamicPropertyChangeEvent>
 #include <QGraphicsSceneDragDropEvent>
+#include <QKeyEvent>
 
 PanelItem::PanelItem(CustomRectItem *parent) :
     ContainerItem(parent),
@@ -56,6 +59,17 @@ bool PanelItem::event(QEvent *e)
     return ContainerItem::event(e);
 }
 
+QVariant PanelItem::userAction(const qint32 &action, const QVariant &param)
+{
+    if (action == ActionKeyEnter)
+    {
+        PanelPropertysDlg dlg(scene()->views().first());
+        dlg.setPanelMode(true);
+        dlg.exec();
+    }
+    return QVariant();
+}
+
 void PanelItem::setPanel(ResPanel *panel)
 {
     m_Panel = panel;
@@ -88,7 +102,7 @@ void PanelItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 
     ResStyleOption opt;
     opt.init(this);
-    opt.text = m_Panel->title();
+    opt.text = m_Title;
     opt.borderStyle = borderStyle();
 
     if (!m_DragHighlightedRect.isValid())
@@ -140,7 +154,7 @@ const ResStyle::PanelStyle &PanelItem::panelStyle() const
 
 void PanelItem::setPanelStyle(const ResStyle::PanelStyle &style)
 {
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_PanelStyle = style;
         emit panelStyleChanged();
@@ -158,7 +172,7 @@ QString PanelItem::title() const
 
 void PanelItem::setTitle(const QString &text)
 {
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_Title = text;
         emit titleChanged();
@@ -176,7 +190,7 @@ QString PanelItem::status() const
 
 void PanelItem::setStatus(const QString &text)
 {
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_Status = text;
         emit statusChanged();
@@ -194,7 +208,7 @@ QString PanelItem::status2() const
 
 void PanelItem::setStatus2(const QString &text)
 {
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_Status2 = text;
         emit status2Changed();
@@ -212,7 +226,7 @@ const bool &PanelItem::isCentered() const
 
 void PanelItem::setIsCentered(const bool &val)
 {
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_isCentered = val;
         emit isCenteredChanged();
@@ -230,7 +244,7 @@ const bool &PanelItem::isRightText() const
 
 void PanelItem::setIsRightText(const bool &val)
 {
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_isRightText = val;
         emit isRightTextChanged();
@@ -248,7 +262,7 @@ PanelItem::PanelExcludeFlags PanelItem::panelExclude() const
 
 void PanelItem::setPanelExclude(const PanelItem::PanelExcludeFlags &val)
 {
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_PanelExclude = val;
         emit panelExcludeChanged();
@@ -266,7 +280,7 @@ QString PanelItem::comment() const
 
 void PanelItem::setComment(const QString &text)
 {
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_Comment = text;
         emit commentChanged();
@@ -284,7 +298,7 @@ const quint32 &PanelItem::helpPage() const
 
 void PanelItem::setHelpPage(const quint32 &val)
 {
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_HelpPage = val;
         emit helpPageChanged();
@@ -305,26 +319,31 @@ void PanelItem::dragEnterEvent(QGraphicsSceneDragDropEvent *event)
             renderToPixmap(&m_DragPixmap);
             createFromJson(this, event->mimeData()->data(MIMETYPE_TOOLBOX), items);
 
-            QRectF rc = items.first()->boundingRect();
-            for (const QGraphicsItem *item : qAsConst(items))
-                rc = rc.united(item->boundingRect());
-            m_DragControl = new QPixmap(rc.toRect().size());
-            m_DragControl->fill(Qt::transparent);
-            m_DragHighlightedRect.setWidth(rc.width());
-            m_DragHighlightedRect.setHeight(rc.height());
-
-            for (QGraphicsItem *item : qAsConst(items))
+            if (!items.empty())
             {
-                CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
+                QRectF rc = items.first()->boundingRect();
+                for (const QGraphicsItem *item : qAsConst(items))
+                    rc = rc.united(item->boundingRect());
+                m_DragControl = new QPixmap(rc.toRect().size());
+                m_DragControl->fill(Qt::transparent);
+                m_DragHighlightedRect.setWidth(rc.width());
+                m_DragHighlightedRect.setHeight(rc.height());
 
-                QPointF coord = ewCoordToReal(rectItem->getPoint());
-                rectItem->renderToPixmap(&m_DragControl, coord);
+                for (QGraphicsItem *item : qAsConst(items))
+                {
+                    CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
+
+                    QPointF coord = ewCoordToReal(rectItem->getPoint());
+                    rectItem->renderToPixmap(&m_DragControl, coord);
+                }
+
+                update();
+                scene()->update();
+
+                qDeleteAll(items);
             }
-
-            update();
-            scene()->update();
-
-            qDeleteAll(items);
+            else
+                qDebug() << "PanelItem::dragEnterEvent: error deserialize";
         }
 
         setChildsVisible(false);

@@ -285,8 +285,8 @@ int ResPanel::readItems(struct PanelR *pp, ResLib *res, bool readName2)
                 {
                     if(element._field->tooltipLen)
                     {
-                        s = (char*)malloc(sizeof(char)*(element._field->formLen + 1));
-                        memset(s, 0, element._field->formLen + 1);
+                        s = (char*)malloc(sizeof(char)*(element._field->tooltipLen + 1));
+                        memset(s, 0, element._field->tooltipLen + 1);
 
                         err = rds(res->fileHandle(), &s, 0, element._field->tooltipLen, nullptr);
                         element.toolTip = res->decodeString(s);

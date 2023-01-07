@@ -22,13 +22,14 @@ public:
     virtual void undo() Q_DECL_OVERRIDE;
 
 private:
+    void calcPasteOffest();
     CustomRectItem *m_pPanel;
     QByteArray m_Data;
     BaseScene *m_pScene;
 
     QList<QGraphicsItem*> *m_ItemsCreated;
     QMap<QString,QUuid> m_CreatedItemUids;
-    QPoint m_Offset;
+    QPoint m_Offset, m_PasteOffset;
 };
 
 #endif // UNDOITEMADD_H

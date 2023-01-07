@@ -20,13 +20,17 @@ SOURCES += \
     basescene.cpp \
     containeritem.cpp \
     controlitem.cpp \
+    controlpropertysdlg.cpp \
+    controtaborder.cpp \
     customrectitem.cpp \
     easywinini.cpp \
     panelitem.cpp \
+    panelpropertysdlg.cpp \
     propertymodel/enumlistmodel.cpp \
     propertymodel/enumpropertytreeitem.cpp \
     propertymodel/ewtextstylepropertytreeitem.cpp \
     propertymodel/flagpropertytreeitem.cpp \
+    propertymodel/labeltextpropertyitem.cpp \
     propertymodel/propertydockwidget.cpp \
     propertymodel/propertygrouptreeitem.cpp \
     propertymodel/propertymodel.cpp \
@@ -54,7 +58,10 @@ SOURCES += \
     undoredo/undoitemdelete.cpp \
     undoredo/undoitemmove.cpp \
     undoredo/undoitemresize.cpp \
-    undoredo/undopropertychange.cpp
+    undoredo/undopropertychange.cpp \
+    widgets/characterwidget.cpp \
+    widgets/controltaborderedit.cpp \
+    widgets/labeltexteditdlg.cpp
 
 HEADERS += \
     ResourceEditorInterface.h \
@@ -65,13 +72,17 @@ HEADERS += \
     basescene.h \
     containeritem.h \
     controlitem.h \
+    controlpropertysdlg.h \
+    controtaborder.h \
     customrectitem.h \
     easywinini.h \
     panelitem.h \
+    panelpropertysdlg.h \
     propertymodel/enumlistmodel.h \
     propertymodel/enumpropertytreeitem.h \
     propertymodel/ewtextstylepropertytreeitem.h \
     propertymodel/flagpropertytreeitem.h \
+    propertymodel/labeltextpropertyitem.h \
     propertymodel/propertydockwidget.h \
     propertymodel/propertygrouptreeitem.h \
     propertymodel/propertymodel.h \
@@ -101,7 +112,10 @@ HEADERS += \
     undoredo/undoitemdelete.h \
     undoredo/undoitemmove.h \
     undoredo/undoitemresize.h \
-    undoredo/undopropertychange.h
+    undoredo/undopropertychange.h \
+    widgets/characterwidget.h \
+    widgets/controltaborderedit.h \
+    widgets/labeltexteditdlg.h
 
 # Default rules for deployment.
 unix {
@@ -135,4 +149,8 @@ INCLUDEPATH += $$PWD/../rsreslbrfn
 DEPENDPATH += $$PWD/../rsreslbrfn
 
 FORMS += \
-    propertymodel/textstyledlg.ui
+    controlpropertysdlg.ui \
+    panelpropertysdlg.ui \
+    propertymodel/textstyledlg.ui \
+    widgets/controltaborderedit.ui \
+    widgets/labeltexteditdlg.ui

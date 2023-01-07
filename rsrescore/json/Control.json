@@ -46,6 +46,10 @@
             "alias" : "Имя/Текст"
         },
         {
+            "name" : "toolTip",
+            "alias" : "Подсказка (tooltip)"
+        },
+        {
             "name" : "valueTemplate",
             "alias" : "Шаблон"
         },

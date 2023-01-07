@@ -2,6 +2,7 @@
 #include "basescene.h"
 #include "qjsonobject.h"
 #include "qmetaobject.h"
+#include "rsrescore.h"
 #include "toolbox/toolboxmodel.h"
 #include <QUndoStack>
 #include <QToolBar>
@@ -59,12 +60,15 @@ void BaseEditorWindow::initUndoRedo(QToolBar *toolbar)
     m_pRedoActionBtn->setIcon(QIcon(":/img/Redo.png"));
 
     m_pUndoAction = m_pUndoStack->createUndoAction(this, tr("Отменить"));
+    m_pUndoAction->setToolTip(m_pUndoAction->text());
     m_pUndoAction->setIcon(QIcon(":/img/Undo.png"));
     m_pUndoAction->setShortcut(QKeySequence::Undo);
+    AddShortcutToToolTip(m_pUndoAction);
 
     m_pRedoAction = m_pUndoStack->createRedoAction(this, tr("Повторить"));
     m_pRedoAction->setIcon(QIcon(":/img/Redo.png"));
-    m_pRedoAction->setShortcut(QKeySequence::Redo);
+    //m_pRedoAction->setShortcut(QKeySequence::Redo);
+    m_pRedoAction->setToolTip(m_pRedoAction->text());
 
     toolbar->addAction(m_pUndoAction);
     toolbar->addWidget(m_pRedoActionBtn);
@@ -72,6 +76,11 @@ void BaseEditorWindow::initUndoRedo(QToolBar *toolbar)
     m_pUndoViewMenuAction = new UndoActionWidget(m_pUndoStack, this);
     m_pUndoMenu->addAction(m_pRedoAction);
     m_pUndoMenu->addAction(m_pUndoViewMenuAction);
+
+    m_pRedoActionBtn->setToolTip(tr("Повторить"));
+    m_pRedoActionBtn->setShortcut(QKeySequence::Redo);
+
+    AddShortcutToToolTip(m_pRedoActionBtn);
 
     connect(m_pRedoActionBtn, &QToolButton::clicked, m_pRedoAction, &QAction::trigger);
 }

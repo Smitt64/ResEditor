@@ -1,5 +1,8 @@
 #include "rsrescore.h"
 #include "ResourceEditorInterface.h"
+#include "controtaborder.h"
+#include "propertymodel/labeltextpropertyitem.h"
+#include "qapplication.h"
 #include "reslib.h"
 #include "controlitem.h"
 #include "textitem.h"
@@ -8,6 +11,7 @@
 #include "styles/extextstyle.h"
 #include <QPluginLoader>
 #include <QFontDatabase>
+#include <QToolButton>
 
 Q_IMPORT_PLUGIN(BaseResourceEditor)
 
@@ -23,11 +27,18 @@ RsResCore::RsResCore()
     qRegisterMetaType<ContainerItem*>();
     qRegisterMetaType<PanelItem*>();
     qRegisterMetaType<EwTextStyle>();
+    qRegisterMetaType<ControTabOrder>();
     qRegisterMetaType<EwTextStylePropertyTreeItem*>();
+    qRegisterMetaType<LabelTextPropertyItem*>();
     qRegisterMetaType<QJsonObject>();
 
     QMetaType::registerComparators<EwTextStyle>();
     QMetaType::registerConverter<EwTextStyle, QJsonObject>(EwTextStyle::toJsonObject);
+    QMetaType::registerConverter<QJsonObject, EwTextStyle>(EwTextStyle::fromJsonObject);
+
+    QMetaType::registerComparators<ControTabOrder>();
+    QMetaType::registerConverter<ControTabOrder, QJsonObject>(ControTabOrder::toJsonObject);
+    QMetaType::registerConverter<QJsonObject, ControTabOrder>(ControTabOrder::fromJsonObject);
 }
 
 RsResCore *RsResCore::inst()
@@ -142,4 +153,52 @@ ResourceEditorInterface *RsResCore::pluginForType(const qint16 &Type)
     }
 
     return nullptr;
+}
+
+static QString strippedActionText(QString s)
+{
+    s.remove(QString::fromLatin1("..."));
+    for (int i = 0; i < s.size(); ++i)
+    {
+        if (s.at(i) == QLatin1Char('&'))
+            s.remove(i, 1);
+    }
+
+    return s.trimmed();
+}
+
+template<class T>void AddShortcutToToolTip(T *action)
+{
+    if (!action->shortcut().isEmpty())
+    {
+        QString tooltip = action->property("tooltipBackup").toString();
+        if (tooltip.isEmpty())
+        {
+            tooltip = action->toolTip();
+            if (tooltip != strippedActionText(action->text()))
+                action->setProperty("tooltipBackup", action->toolTip());  // action uses a custom tooltip. Backup so that we can restore it later.
+        }
+
+        QColor shortcutTextColor = QApplication::palette().color(QPalette::ToolTipText);
+        QString shortCutTextColorName;
+        if (shortcutTextColor.value() == 0)
+            shortCutTextColorName = "gray";  // special handling for black because lighter() does not work there [QTBUG-9343].
+        else
+        {
+            int factor = (shortcutTextColor.value() < 128) ? 150 : 50;
+            shortCutTextColorName = shortcutTextColor.lighter(factor).name();
+        }
+        action->setToolTip(QString("<p style='white-space:pre'>%1&nbsp;&nbsp;<code style='color:%2; font-size:small'>%3</code></p>")
+                           .arg(tooltip, shortCutTextColorName, action->shortcut().toString(QKeySequence::NativeText)));
+    }
+}
+
+void AddShortcutToToolTip(QAction *action)
+{
+    AddShortcutToToolTip<QAction>(action);
+}
+
+void AddShortcutToToolTip(QToolButton *action)
+{
+    AddShortcutToToolTip<QToolButton>(action);
 }

@@ -252,7 +252,7 @@ void PropertyModel::addProperty(const QJsonObject &obj, const QMetaObject *meta,
             if (id != QMetaType::UnknownType)
             {
                 const QMetaObject *viewMetaObject = QMetaType::metaObjectForType(id);
-                QObject *pInstance = viewMetaObject->newInstance(Q_ARG(CustomRectItem*, m_pItem), Q_ARG(QObject*, this));
+                QObject *pInstance = viewMetaObject->newInstance(Q_ARG(QObject*, m_pItem), Q_ARG(QObject*, this));
                 PropertyTreeItem *pTreeItem = qobject_cast<PropertyTreeItem*>(pInstance);
 
                 if (pTreeItem)

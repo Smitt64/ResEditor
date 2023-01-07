@@ -13,7 +13,7 @@ class ContainerItem : public CustomRectItem
     Q_CLASSINFO(CLASSINFO_PROPERTYLIST, ":/json/Container.json")
     Q_CLASSINFO(CLASSINFO_PROPERTYGROUP, "Container")
 public:
-    Q_INVOKABLE ContainerItem(CustomRectItem* parent = nullptr);
+    Q_INVOKABLE ContainerItem(QGraphicsItem* parent = nullptr);
     ContainerItem(const QRect& rect, CustomRectItem* parent = nullptr);
     virtual ~ContainerItem();
 
@@ -30,10 +30,12 @@ protected:
     virtual void dragEnterEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
     virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
 
+    virtual bool isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const Q_DECL_OVERRIDE;
+
 private:
     ResStyle::BorderStyle m_BorderStyle;
 };
 
-Q_DECLARE_METATYPE(ContainerItem*)
+Q_DECLARE_OPAQUE_POINTER(ContainerItem)
 
 #endif // CONTAINERITEM_H

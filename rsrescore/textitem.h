@@ -22,6 +22,7 @@ public:
         TypeCheck,
         TypeRadio,
         TypeHorizontal,
+        TypeTextHorizontal,
     };
     Q_ENUM(TextItemType)
     Q_INVOKABLE TextItem(QGraphicsItem* parent = nullptr);
@@ -37,7 +38,10 @@ public:
     EwTextStyle textStyle();
     void setTextStyle(const EwTextStyle &style);
 
-    //virtual void serialize(QByteArray &data) Q_DECL_OVERRIDE;
+    QUuid attachedControl() const;
+    int attachedControlOffset() const;
+
+    virtual QVariant userAction(const qint32 &action, const QVariant &param = QVariant()) Q_DECL_OVERRIDE;
 
 signals:
     void textChanged();
@@ -48,15 +52,24 @@ protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
     virtual bool canResize(const QRectF &newRect, const ResizeCorners &corner) const Q_DECL_OVERRIDE;
     virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+
+    virtual void onInsertUndoRedoMove(const QMap<CustomRectItem *, QPointF> &MousePressPoint) Q_DECL_OVERRIDE;
+    virtual bool isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const Q_DECL_OVERRIDE;
 
 private:
-    void detectType();
+    void detectType(const bool &fUpdateCorners = true);
+    int findLastNonHorline(const QString &pattern = TEXTITEM_HORIZONTAL) const;
     QString checkRadioStr(const TextItemType &type) const;
     //struct TextStruct *m_pTextStruct;
-    QString m_Value;
+    QString m_Value, m_SaveValue;
 
     TextItemType m_Type;
     int m_CheckRadioPos;
+
+    QPointF m_AttachedPos;
+    QUuid m_AttachedControl;
 
     EwTextStyle m_TextStyle;
 };

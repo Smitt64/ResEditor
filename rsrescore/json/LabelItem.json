@@ -2,7 +2,8 @@
     "propertylist": [
         {
             "name" : "text",
-            "alias" : "Текст"
+            "alias" : "Текст",
+            "viewclass" : "LabelTextPropertyItem"
         },
         {
             "name" : "textType",

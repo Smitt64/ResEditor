@@ -2,12 +2,18 @@
 #include <QPainter>
 #include <QFont>
 #include <QColor>
+#include "basescene.h"
+#include "containeritem.h"
+#include "controlpropertysdlg.h"
 #include "respanel.h"
+#include "rsrescore.h"
 #include "styles/resstyle.h"
+#include "textitem.h"
 #include "undoredo/undopropertychange.h"
 #include "rscoreheader.h"
 #include <QGraphicsScene>
 #include <QUndoStack>
+#include <QGraphicsView>
 
 ControlItem::ControlItem(QGraphicsItem *parent) :
     CustomRectItem(parent),
@@ -23,6 +29,7 @@ ControlItem::ControlItem(QGraphicsItem *parent) :
 {
     setBrush(QBrush(Qt::darkBlue));
     updateCorners();
+    setZValue(200.0);
 }
 
 ControlItem::~ControlItem()
@@ -43,16 +50,24 @@ void ControlItem::updateCorners()
     flags.setFlag(BOTTOM, false);
     flags.setFlag(BOTTOM_RIGHT, false);
 
-    if (m_FieldType == FWR || m_FieldType == FVW)
+    if (m_DataType == PICTURE)
     {
         flags.setFlag(BOTTOM, true);
         flags.setFlag(BOTTOM_RIGHT, true);
     }
-
-    if ((m_DataType == CHAR || m_DataType == UCHAR) && !m_DataLength)
-        flags.setFlag(RIGHT, false);
     else
-        flags.setFlag(RIGHT, true);
+    {
+        if (m_FieldType == FWR || m_FieldType == FVW)
+        {
+            flags.setFlag(BOTTOM, true);
+            flags.setFlag(BOTTOM_RIGHT, true);
+        }
+
+        if ((m_DataType == CHAR || m_DataType == UCHAR) && !m_DataLength)
+            flags.setFlag(RIGHT, false);
+        else
+            flags.setFlag(RIGHT, true);
+    }
 
     setAvailableCorners(flags);
 }
@@ -68,6 +83,7 @@ void ControlItem::setFieldStruct(struct FieldStruct *value)
     m_DataType = static_cast<DataType>(m_pFieldStruct->_field->FVt);
     m_DataLength = m_pFieldStruct->_field->FVp;
     m_ValueTemplate = m_pFieldStruct->formatStr;
+    m_ToolTip = m_pFieldStruct->toolTip;
     m_ControlGroup = m_pFieldStruct->_field->group;
     m_HelpPage = m_pFieldStruct->_field->FHelp;
 
@@ -78,6 +94,25 @@ int ControlItem::lines() const
 {
     QSize grid = style()->gridSize();
     return round(boundingRect().height() / grid.height());
+}
+
+bool ControlItem::isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const
+{
+    TextItem *pIsText = dynamic_cast<TextItem*>(item);
+    ContainerItem *pIsContainer = dynamic_cast<ContainerItem*>(item);
+
+
+    if (pIsText && IsIn(m_FieldType, 2, ControlItem::FBT, ControlItem::FVT) && IsIn(m_DataType, 2, CHAR, UCHAR))
+    {
+        QUuid attached = pIsText->attachedControl();
+
+        if (attached == uuid())
+            return false;
+    }
+    else if (pIsContainer)
+        return false;
+
+    return true;
 }
 
 void ControlItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -121,7 +156,7 @@ void ControlItem::setFieldType(const ControlItem::FieldType &val)
 {
     checkPropSame("fieldType", val);
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_FieldType = val;
         updateCorners();
@@ -151,7 +186,7 @@ void ControlItem::setDataType(const ControlItem::DataType &val)
 {
     checkPropSame("dataType", val);
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_DataType = val;
         updateCorners();
@@ -172,7 +207,7 @@ void ControlItem::setDataLength(const quint16 &val)
 {
     checkPropSame("dataLength", val);
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_DataLength = val;
         emit dataLengthChanged();
@@ -197,7 +232,7 @@ void ControlItem::setFdm(const bool &val)
 {
     checkPropSame("fdm", val);
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_Fdm = val;
         emit fdmChanged();
@@ -217,7 +252,7 @@ void ControlItem::setIsText(const bool &val)
 {
     checkPropSame("isText", val);
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_IsText = val;
         emit isTextChanged();
@@ -237,7 +272,7 @@ void ControlItem::setControlName(const QString &val)
 {
     checkPropSame("controlName", val);
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_ControlName = val;
         emit controlNameChanged();
@@ -246,6 +281,26 @@ void ControlItem::setControlName(const QString &val)
     }
     else
         pushUndoPropertyData("controlName", val);
+}
+
+const QString &ControlItem::toolTip() const
+{
+    return m_ToolTip;
+}
+
+void ControlItem::setToolTip(const QString &val)
+{
+    checkPropSame("toolTip", val);
+
+    if (isSkipUndoStack() || !undoStack())
+    {
+        m_ToolTip = val;
+        emit toolTipChanged();
+        update();
+        scene()->update();
+    }
+    else
+        pushUndoPropertyData("toolTip", val);
 }
 
 const ResStyle::PanelStyle &ControlItem::controlStyle() const
@@ -257,7 +312,7 @@ void ControlItem::setControlStyle(const ResStyle::PanelStyle &val)
 {
     checkPropSame("controlStyle", val);
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_Style = val;
         emit controlStyleChanged();
@@ -277,7 +332,7 @@ void ControlItem::setValueTemplate(const QString &val)
 {
     checkPropSame("valueTemplate", val);
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_ValueTemplate = val;
         emit valueTemplateChanged();
@@ -297,7 +352,7 @@ void ControlItem::setControlGroup(const quint16 &val)
 {
     checkPropSame("controlGroup", val);
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_ControlGroup = val;
         emit controlGroupChanged();
@@ -317,7 +372,7 @@ void ControlItem::setHelpPage(const quint16 &val)
 {
     checkPropSame("helpPage", val);
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_HelpPage = val;
         emit helpPageChanged();
@@ -326,4 +381,18 @@ void ControlItem::setHelpPage(const quint16 &val)
     }
     else
         pushUndoPropertyData("helpPage", val);
+}
+
+QVariant ControlItem::userAction(const qint32 &action, const QVariant &param)
+{
+    BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+    if (action == ActionKeyEnter)
+    {
+        ControlPropertysDlg dlg(customScene->views().first());
+
+        if (dlg.exec() == QDialog::Accepted)
+            ;
+    }
+
+    return QVariant();
 }

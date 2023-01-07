@@ -40,5 +40,16 @@
         <file>json/TextColorEnum.json</file>
         <file>ui/TextStyleTest.ui</file>
         <file>json/TextBackEnum.json</file>
+        <file>img/FrameContainer_24x.png</file>
+        <file>img/FrameContainer2_24x.png</file>
+        <file>img/TextBoxChar_24x.png</file>
+        <file>img/Image_24x.png</file>
+        <file>img/TimePickerShort_24x.png</file>
+        <file>img/Label_verline24x.png</file>
+        <file>img/Label_vertright24x.png</file>
+        <file>img/Label_upright24x.png</file>
+        <file>img/Properties.png</file>
+        <file>img/CustomControl_16x.png</file>
+        <file>img/DocumentHS.png</file>
     </qresource>
 </RCC>

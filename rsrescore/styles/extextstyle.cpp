@@ -59,9 +59,11 @@ QJsonObject EwTextStyle::toJsonObject(const EwTextStyle &style)
 
 EwTextStyle EwTextStyle::fromJsonObject(const QJsonObject &obj)
 {
-    EwTextStyle style;;
+    EwTextStyle style;
     style.setAlign(static_cast<TextAlign>(obj["align"].toInt()));
     style.setFormat(static_cast<TextFormat>(obj["format"].toInt()));
+    style.setTextColor(static_cast<TextColor>(obj["color"].toInt()));
+    style.setBackColor(static_cast<BackColor>(obj["background"].toInt()));
 
     return style;
 }

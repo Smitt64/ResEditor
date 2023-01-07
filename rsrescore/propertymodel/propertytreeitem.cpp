@@ -140,7 +140,7 @@ QString PropertyTreeItem::propertyName() const
     return m_PropertyName;
 }
 
-QObject *PropertyTreeItem::object()
+QObject *PropertyTreeItem::object() const
 {
     return m_pItem;
 }

@@ -20,7 +20,7 @@ public:
         SubTypeTextBack
     };
 
-    Q_INVOKABLE EwTextStylePropertyTreeItem(CustomRectItem *rectItem, QObject *parent = nullptr);
+    Q_INVOKABLE EwTextStylePropertyTreeItem(QObject *rectItem, QObject *parent = nullptr);
     EwTextStylePropertyTreeItem(const NodeSubType &type, CustomRectItem *rectItem, QObject *parent);
     virtual ~EwTextStylePropertyTreeItem();
 

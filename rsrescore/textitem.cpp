@@ -1,14 +1,23 @@
 #include "textitem.h"
 #include <QColor>
+#include "containeritem.h"
+#include "controlitem.h"
 #include "qgraphicsscene.h"
+#include "qlineedit.h"
 #include "respanel.h"
 #include "styles/resstyle.h"
+#include "undoredo/undoitemmove.h"
 #include "undoredo/undopropertychange.h"
+#include "undoredo/undoitemresize.h"
+#include "rsrescore.h"
+#include "basescene.h"
+#include "widgets/labeltexteditdlg.h"
 #include <QPainter>
 #include <QFont>
 #include <QDebug>
 #include <QGraphicsSceneMouseEvent>
 #include <QUndoStack>
+#include <QGraphicsView>
 
 #define CHECK_STR "[ ]"
 #define RADIO_STR "( )"
@@ -22,6 +31,7 @@ TextItem::TextItem(QGraphicsItem* parent) :
 
     setBrush(QBrush(Qt::darkBlue));
     setAvailableCorners(0);
+    setZValue(100.0);
 }
 
 TextItem::~TextItem()
@@ -59,14 +69,14 @@ const TextItem::TextItemType &TextItem::textType() const
     return m_Type;
 }
 
-void TextItem::detectType()
+void TextItem::detectType(const bool &fUpdateCorners)
 {
     m_CheckRadioPos = m_Value.indexOf("[ ]");
 
     if (m_CheckRadioPos != -1)
         m_Type = TypeCheck;
 
-    if (m_Type == TypeLabel)
+    if (m_Type != TypeCheck)
     {
         m_CheckRadioPos = m_Value.indexOf("( )");
 
@@ -74,8 +84,25 @@ void TextItem::detectType()
             m_Type = TypeRadio;
     }
 
-    if (m_Type == TypeCheck || m_Type == TypeRadio)
-        setAvailableCorners(RIGHT);
+    if (m_Type == TypeLabel)
+    {
+        if (m_Value.count(TEXTITEM_HORIZONTAL) == m_Value.size())
+            m_Type = TypeHorizontal;
+    }
+
+    if (m_Type == TypeLabel)
+    {
+        if (m_Value.back() == TEXTITEM_HORIZONTAL)
+            m_Type = TypeTextHorizontal;
+    }
+
+    if (fUpdateCorners)
+    {
+        if (IsIn(m_Type, 4, TypeCheck, TypeRadio, TypeHorizontal, TypeTextHorizontal))
+            setAvailableCorners(RIGHT);
+        else
+            setAvailableCorners(RIGHT, false);
+    }
 }
 
 bool TextItem::canResize(const QRectF &newRect, const ResizeCorners &corner) const
@@ -102,9 +129,38 @@ bool TextItem::canResize(const QRectF &newRect, const ResizeCorners &corner) con
             if (newWidth < newText.length())
                 fResize = false;
         }
+        else if (m_Type == TypeTextHorizontal)
+        {
+            QSize gridSize = style()->gridSize();
+            int newWidth = round(newRect.width() / gridSize.width());
+            int pos = findLastNonHorline() + 1;
+
+            if (newWidth < pos + 1)
+                fResize = false;
+        }
     }
 
     return fResize;
+}
+
+bool TextItem::isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const
+{
+    ControlItem *pIsControl = dynamic_cast<ControlItem*>(item);
+    ContainerItem *pIsContainer = dynamic_cast<ContainerItem*>(item);
+
+    if (pIsControl)
+    {
+        if (IsIn(pIsControl->fieldType(), 2, ControlItem::FBT, ControlItem::FVT) &&
+            IsIn(pIsControl->dataType(), 2, ControlItem::CHAR, ControlItem::UCHAR)
+            && pIsControl->uuid() == attachedControl())
+        {
+            return false;
+        }
+    }
+    else if (pIsContainer)
+        return false;
+
+    return true;
 }
 
 QString TextItem::checkRadioStr(const TextItemType &type) const
@@ -119,9 +175,32 @@ QString TextItem::checkRadioStr(const TextItemType &type) const
     case TypeRadio:
         value = RADIO_STR;
         break;
+    case TypeLabel:
+    case TypeHorizontal:
+        break;
+    case TypeTextHorizontal:
+        break;
     }
 
     return value;
+}
+
+void TextItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    CustomRectItem::mousePressEvent(event);
+
+    if (isResizing())
+        m_SaveValue = m_Value;
+
+    m_AttachedControl = attachedControl();
+    if (!m_AttachedControl.isNull())
+    {
+        BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+        ControlItem *rect = qobject_cast<ControlItem*>(customScene->findItem(m_AttachedControl));
+
+        if (rect)
+            m_AttachedPos = rect->pos();
+    }
 }
 
 void TextItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
@@ -137,6 +216,7 @@ void TextItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
             QSize gridSize = style()->gridSize();
             QString tmp = m_Value;
 
+            detectType(false);
             if (m_CheckRadioPos == 0)
                 tmp = tmp.remove(m_CheckRadioPos, 3);
             else
@@ -158,6 +238,116 @@ void TextItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
                 m_Value = newText;
             }
         }
+        else if (m_Type == TypeHorizontal)
+        {
+            QRectF rect = boundingRect();
+
+            QSize gridSize = style()->gridSize();
+            int newWidth = round(rect.width() / gridSize.width());
+
+            m_Value = QString(newWidth, *QString(TEXTITEM_HORIZONTAL).begin());
+
+            qDebug() << "isNonCharacter" << QChar(*QString(TEXTITEM_HORIZONTAL).begin()).isNonCharacter();
+        }
+        else if (m_Type == TypeTextHorizontal)
+        {
+            QRectF rect = boundingRect();
+            int pos = findLastNonHorline() + 1;
+            QSize gridSize = style()->gridSize();
+            int newWidth = round(rect.width() / gridSize.width());
+
+            QString textPart = m_Value.mid(0, pos);
+            m_Value = textPart + QString(newWidth - textPart.size(), *QString(TEXTITEM_HORIZONTAL).begin());
+        }
+    }
+
+    if (!m_AttachedControl.isNull())
+    {
+        BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+        CustomRectItem *attachedRect = customScene->findItem(m_AttachedControl);
+
+        if (attachedRect && !attachedRect->isSelected())
+        {
+            int offset = attachedControlOffset();
+            BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+            QSize gridSize = customScene->getGridSize();
+
+            QPointF thisPos = pos();
+            thisPos.setX(thisPos.x() + (offset + 1) * gridSize.width());
+
+            attachedRect->setPos(thisPos);
+
+            attachedRect->update();
+            customScene->update();
+        }
+    }
+}
+
+int TextItem::findLastNonHorline(const QString &pattern) const
+{
+    int pos = -1;
+
+    for (int i = 0; i < m_Value.size(); i++)
+    {
+        if (QString(m_Value[i]) != pattern)
+            pos = i;
+    }
+    return pos;
+}
+
+void TextItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+
+    if (isResizing())
+    {
+        QRectF actual = actualRect();
+        QRectF bound = boundingRect();
+
+        QPointF dPos = bound.topLeft() - actual.topLeft();
+        moveBy(dPos.rx(), dPos.ry());
+        QSizeF vsize = bound.size();
+
+        bound.setTopLeft(QPointF(0, 0));
+        bound.setSize(vsize);
+        setBoundingRect(bound);
+
+        UndoItemResize *undocmd = new UndoItemResize(customScene, uuid());
+        UndoPropertyChange *undoprop = new UndoPropertyChange(customScene, uuid());\
+
+        undocmd->setSizes(actual.size(), bound.size());
+        undoprop->setPropertyName("text");
+        undoprop->setValues(m_SaveValue, m_Value);
+
+        undoStack()->beginMacro(undocmd->text());
+        undoStack()->push(undocmd);
+        undoStack()->push(undoprop);
+
+        if (!m_AttachedControl.isNull())
+        {
+            CustomRectItem *attachedRect = customScene->findItem(m_AttachedControl);
+            UndoItemMove *pAttachMove = new UndoItemMove(customScene, m_AttachedControl);
+            pAttachMove->setPositions(m_AttachedPos, attachedRect->pos());
+            undoStack()->push(pAttachMove);
+        }
+        undoStack()->endMacro();
+    }
+    else
+        insertUndoRedoMove();
+
+    m_AttachedControl = QUuid();
+    afterReleaseMouse(event);
+}
+
+void TextItem::onInsertUndoRedoMove(const QMap<CustomRectItem *, QPointF> &MousePressPoint)
+{
+    if (!m_AttachedControl.isNull())
+    {
+        BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+        CustomRectItem *attachedRect = customScene->findItem(m_AttachedControl);
+        UndoItemMove *pAttachMove = new UndoItemMove(customScene, m_AttachedControl);
+        pAttachMove->setPositions(m_AttachedPos, attachedRect->pos());
+        undoStack()->push(pAttachMove);
     }
 }
 
@@ -173,9 +363,10 @@ void TextItem::setText(const QString &txt)
     QRect sz = geometry();
     sz.setWidth(txt.length());
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
-        m_Value = txt;
+        m_Value = txt.trimmed();
+        detectType();
         setGeometry(sz);
 
         emit textChanged();
@@ -206,7 +397,7 @@ void TextItem::setTextStyle(const EwTextStyle &style)
 {
     checkPropSame("textStyle", QVariant::fromValue(style));
 
-    if (isSkipUndoStack())
+    if (isSkipUndoStack() || !undoStack())
     {
         m_TextStyle = style;
         emit textStyleChanged();
@@ -218,4 +409,63 @@ void TextItem::setTextStyle(const EwTextStyle &style)
     {
         pushUndoPropertyData("textStyle", QVariant::fromValue(style));
     }
+}
+
+int TextItem::attachedControlOffset() const
+{
+    if (!IsIn(m_Type, 2, TypeCheck, TypeRadio))
+        return std::numeric_limits<int>::infinity();
+
+    QString bracer = "[ ]";
+    if (m_Type == TypeRadio)
+        bracer = "( )";
+
+    int pos = m_Value.indexOf(bracer);
+    if (pos < 0)
+        return std::numeric_limits<int>::infinity();
+
+    return pos;
+}
+
+QUuid TextItem::attachedControl() const
+{
+    if (IsIn(m_Type, 2, TypeCheck, TypeRadio))
+    {
+        QSize gridSize = style()->gridSize();
+        BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+        int offset = attachedControlOffset();
+
+        QRectF rc;
+        rc.setX((offset + 1) * gridSize.width());
+        rc.setY(0.0);
+        rc.setWidth(gridSize.width());
+        rc.setHeight(gridSize.height());
+
+        rc = mapRectToScene(rc);
+
+        QList<ControlItem*> result = customScene->findItemsIntersect<ControlItem>(rc);
+        if (!result.empty())
+        {
+            ControlItem *rectItem = result.first();
+
+            if (IsIn(rectItem->fieldType(), 2, ControlItem::FBT, ControlItem::FVT) && IsIn(rectItem->dataLength(), 2, 0, 1))
+                return result.first()->uuid();
+        }
+    }
+    return QUuid();
+}
+
+QVariant TextItem::userAction(const qint32 &action, const QVariant &param)
+{
+    BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+    if (action == ActionKeyEnter)
+    {
+        LabelTextEditDlg dlg(customScene->views().first());
+        dlg.editor()->setText(m_Value);
+
+        if (dlg.exec() == QDialog::Accepted)
+            setText(dlg.editor()->text());
+    }
+
+    return QVariant();
 }

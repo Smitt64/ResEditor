@@ -12,7 +12,7 @@
 #include <QPushButton>
 #include <QComboBox>
 
-EwTextStylePropertyTreeItem::EwTextStylePropertyTreeItem(CustomRectItem *rectItem, QObject *parent)
+EwTextStylePropertyTreeItem::EwTextStylePropertyTreeItem(QObject *rectItem, QObject *parent)
     : PropertyTreeItem{rectItem, parent},
       m_pStyle(nullptr),
       m_pFormat(nullptr),

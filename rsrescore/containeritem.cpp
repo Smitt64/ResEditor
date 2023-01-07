@@ -7,11 +7,12 @@
 #include <QMimeData>
 #include <QGraphicsSceneDragDropEvent>
 
-ContainerItem::ContainerItem(CustomRectItem *parent) :
+ContainerItem::ContainerItem(QGraphicsItem *parent) :
     CustomRectItem(QRect(0, 0, 50, 50), parent),
     m_BorderStyle(ResStyle::Border_DoubleLine)
 {
     setAcceptDrops(true);
+    setZValue(0.0);
     setAvailableCorners(CustomRectItem::RIGHT | CustomRectItem::BOTTOM | CustomRectItem::BOTTOM_RIGHT);
 }
 
@@ -60,17 +61,29 @@ bool ContainerItem::childCanMove(const QPointF &newPos, CustomRectItem *item)
     return true;
 }
 
+bool ContainerItem::isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const
+{
+    return false;
+}
+
 void ContainerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     CustomRectItem::paint(painter, option, widget);
 
     QRectF BoundingRect = boundingRect();
-    painter->fillRect(BoundingRect, getBrush());
+    painter->fillRect(BoundingRect, Qt::transparent);
+    //painter->fillRect(BoundingRect, getBrush());
 
     ResStyleOption opt;
     opt.init(this);
-    opt.borderStyle = ResStyle::Border_DoubleLine;
-    style()->drawControl(ResStyle::Control_Panel, painter, &opt);
+    opt.borderStyle = m_BorderStyle;
+    style()->drawControl(ResStyle::Control_Frame, painter, &opt);
+
+    painter->save();
+    QColor br = style()->color(ResStyle::Color_TextBg, &opt);
+    QColor inverceColor = QColor::fromRgb(255 - br.red(), 255 - br.green(), 255 - br.blue());
+    paintBevel(painter, inverceColor);
+    painter->restore();
 }
 
 void ContainerItem::dragEnterEvent(QGraphicsSceneDragDropEvent *event)

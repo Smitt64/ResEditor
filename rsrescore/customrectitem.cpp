@@ -25,6 +25,7 @@
 #include <QMessageBox>
 #include <QFile>
 #include <QMetaType>
+#include <QKeyEvent>
 
 #define SEL_RECT_ZIZE 6
 #define PIE 3.1415926535897932384626433832795
@@ -54,12 +55,15 @@ void CustomRectItem::init()
     m_pUndoStack = nullptr;
     m_pPropertyModel = nullptr;
     m_SkipUndoStack = false;
+    m_Size = QSize(1, 1);
+    m_Coord = QPoint(0, 0);
 
     setFlags(QGraphicsItem::ItemIsSelectable |
              QGraphicsItem::ItemIsMovable |
              QGraphicsItem::ItemSendsGeometryChanges |
              QGraphicsItem::ItemClipsChildrenToShape |
-             QGraphicsItem::ItemClipsToShape);
+             QGraphicsItem::ItemClipsToShape |
+             QGraphicsItem::ItemIsFocusable);
     setInputMethodHints(Qt::ImhHiddenText);
     setAcceptDrops(false);
 
@@ -161,6 +165,10 @@ QVariant CustomRectItem::itemChange(GraphicsItemChange change, const QVariant &v
             m_BoundingRect.setHeight(hV);
         }
     }
+    /*else if (change == QGraphicsItem::ItemSelectedChange)
+    {
+        setFocus();
+    }*/
 
     return QGraphicsItem::itemChange(change, value);
 }
@@ -455,6 +463,11 @@ void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     }
 }
 
+void CustomRectItem::onInsertUndoRedoMove(const QMap<CustomRectItem*, QPointF> &MousePressPoint)
+{
+    Q_UNUSED(MousePressPoint)
+}
+
 void CustomRectItem::insertUndoRedoMove()
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
@@ -473,7 +486,10 @@ void CustomRectItem::insertUndoRedoMove()
             UndoItemMove *undocmd = new UndoItemMove(customScene, uuid());
             undocmd->setPositions(mousePos, pos());
 
+            undoStack()->beginMacro(undocmd->text());
             undoStack()->push(undocmd);
+            onInsertUndoRedoMove(MousePressPoint);
+            undoStack()->endMacro();
         }
     }
     else if (!MousePressPoint.empty())
@@ -505,9 +521,10 @@ void CustomRectItem::insertUndoRedoMove()
                 {
                     UndoItemMove *undocmd = new UndoItemMove(customScene, std::get<0>(_tuple));
                     undocmd->setPositions(std::get<1>(_tuple), std::get<2>(_tuple));
-
                     undoStack()->push(undocmd);
                 }
+
+                onInsertUndoRedoMove(MousePressPoint);
                 undoStack()->endMacro();
             }
 
@@ -542,6 +559,13 @@ void CustomRectItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
     scene()->views()[0]->setCursor(Qt::ArrowCursor);
 
+    afterReleaseMouse(event);
+}
+
+void CustomRectItem::afterReleaseMouse(QGraphicsSceneMouseEvent *event)
+{
+    scene()->views()[0]->setCursor(Qt::ArrowCursor);
+
     m_MousePressed = false;
     m_IsResizing = false;
     m_IsSelection = false;
@@ -550,7 +574,18 @@ void CustomRectItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     update();
     scene()->update();
 
-    QGraphicsItem::mouseReleaseEvent(event);
+    if (event)
+        QGraphicsItem::mouseReleaseEvent(event);
+}
+
+void CustomRectItem::setBoundingRect(const QRectF &bound)
+{
+    m_BoundingRect = bound;
+}
+
+const QRectF &CustomRectItem::actualRect() const
+{
+    return m_ActualRect;
 }
 
 bool CustomRectItem::mousePosOnHandles(QPointF pos)
@@ -641,6 +676,11 @@ void CustomRectItem::setAvailableCorners(ResizeCornersFlags flags)
     m_ResizeHandles.fill(QRect(0, 0, 0, 0), 8);
 }
 
+void CustomRectItem::setAvailableCorners(ResizeCorners flag, bool enable)
+{
+    m_AvailableCorners.setFlag(flag, enable);
+}
+
 const CustomRectItem::ResizeCornersFlags &CustomRectItem::availableCorners() const
 {
     return m_AvailableCorners;
@@ -670,6 +710,14 @@ bool CustomRectItem::canResize(const QRectF &newRect, const ResizeCorners &corne
     return true;
 }
 
+bool CustomRectItem::isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const
+{
+    Q_UNUSED(thisBound)
+    Q_UNUSED(item)
+    Q_UNUSED(itemBound)
+    return true;
+}
+
 void CustomRectItem::drawIntersects(QPainter *painter)
 {
     QGraphicsScene *pScene = scene();
@@ -683,7 +731,7 @@ void CustomRectItem::drawIntersects(QPainter *painter)
             QRectF mBoundingRect = mapRectToScene(boundingRect());
             QRectF mItemRect = item->mapRectToScene(item->boundingRect());
 
-            if (mBoundingRect.intersects(mItemRect))
+            if (mBoundingRect.intersects(mItemRect) && isIntersects(mBoundingRect, item, mItemRect))
             {
                 painter->save();
                 painter->setCompositionMode(QPainter::CompositionMode_Plus/*CompositionMode_Overlay*/);
@@ -973,20 +1021,6 @@ void CustomRectItem::serializeProperty(QJsonObject &obj, const QMetaObject *meta
     }
 }
 
-template<class T>QVector<T> fromJsonArray(const QJsonArray &arr)
-{
-    QVector<T> result;
-    result.reserve(arr.size());
-
-    for (const auto &element : arr)
-    {
-        QVariant var = element.toVariant();
-        result.push_back(var.value<T>());
-    }
-
-    return result;
-}
-
 void CustomRectItem::serialize(QJsonObject &data)
 {
     QList<const QMetaObject*> metaobjects;
@@ -1166,6 +1200,46 @@ void CustomRectItem::deserializeProperty(QJsonObject &obj)
             value = obj["value"].toString();
         else if (type == QVariant::Bool)
             value = obj["value"].toBool();
+        else
+        {
+            int userType = prop.userType();
+            if (QMetaType::hasRegisteredConverterFunction(QMetaType::QJsonObject, userType))
+            {
+                const QMetaObject *meta = QMetaType::metaObjectForType(userType);
+
+                if (meta)
+                {
+                    QObject *newObj = meta->newInstance();
+
+                    if (newObj)
+                    {
+                        QJsonObject valueObj = obj["value"].toObject();
+                        bool convert = QMetaType::convert(&valueObj, QMetaType::QJsonObject, newObj, userType);
+
+                        if (convert)
+                            setProperty(propertyName.toLocal8Bit().data(), QVariant(userType, newObj));
+                        delete newObj;
+                    }
+                }
+                else
+                {
+                    void *toConvert = QMetaType::create(userType);
+
+                    if (toConvert)
+                    {
+                        QJsonObject valueObj = obj["value"].toObject();
+                        bool convert = QMetaType::convert(&valueObj, QMetaType::QJsonObject, toConvert, userType);
+
+                        if (convert)
+                        {
+                            QVariant t = QVariant(userType, toConvert);
+                            setProperty(propertyName.toLocal8Bit().data(), t);
+                            QMetaType::destroy(userType, toConvert);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if (value.isValid())
@@ -1222,4 +1296,17 @@ void CustomRectItem::createFromJson(CustomRectItem *parent, const QByteArray &da
     pUndoRedo->redo();
 
     delete pUndoRedo;
+}
+
+QVariant CustomRectItem::userAction(const qint32 &action, const QVariant &param)
+{
+    Q_UNUSED(action)
+    Q_UNUSED(param)
+    return QVariant();
+}
+
+void CustomRectItem::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Return)
+        userAction(ActionKeyEnter);
 }

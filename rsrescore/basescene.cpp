@@ -93,7 +93,6 @@ void BaseScene::insertMousePressPoint(CustomRectItem *rectItem)
 
 void BaseScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    qDebug() << "BaseScene::mousePressEvent" << event->scenePos();
     QGraphicsScene::mousePressEvent(event);
 
     if (event->button() == Qt::LeftButton)

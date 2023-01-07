@@ -2,11 +2,13 @@
 #include "baseeditorview.h"
 #include "panelitem.h"
 #include "respanel.h"
+#include "rsrescore.h"
 #include "statusbarelement.h"
 #include "basescene.h"
 #include "baseeditorview.h"
+#include "undoredo/undoitemadd.h"
 #include "undoredo/undoitemdelete.h"
-#include "toolbox/toolboxmodel.h"
+#include "textitem.h"
 #include <QStatusBar>
 #include <QHBoxLayout>
 #include <QGraphicsSceneMouseEvent>
@@ -23,6 +25,10 @@
 #include <QJsonArray>
 #include <QClipboard>
 #include <QJsonDocument>
+#include <QTextLayout>
+#include <QTimer>
+#include <QMimeData>
+#include <QGraphicsSceneMouseEvent>
 
 #define SHADOW_CODE 9617
 
@@ -32,12 +38,29 @@ class StdEditorScene : public BaseScene
 {
 public:
     StdEditorScene(QObject *parent = nullptr) :
-        BaseScene(parent)
+        BaseScene(parent),
+        m_fShowCursor(false)
     {
+        m_pCursorTimer = new QTimer(this);
+        m_pCursorTimer->setInterval(1000);
+        m_pCursorTimer->setSingleShot(false);
 
+        connect(m_pCursorTimer, &QTimer::timeout, [&]()
+        {
+            m_fShowCursor = !m_fShowCursor;
+        });
+
+        m_pCursorTimer->start();
     }
 
-    virtual ~StdEditorScene() {}
+    const QPointF &cursorPos() const
+    {
+        return m_CursorPos;
+    }
+
+    virtual ~StdEditorScene()
+    {
+    }
 
 protected:
     virtual void drawBackground (QPainter* painter, const QRectF &rect) Q_DECL_OVERRIDE
@@ -63,6 +86,66 @@ protected:
             }
         }
     }
+
+    virtual void drawForeground(QPainter *painter, const QRectF &rect) Q_DECL_OVERRIDE
+    {
+        if (m_fShowCursor && !m_CursorPos.isNull())
+        {
+            painter->save();
+            painter->setCompositionMode(QPainter::RasterOp_NotDestination);
+
+            QPointF CursorPos = m_CursorPos;
+            painter->fillRect(QRectF(CursorPos, QSizeF(getGridSize().width(), getGridSize().height()/* / 2*/)), Qt::black);
+            painter->restore();
+        }
+
+        update(rect);
+    }
+
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent) Q_DECL_OVERRIDE
+    {
+        BaseScene::mousePressEvent(mouseEvent);
+        if (mouseEvent->button() != Qt::LeftButton)
+            return;
+
+        CustomRectItem *panelItem = findTopLevelItem();
+        if (!panelItem)
+            return;
+
+        QSize gridSize = getGridSize();
+        qreal xV = round(mouseEvent->scenePos().x() / gridSize.width()) * gridSize.width();
+        qreal yV = round(mouseEvent->scenePos().y() / gridSize.height())* gridSize.height();
+
+        QPointF nPos = QPointF(xV, yV);
+        QRectF panelSceneBound = panelItem->mapRectToScene(panelItem->boundingRect());
+
+        if (panelSceneBound.contains(mouseEvent->scenePos()))
+        {
+            bool hasBounds = false;
+            QList<QGraphicsItem*> panelItems = items();
+
+            for (QGraphicsItem *tmpItem : qAsConst(panelItems))
+            {
+                if (tmpItem == panelItem)
+                    continue;
+
+                QRectF itemSceneBound = tmpItem->mapRectToScene(tmpItem->boundingRect());
+                if (itemSceneBound.contains(mouseEvent->scenePos()))
+                {
+                    hasBounds = true;
+                    break;
+                }
+            }
+
+            if (!hasBounds)
+                m_CursorPos = nPos;
+        }
+    }
+
+private:
+    bool m_fShowCursor;
+    QTimer *m_pCursorTimer;
+    QPointF m_CursorPos;
 };
 
 // ----------------------------------------------------
@@ -116,6 +199,9 @@ StdPanelEditor::StdPanelEditor(QWidget *parent) :
     setStatusBar(m_StatusBar);
 
     setMouseTracking(true);
+
+    m_pClipboard = QApplication::clipboard();
+    connect(m_pClipboard, &QClipboard::dataChanged, this, &StdPanelEditor::clipboardChanged);
 }
 
 void StdPanelEditor::setupMenus()
@@ -156,10 +242,11 @@ void StdPanelEditor::setupEditor()
     m_pToolBar->addSeparator();
     initUndoRedo(m_pToolBar);
     setupCopyPaste();
-    setupContrastAction();
 
-    m_pDelete = m_pToolBar->addAction(QIcon(":/img/Delete.png"), tr("Удалить"));
-    m_pDelete->setShortcut(QKeySequence::Delete);
+    m_pDelete = addAction(QIcon(":/img/Delete.png"), tr("Удалить"), QKeySequence::Delete);
+
+    setupContrastAction();
+    setupPropertyAction();
 
     BaseScene *baseScene = dynamic_cast<BaseScene*>(m_pView->scene());
     if (baseScene)
@@ -175,14 +262,26 @@ void StdPanelEditor::setupContrastAction()
 {
     m_pToolBar->addSeparator();
 
-    m_pContrst = m_pToolBar->addAction(QIcon(":/img/EditBrightContrastHS.png"), tr("Контраст"));
+    m_pContrst = addAction(QIcon(":/img/EditBrightContrastHS.png"), tr("Контраст"));
     m_pContrst->setCheckable(true);
 
-    connect(m_pContrst, &QAction::toggled, [this](bool toogled)
+    connect(m_pContrst, &QAction::toggled, [&](bool toogled)
     {
         panelItem->setProperty(CONTRAST_PROPERTY, toogled);
     });
+
     m_pContrst->setChecked(true);
+}
+
+void StdPanelEditor::setupPropertyAction()
+{
+    m_pProperty = addAction(QIcon(":/img/Properties.png"), tr("Характеристики элемента"), QKeySequence::InsertParagraphSeparator);
+
+    connect(m_pProperty, &QAction::triggered, [&]()
+    {
+        QKeyEvent event(QEvent::KeyPress, Qt::Key_Return, Qt::NoModifier);
+        QApplication::sendEvent(m_pView, &event);
+    });
 }
 
 void StdPanelEditor::setupNameLine()
@@ -203,16 +302,29 @@ void StdPanelEditor::setupNameLine()
 void StdPanelEditor::setupCopyPaste()
 {
     m_pToolBar->addSeparator();
-    m_pCutAction = m_pToolBar->addAction(QIcon(":/img/CutHS.png"), tr("Вырезать"));
-    m_pCutAction->setShortcut(QKeySequence::Cut);
+    m_pCutAction = addAction(QIcon(":/img/CutHS.png"), tr("Вырезать"), QKeySequence::Cut);
+    m_pCopyAction = addAction(QIcon(":/img/CopyHS.png"), tr("Копировать"), QKeySequence::Copy);
+    m_pPasteAction = addAction(QIcon(":/img/PasteHS.png"), tr("Вставить"), QKeySequence::Paste);
 
-    m_pCopyAction = m_pToolBar->addAction(QIcon(":/img/CopyHS.png"), tr("Копировать"));
-    m_pCopyAction->setShortcut(QKeySequence::Copy);
-
-    m_pPasteAction = m_pToolBar->addAction(QIcon(":/img/PasteHS.png"), tr("Вставить"));
-    m_pPasteAction->setShortcut(QKeySequence::Paste);
+    clipboardChanged();
 
     connect(m_pCopyAction, &QAction::triggered, this, &StdPanelEditor::sceneCopyItems);
+    connect(m_pPasteAction, &QAction::triggered, this, &StdPanelEditor::scenePasteItems);
+    connect(m_pCutAction, &QAction::triggered, this, &StdPanelEditor::sceneCutItems);
+}
+
+QAction *StdPanelEditor::addAction(const QIcon &icon, const QString &text, const QKeySequence &key)
+{
+    QAction *action = m_pToolBar->addAction(icon, text);
+    action->setToolTip(text);
+
+    if (!key.isEmpty())
+    {
+        action->setShortcut(key);
+        AddShortcutToToolTip(action);
+    }
+
+    return action;
 }
 
 void StdPanelEditor::setPanel(ResPanel *panel)
@@ -292,6 +404,12 @@ void StdPanelEditor::fillItems(const QList<QGraphicsItem*> &selectedItems, QSet<
     }
 }
 
+void StdPanelEditor::sceneCutItems()
+{
+    sceneCopyItems();
+    sceneDeleteItems();
+}
+
 void StdPanelEditor::sceneDeleteItems()
 {
     BaseScene *pScene = dynamic_cast<BaseScene*>(m_pView->scene());
@@ -349,5 +467,74 @@ void StdPanelEditor::sceneCopyItems()
     QJsonDocument doc;
     doc.setObject(rootObj);
 
-    pClipboard->setText(doc.toJson());
+    QMimeData *pMimeData = new QMimeData();
+    pMimeData->setData(MIMETYPE_TOOLBOX, doc.toJson());
+    pClipboard->setMimeData(pMimeData);
+}
+
+void StdPanelEditor::scenePasteItems()
+{
+    QClipboard *pClipboard = QApplication::clipboard();
+    const QMimeData *mimeData = pClipboard->mimeData();
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+    CustomRectItem *topItem = pScene->findTopLevelItem();
+
+    if (!pScene || pScene->cursorPos().isNull())
+        return;
+
+    if (mimeData->hasText())
+    {
+        QTextStream stream(mimeData->text().toLocal8Bit());
+
+        QJsonObject rootObj;
+        QJsonArray items;
+        QPointF offset = topItem->mapFromScene(pScene->cursorPos());
+        int yOffset = 0;
+        while (!stream.atEnd())
+        {
+            QString text = stream.readLine();
+
+            TextItem *pTextItem = new TextItem();
+            pScene->addItem(pTextItem);
+            pTextItem->setText(text);
+            pTextItem->setCoord(QPoint(0, yOffset));
+            QJsonObject itemData;
+
+            pTextItem->serialize(itemData);
+            delete pTextItem;
+
+            items.append(itemData);
+
+            yOffset ++;
+        }
+        rootObj.insert("items", items);
+
+        QJsonDocument doc;
+        doc.setObject(rootObj);
+        UndoItemAdd *pUndo = new UndoItemAdd(pScene);
+        pUndo->setData(doc.toJson());
+        pUndo->setOffset(topItem->realCoordToEw(offset));
+        undoStack()->push(pUndo);
+
+        pScene->update();
+    }
+    else if (mimeData->hasFormat(MIMETYPE_TOOLBOX))
+    {
+        QPointF offset = topItem->mapFromScene(pScene->cursorPos());
+        UndoItemAdd *pUndo = new UndoItemAdd(pScene);
+        pUndo->setData(mimeData->data(MIMETYPE_TOOLBOX));
+        pUndo->setOffset(topItem->realCoordToEw(offset));
+        undoStack()->push(pUndo);
+
+        pScene->update();
+    }
+}
+
+void StdPanelEditor::clipboardChanged()
+{
+    const QMimeData *mimeData = m_pClipboard->mimeData();
+    if (mimeData->hasText() || mimeData->hasFormat(MIMETYPE_TOOLBOX))
+        m_pPasteAction->setEnabled(true);
+    else
+        m_pPasteAction->setEnabled(false);
 }

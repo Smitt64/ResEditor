@@ -68,6 +68,8 @@ public:
     const quint32 &helpPage() const;
     void setHelpPage(const quint32 &val);
 
+    virtual QVariant userAction(const qint32 &action, const QVariant &param = QVariant()) Q_DECL_OVERRIDE;
+
 signals:
     void panelStyleChanged();
     void titleChanged();
@@ -82,6 +84,7 @@ signals:
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
     virtual bool event(QEvent *e) Q_DECL_OVERRIDE;
+    //virtual void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
     virtual void dragEnterEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
     virtual void dragMoveEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;

@@ -25,6 +25,42 @@ UndoItemAdd::~UndoItemAdd()
 void UndoItemAdd::setData(const QByteArray &data)
 {
     m_Data = data;
+    calcPasteOffest();
+}
+
+void UndoItemAdd::calcPasteOffest()
+{
+    QPoint pt;
+    pt.setX(std::numeric_limits<decltype(pt.x())>::max());
+    pt.setY(std::numeric_limits<decltype(pt.y())>::max());
+
+    QJsonDocument doc = QJsonDocument::fromJson(m_Data);
+    QJsonObject root = doc.object();
+
+    QJsonArray jsitems = root["items"].toArray();
+    for (const QJsonValue &element : qAsConst(jsitems))
+    {
+        QJsonObject obj = element.toObject();
+        QJsonArray jsproperties = obj["properties"].toArray();
+
+        for (const QJsonValue &propelement : qAsConst(jsproperties))
+        {
+            QJsonObject prop = propelement.toObject();
+
+            if (prop["property"].toString() == "point")
+            {
+                QVector<int> val = fromJsonArray<int>(prop["value"].toArray());
+                pt.setX(qMin(pt.x(), val[0]));
+                pt.setY(qMin(pt.y(), val[1]));
+            }
+        }
+    }
+
+    if (pt.x() != std::numeric_limits<decltype(pt.x())>::max())
+        m_PasteOffset.setX(pt.x());
+
+    if (pt.y() != std::numeric_limits<decltype(pt.y())>::max())
+        m_PasteOffset.setY(pt.y());
 }
 
 void UndoItemAdd::setOffset(const QPoint &offset)
@@ -59,7 +95,8 @@ void UndoItemAdd::redo()
             bool oldSkip = rectItem->setSkipUndoStack(true);
             rectItem->deserialize(obj);
 
-            QPoint pos = rectItem->getPoint() + m_Offset;
+            QPoint originalPos = rectItem->getPoint();
+            QPoint pos = originalPos + m_Offset - m_PasteOffset;
             QRect rc = rectItem->geometry();
             rc.moveTo(pos);
             rectItem->setCoord(pos);

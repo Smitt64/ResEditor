@@ -5,6 +5,7 @@
 #include "math.h"
 #include <QBrush>
 #include <QUuid>
+#include <QJsonArray>
 
 #define CLASSINFO_UNDOREDO "UNDOREDO"
 #define CLASSINFO_PROPERTYLIST "PROPERTYLIST"
@@ -30,6 +31,12 @@ class CustomRectItem : public QGraphicsObject
     friend class UndoItemAdd;
     friend class UndoPropertyChange;
 public:
+    enum UserAction
+    {
+        ActionKeyEnter = 0,
+        UserValue,
+    };
+
     enum ResizeCorners
     {
         TOP_LEFT = 1 << 1,
@@ -57,6 +64,7 @@ public:
     void setRubberBand(bool value);
 
     void setAvailableCorners(ResizeCornersFlags flags);
+    void setAvailableCorners(ResizeCorners flag, bool enable);
     const ResizeCornersFlags &availableCorners() const;
 
     QRect geometry() const;
@@ -90,6 +98,8 @@ public:
     QPoint realCoordToEw(const QPointF &point);
     QPointF ewCoordToReal(const QPoint &point);
 
+    virtual QVariant userAction(const qint32 &action, const QVariant &param = QVariant());
+
 signals:
     void geometryChanged();
 
@@ -101,13 +111,17 @@ protected:
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
     virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
     virtual bool childCanMove(const QPointF &newPos, CustomRectItem *item);
     virtual bool canResize(const QRectF &newRect, const ResizeCorners &corner) const;
     virtual bool checkPropSameValue(const QString &propertyName, const QVariant &value);
 
+    virtual bool isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const;
     const QBrush &getBrush() const;
     const bool &isResizing() const;
+    const QRectF &actualRect() const;
+    void setBoundingRect(const QRectF &bound);
 
     void drawIntersects(QPainter *painter);
 
@@ -120,6 +134,10 @@ protected:
 
     void createFromJson(CustomRectItem *parent, const QByteArray &data, QList<QGraphicsItem*> &items);
 
+    void afterReleaseMouse(QGraphicsSceneMouseEvent *event = nullptr);
+    void insertUndoRedoMove();
+    virtual void onInsertUndoRedoMove(const QMap<CustomRectItem *, QPointF> &MousePressPoint);
+
 private:
     void init();
     void serializeProperty(QJsonObject &obj, const QMetaObject *meta, const QString &propertyName);
@@ -127,7 +145,7 @@ private:
     QRubberBand *rubberBand();
     bool mousePosOnHandles(QPointF pos);
     void updateSizePos();
-    void insertUndoRedoMove();
+
     QVector<QRectF> m_ResizeHandles;
     QRubberBand *pRubberBand;
     QPoint startDrag;
@@ -153,6 +171,20 @@ private:
     PropertyModel *m_pPropertyModel;
     bool m_SkipUndoStack;
 };
+
+template<class T>QVector<T> fromJsonArray(const QJsonArray &arr)
+{
+    QVector<T> result;
+    result.reserve(arr.size());
+
+    for (const auto &element : arr)
+    {
+        QVariant var = element.toVariant();
+        result.push_back(var.value<T>());
+    }
+
+    return result;
+}
 
 Q_DECLARE_OPAQUE_POINTER(CustomRectItem)
 

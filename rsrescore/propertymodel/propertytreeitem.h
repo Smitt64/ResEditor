@@ -44,7 +44,7 @@ public:
     virtual QString propertyName() const;
     virtual QString propertyAlias() const;
 
-    QObject *object();
+    QObject *object() const;
     virtual void setObject(QObject *object);
 
     QModelIndex index() const;

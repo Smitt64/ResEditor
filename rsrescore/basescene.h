@@ -1,6 +1,7 @@
 #ifndef BASESCENE_H
 #define BASESCENE_H
 
+#include "qgraphicsitem.h"
 #include "rsrescore_global.h"
 #include <QGraphicsScene>
 #include <QUuid>
@@ -27,6 +28,43 @@ public:
     void insertMousePressPoint(CustomRectItem *rectItem);
     const CustomRectItemPoints &mousePressPoints() const;
     void clearMousePressPoints();
+
+    template<class T> QList<T> findItems()
+    {
+        QList<T> result;
+        QList<QGraphicsItem*> tmplst = items();
+
+        for (QGraphicsItem *item : tmplst)
+        {
+            T *converted = dynamic_cast<T*>(item);
+
+            if (converted)
+                result.append(converted);
+        }
+
+        return result;
+    }
+
+    template<class T> QList<T*> findItemsIntersect(const QRectF &sceneRect)
+    {
+        QList<T*> result;
+        QList<QGraphicsItem*> tmplst = items();
+
+        for (QGraphicsItem *item : tmplst)
+        {
+            T *converted = dynamic_cast<T*>(item);
+
+            if (converted)
+            {
+                QRectF bound = item->mapRectToScene(item->boundingRect());
+
+                if (sceneRect.intersects(bound))
+                    result.append(converted);
+            }
+        }
+
+        return result;
+    }
 
 signals:
     void propertyModelChanged(QAbstractItemModel *model);
