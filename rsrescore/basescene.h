@@ -29,9 +29,11 @@ public:
     const CustomRectItemPoints &mousePressPoints() const;
     void clearMousePressPoints();
 
-    template<class T> QList<T> findItems()
+    virtual void sceneItemPosChanged();
+
+    template<class T> QList<T*> findItems()
     {
-        QList<T> result;
+        QList<T*> result;
         QList<QGraphicsItem*> tmplst = items();
 
         for (QGraphicsItem *item : tmplst)
@@ -43,6 +45,21 @@ public:
         }
 
         return result;
+    }
+
+    template<class T> T *findFirst()
+    {
+        QList<QGraphicsItem*> tmplst = items();
+
+        for (QGraphicsItem *item : tmplst)
+        {
+            T *converted = dynamic_cast<T*>(item);
+
+            if (converted)
+                return converted;
+        }
+
+        return nullptr;
     }
 
     template<class T> QList<T*> findItemsIntersect(const QRectF &sceneRect)

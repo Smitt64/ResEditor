@@ -2,7 +2,8 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11 static_runtime
+CONFIG += c++11
+#static_runtime
 
 include(../config.pri)
 #QMAKE_CXXFLAGS_DEBUG += /MTd
@@ -13,13 +14,16 @@ include(../config.pri)
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    newitemsdlg.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    newitemsdlg.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    newitemsdlg.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -32,3 +36,13 @@ else:unix: LIBS += -L$$OUT_PWD/../rsrescore/ -lrsrescore
 
 INCLUDEPATH += $$PWD/../rsrescore
 DEPENDPATH += $$PWD/../rsrescore
+
+INCLUDEPATH += $$PWD/../rsreslbrfn
+DEPENDPATH += $$PWD/../rsreslbrfn
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../rsreslbrfn/release/ -lrsreslbrfn
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../rsreslbrfn/debug/ -lrsreslbrfn
+else:unix:!macx: LIBS += -L$$OUT_PWD/../rsreslbrfn/ -lrsreslbrfn
+
+INCLUDEPATH += $$PWD/../rsreslbrfn
+DEPENDPATH += $$PWD/../rsreslbrfn

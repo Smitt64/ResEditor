@@ -26,6 +26,7 @@ SOURCES += \
     easywinini.cpp \
     panelitem.cpp \
     panelpropertysdlg.cpp \
+    propertymodel/ctrltabordertreeitem.cpp \
     propertymodel/enumlistmodel.cpp \
     propertymodel/enumpropertytreeitem.cpp \
     propertymodel/ewtextstylepropertytreeitem.cpp \
@@ -39,7 +40,6 @@ SOURCES += \
     propertymodel/propertytreeview.cpp \
     propertymodel/rectpropertytreeitem.cpp \
     propertymodel/textstyledlg.cpp \
-    reslib.cpp \
     reslibdirmodel.cpp \
     reslistdockwidget.cpp \
     respanel.cpp \
@@ -78,6 +78,7 @@ HEADERS += \
     easywinini.h \
     panelitem.h \
     panelpropertysdlg.h \
+    propertymodel/ctrltabordertreeitem.h \
     propertymodel/enumlistmodel.h \
     propertymodel/enumpropertytreeitem.h \
     propertymodel/ewtextstylepropertytreeitem.h \
@@ -91,7 +92,6 @@ HEADERS += \
     propertymodel/propertytreeview.h \
     propertymodel/rectpropertytreeitem.h \
     propertymodel/textstyledlg.h \
-    reslib.h \
     reslibdirmodel.h \
     reslistdockwidget.h \
     respanel.h \
@@ -117,10 +117,15 @@ HEADERS += \
     widgets/controltaborderedit.h \
     widgets/labeltexteditdlg.h
 
-# Default rules for deployment.
-unix {
-    target.path = /usr/lib
-}
+FORMS += \
+    controlpropertysdlg.ui \
+    panelpropertysdlg.ui \
+    propertymodel/textstyledlg.ui \
+    widgets/controltaborderedit.ui \
+    widgets/labeltexteditdlg.ui
+
+qnx: target.path = /tmp/$${TARGET}/bin
+else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 INCLUDEPATH += lib
@@ -137,20 +142,14 @@ DEPENDPATH += $$PWD/../rsbaseeditor
 
 win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../rsbaseeditor/release/librsbaseeditor.a
 else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../rsbaseeditor/debug/librsbaseeditor.a
+
 else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../rsbaseeditor/release/rsbaseeditor.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../rsbaseeditor/debug/rsbaseeditor.lib
 else:unix: PRE_TARGETDEPS += $$OUT_PWD/../rsbaseeditor/librsbaseeditor.a
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../rsreslbrfn/release/ -lrsreslbrfn
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../rsreslbrfn/debug/ -lrsreslbrfn
-else:unix: LIBS += -L$$OUT_PWD/../rsreslbrfn/ -lrsreslbrfn
+else:unix:!macx: LIBS += -L$$OUT_PWD/../rsreslbrfn/ -lrsreslbrfn
 
 INCLUDEPATH += $$PWD/../rsreslbrfn
 DEPENDPATH += $$PWD/../rsreslbrfn
-
-FORMS += \
-    controlpropertysdlg.ui \
-    panelpropertysdlg.ui \
-    propertymodel/textstyledlg.ui \
-    widgets/controltaborderedit.ui \
-    widgets/labeltexteditdlg.ui

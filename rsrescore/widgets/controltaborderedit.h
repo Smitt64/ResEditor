@@ -7,13 +7,17 @@ namespace Ui {
 class ControlTabOrderEdit;
 }
 
+class ControTabOrder;
 class ControlTabOrderEdit : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit ControlTabOrderEdit(QWidget *parent = nullptr);
+    ControlTabOrderEdit(QWidget *parent = nullptr);
     ~ControlTabOrderEdit();
+
+    void setValue(const ControTabOrder * const value);
+    void getValue(ControTabOrder *other);
 
 private:
     Ui::ControlTabOrderEdit *ui;

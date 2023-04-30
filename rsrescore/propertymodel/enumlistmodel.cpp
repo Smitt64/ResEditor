@@ -1,5 +1,8 @@
 #include "enumlistmodel.h"
 #include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QFile>
 
 EnumListModel::EnumListModel(QObject *parent)
     : QAbstractListModel{parent}
@@ -21,6 +24,19 @@ void EnumListModel::loadFromJsonArray(const QJsonArray &array)
         QString alias = itemobj["alias"].toString();
 
         m_EnumKey.append({key, alias});
+    }
+}
+
+void EnumListModel::loadFromJsonFile(const QString &filename)
+{
+    QFile f(filename);
+    if (f.open(QIODevice::ReadOnly))
+    {
+        QJsonParseError parseError;
+        QJsonDocument doc = QJsonDocument::fromJson(f.readAll(), &parseError);
+        QJsonObject obj = doc.object();
+
+        loadFromJsonArray(obj["enum"].toArray());
     }
 }
 
@@ -53,18 +69,32 @@ void EnumListModel::setMetaEnum(const QMetaEnum &menum)
     m_MetaEnum = menum;
 }
 
-int EnumListModel::keyToValue(const QString &key)
+void EnumListModel::setMetaEnum(QObject *obj, const QString &property)
+{
+    const QMetaObject *metaobject = obj->metaObject();
+    int propIndex = metaobject->indexOfProperty(property.toLocal8Bit().data());
+
+    if (propIndex < 0)
+        return;
+
+    QMetaProperty prop = metaobject->property(propIndex);
+    QMetaEnum metaenum = prop.enumerator();
+
+    setMetaEnum(metaenum);
+}
+
+int EnumListModel::keyToValue(const QString &key) const
 {
     return m_MetaEnum.keyToValue(key.toLocal8Bit());
 }
 
-QString EnumListModel::valueToAlias(const int &value)
+QString EnumListModel::valueToAlias(const int &value) const
 {
     QString valkey = m_MetaEnum.valueToKey(value);
     return alias(valkey);
 }
 
-QString EnumListModel::valueToKey(const int &value)
+QString EnumListModel::valueToKey(const int &value) const
 {
     QString valkey = m_MetaEnum.valueToKey(value);
     return key(valkey);
@@ -82,6 +112,12 @@ int EnumListModel::indexFromValue(const int &value) const
     });
 
     return std::distance(m_EnumKey.begin(), iter);
+}
+
+int EnumListModel::valueFromIndex(const int &index) const
+{
+    QString key = m_EnumKey[index].key;
+    return keyToValue(key);
 }
 
 int EnumListModel::rowCount(const QModelIndex &parent) const

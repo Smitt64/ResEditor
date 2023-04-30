@@ -1,8 +1,12 @@
 #include "propertytreeitem.h"
 #include "propertymodel.h"
+#include "qsize.h"
 #include <QMetaObject>
 #include <QMetaProperty>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <QColor>
+#include <QLineEdit>
 
 PropertyTreeItem::PropertyTreeItem(QObject *object, QObject *parent)
     : QObject{parent},
@@ -22,6 +26,20 @@ PropertyTreeItem::~PropertyTreeItem()
 const int &PropertyTreeItem::group() const
 {
     return m_ItemGroup;
+}
+
+QMetaMethod PropertyTreeItem::findMethod(const QString &name) const
+{
+    const QMetaObject *metaobject = metaObject();
+    int size = metaobject->methodCount();
+
+    for (int i = 0; i < size; i++)
+    {
+        QMetaMethod method = metaobject->method(i);
+        if (name == method.name())
+            return method;
+    }
+    return QMetaMethod();
 }
 
 void PropertyTreeItem::ConnectNotify()
@@ -212,9 +230,89 @@ void PropertyTreeItem::setEnabled(const bool &v)
     m_Enable = v;
 }
 
+template<class T>
+QWidget *CreateNumberEditor(QWidget *parent)
+{
+    QWidget *editor = nullptr;
+    T Min = std::numeric_limits<T>::min();
+    T Max = std::numeric_limits<T>::max();
+
+    if (!std::is_floating_point<T>::value)
+    {
+        QSpinBox *pSpinBox = new QSpinBox(parent);
+        pSpinBox->setMinimum(Min);
+        pSpinBox->setMaximum(Max);
+        editor = pSpinBox;
+    }
+    else
+    {
+        QDoubleSpinBox *pSpinBox = new QDoubleSpinBox(parent);
+        pSpinBox->setMinimum(Min);
+        pSpinBox->setMaximum(Max);
+        editor = pSpinBox;
+    }
+
+    return editor;
+}
+
+QWidget *CreateStringEditor(QWidget *parent)
+{
+    QLineEdit *editor = new QLineEdit(parent);
+    editor->setMaxLength(255);
+    editor->setClearButtonEnabled(true);
+    return editor;
+}
+
 QWidget *PropertyTreeItem::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    return nullptr;
+    QWidget *pEditor = nullptr;
+    const QMetaObject *metaobject = m_pItem->metaObject();
+    int propid = metaobject->indexOfProperty(m_PropertyName.toLocal8Bit().data());
+
+    if (propid >= 0)
+    {
+        QMetaProperty prop = metaobject->property(propid);
+
+        int type = prop.type();
+        switch(type)
+        {
+        case QMetaType::Int:
+            pEditor = CreateNumberEditor<int>(parent);
+            break;
+        case QMetaType::UInt:
+            pEditor = CreateNumberEditor<unsigned int>(parent);
+            break;
+        case QMetaType::Double:
+            pEditor = CreateNumberEditor<double>(parent);
+            break;
+        case QMetaType::Long:
+            pEditor = CreateNumberEditor<long>(parent);
+            break;
+        case QMetaType::LongLong:
+            pEditor = CreateNumberEditor<long long>(parent);
+            break;
+        case QMetaType::Short:
+            pEditor = CreateNumberEditor<short>(parent);
+            break;
+        case QMetaType::ULong:
+            pEditor = CreateNumberEditor<unsigned long>(parent);
+            break;
+        case QMetaType::ULongLong:
+            pEditor = CreateNumberEditor<unsigned long long>(parent);
+            break;
+        case QMetaType::UShort:
+            pEditor = CreateNumberEditor<unsigned short>(parent);
+            break;
+        case QMetaType::Float:
+            pEditor = CreateNumberEditor<float>(parent);
+            break;
+        case QMetaType::QString:
+            pEditor = CreateStringEditor(parent);
+            break;
+        }
+    }
+
+    return pEditor;
 }
 
 bool PropertyTreeItem::setEditorData(QWidget *editor, const QModelIndex &index) const
@@ -225,6 +323,11 @@ bool PropertyTreeItem::setEditorData(QWidget *editor, const QModelIndex &index) 
 bool PropertyTreeItem::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
     return false;
+}
+
+QSize PropertyTreeItem::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    return QSize();
 }
 
 void PropertyTreeItem::initFromJson(const QJsonObject &obj)

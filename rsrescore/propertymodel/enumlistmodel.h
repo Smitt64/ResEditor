@@ -21,16 +21,20 @@ public:
     virtual ~EnumListModel();
 
     void loadFromJsonArray(const QJsonArray &array);
+    void loadFromJsonFile(const QString &filename);
 
     QString alias(const QString &key) const;
     QString key(const QString &alias) const;
-    void setMetaEnum(const QMetaEnum &menum);
 
-    int keyToValue(const QString &key);
-    QString valueToAlias(const int &value);
-    QString valueToKey(const int &value);
+    void setMetaEnum(const QMetaEnum &menum);
+    void setMetaEnum(QObject *obj, const QString &property);
+
+    int keyToValue(const QString &key) const;
+    QString valueToAlias(const int &value) const;
+    QString valueToKey(const int &value) const;
 
     int indexFromValue(const int &value) const;
+    int valueFromIndex(const int &index) const;
 
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;

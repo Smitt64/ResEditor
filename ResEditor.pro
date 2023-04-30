@@ -7,4 +7,4 @@ SUBDIRS += \
     rsreslbrfn
 
 rsrescore.depends = rsbaseeditor rsreslbrfn
-RsResEditor.depends = rsrescore
+RsResEditor.depends = rsreslbrfn rsrescore

@@ -1,0 +1,23 @@
+{
+    "items": [
+        {
+            "action": "{c7e4dbe9-cd8e-4eaf-bcd3-975f9fb6ba1e}",
+            "title": "Библиотека",
+            "icon": ":/img/filecabinet.png",
+            "group": "Файлы",
+            "description": "Создание новой библиотеки ресурсов",
+            "needname": true,
+            "needpath": true
+        },
+        {
+            "action": "{57f88805-7474-42fb-bc00-24a90cd5e85d}",
+            "title": "Панель (двойная рамка)",
+            "icon": ":/img/Panel.png",
+            "group": "Ресурсы",
+            "description": "Создание панелии с двойной рамкой",
+            "needname": true,
+            "needpath": false,
+            "namelen": 8
+        }
+    ]
+}

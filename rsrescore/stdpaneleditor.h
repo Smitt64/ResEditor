@@ -22,7 +22,7 @@ public:
     StdPanelEditor(QWidget *parent = nullptr);
 
     virtual void setupEditor() Q_DECL_FINAL;
-    void setPanel(ResPanel *panel);
+    void setPanel(ResPanel *panel, const QString &comment = QString());
 
 private slots:
     void sceneSelectionChanged();

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>600</width>
-    <height>478</height>
+    <height>508</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -38,7 +38,10 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QComboBox" name="comboBox">
+        <widget class="QComboBox" name="typeBox">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>200</width>
@@ -61,7 +64,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QComboBox" name="comboBox_2">
+        <widget class="QComboBox" name="borderStyle">
          <property name="minimumSize">
           <size>
            <width>200</width>
@@ -114,7 +117,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QComboBox" name="comboBox_3"/>
+        <widget class="QComboBox" name="panelStyle"/>
        </item>
       </layout>
      </item>
@@ -140,7 +143,11 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="lineEdit"/>
+      <widget class="QLineEdit" name="titleEdit">
+       <property name="maxLength">
+        <number>255</number>
+       </property>
+      </widget>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="label_5">
@@ -150,7 +157,11 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="lineEdit_2"/>
+      <widget class="QLineEdit" name="statusEdit">
+       <property name="maxLength">
+        <number>255</number>
+       </property>
+      </widget>
      </item>
      <item row="2" column="0">
       <widget class="QLabel" name="label_6">
@@ -160,7 +171,11 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QLineEdit" name="lineEdit_3"/>
+      <widget class="QLineEdit" name="statusEdit2">
+       <property name="maxLength">
+        <number>255</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
@@ -276,21 +291,21 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QCheckBox" name="checkBox_4">
+         <widget class="QCheckBox" name="excludeAutoTab">
           <property name="text">
            <string>Автоматический обход</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox_5">
+         <widget class="QCheckBox" name="excludeAutoNum">
           <property name="text">
            <string>Автоматическую нумерацию полей</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox_6">
+         <widget class="QCheckBox" name="excludeShadow">
           <property name="text">
            <string>Отображение тени</string>
           </property>
@@ -330,7 +345,13 @@
           </spacer>
          </item>
          <item>
-          <widget class="QCheckBox" name="checkBox_7">
+          <widget class="QCheckBox" name="alignTextRight">
+           <property name="minimumSize">
+            <size>
+             <width>182</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="text">
             <string>Выравнивание текста справа</string>
            </property>
@@ -354,7 +375,13 @@
           </spacer>
          </item>
          <item>
-          <widget class="QCheckBox" name="checkBox_8">
+          <widget class="QCheckBox" name="alignPanCenter">
+           <property name="minimumSize">
+            <size>
+             <width>182</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="text">
             <string>Выводить панель по центру</string>
            </property>
@@ -375,7 +402,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="spinBox_6">
+          <widget class="QSpinBox" name="helpPage">
            <property name="maximumSize">
             <size>
              <width>100</width>
@@ -400,6 +427,24 @@
         </spacer>
        </item>
       </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_8">
+     <item>
+      <widget class="QLabel" name="label_12">
+       <property name="text">
+        <string>Комментарий:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="commentEdit">
+       <property name="maxLength">
+        <number>255</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

@@ -62,6 +62,14 @@ public:
     {
     }
 
+    virtual void sceneItemPosChanged() Q_DECL_OVERRIDE
+    {
+        PanelItem *panel = findFirst<PanelItem>();
+
+        if (panel)
+            panel->updateChildControlsOrder();
+    }
+
 protected:
     virtual void drawBackground (QPainter* painter, const QRectF &rect) Q_DECL_OVERRIDE
     {
@@ -327,11 +335,11 @@ QAction *StdPanelEditor::addAction(const QIcon &icon, const QString &text, const
     return action;
 }
 
-void StdPanelEditor::setPanel(ResPanel *panel)
+void StdPanelEditor::setPanel(ResPanel *panel, const QString &comment)
 {
     m_pPanel = panel;
     panelItem->setUndoStack(undoStack());
-    panelItem->setPanel(m_pPanel);
+    panelItem->setPanel(m_pPanel, comment);
 
     m_pNameLineEdit->setText(m_pPanel->name());
 }

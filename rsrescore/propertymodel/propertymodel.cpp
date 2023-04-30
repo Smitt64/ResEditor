@@ -296,7 +296,12 @@ void PropertyModel::addProperty(const QJsonObject &obj, const QMetaObject *meta,
                 item->setGroup(group);
 
                 if (obj.contains("enum"))
-                    item->loadEnumAlias(obj["enum"].toArray());
+                {
+                    if (obj["enum"].isArray())
+                        item->loadEnumAlias(obj["enum"].toArray());
+                    else
+                        item->loadEnumAlias(obj["enum"].toString());
+                }
 
                 itemBase = item;
             }

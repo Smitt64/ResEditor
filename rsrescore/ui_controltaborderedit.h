@@ -24,13 +24,13 @@ public:
     QHBoxLayout *horizontalLayout;
     QGridLayout *gridLayout;
     QWidget *widget_2;
-    QSpinBox *spinBox;
+    QSpinBox *up;
     QWidget *widget;
-    QSpinBox *spinBox_5;
-    QSpinBox *spinBox_2;
-    QSpinBox *spinBox_4;
+    QSpinBox *left;
+    QSpinBox *self;
+    QSpinBox *right;
     QWidget *widget_3;
-    QSpinBox *spinBox_3;
+    QSpinBox *bottom;
     QWidget *widget_4;
 
     void setupUi(QWidget *ControlTabOrderEdit)
@@ -48,43 +48,43 @@ public:
 
         gridLayout->addWidget(widget_2, 0, 0, 1, 1);
 
-        spinBox = new QSpinBox(ControlTabOrderEdit);
-        spinBox->setObjectName(QString::fromUtf8("spinBox"));
-        spinBox->setMinimumSize(QSize(40, 0));
+        up = new QSpinBox(ControlTabOrderEdit);
+        up->setObjectName(QString::fromUtf8("up"));
+        up->setMinimumSize(QSize(40, 0));
 
-        gridLayout->addWidget(spinBox, 0, 1, 1, 1);
+        gridLayout->addWidget(up, 0, 1, 1, 1);
 
         widget = new QWidget(ControlTabOrderEdit);
         widget->setObjectName(QString::fromUtf8("widget"));
 
         gridLayout->addWidget(widget, 0, 2, 1, 1);
 
-        spinBox_5 = new QSpinBox(ControlTabOrderEdit);
-        spinBox_5->setObjectName(QString::fromUtf8("spinBox_5"));
-        spinBox_5->setMinimumSize(QSize(40, 0));
+        left = new QSpinBox(ControlTabOrderEdit);
+        left->setObjectName(QString::fromUtf8("left"));
+        left->setMinimumSize(QSize(40, 0));
 
-        gridLayout->addWidget(spinBox_5, 1, 0, 1, 1);
+        gridLayout->addWidget(left, 1, 0, 1, 1);
 
-        spinBox_2 = new QSpinBox(ControlTabOrderEdit);
-        spinBox_2->setObjectName(QString::fromUtf8("spinBox_2"));
+        self = new QSpinBox(ControlTabOrderEdit);
+        self->setObjectName(QString::fromUtf8("self"));
 
-        gridLayout->addWidget(spinBox_2, 1, 1, 1, 1);
+        gridLayout->addWidget(self, 1, 1, 1, 1);
 
-        spinBox_4 = new QSpinBox(ControlTabOrderEdit);
-        spinBox_4->setObjectName(QString::fromUtf8("spinBox_4"));
-        spinBox_4->setMinimumSize(QSize(40, 0));
+        right = new QSpinBox(ControlTabOrderEdit);
+        right->setObjectName(QString::fromUtf8("right"));
+        right->setMinimumSize(QSize(40, 0));
 
-        gridLayout->addWidget(spinBox_4, 1, 2, 1, 1);
+        gridLayout->addWidget(right, 1, 2, 1, 1);
 
         widget_3 = new QWidget(ControlTabOrderEdit);
         widget_3->setObjectName(QString::fromUtf8("widget_3"));
 
         gridLayout->addWidget(widget_3, 2, 0, 1, 1);
 
-        spinBox_3 = new QSpinBox(ControlTabOrderEdit);
-        spinBox_3->setObjectName(QString::fromUtf8("spinBox_3"));
+        bottom = new QSpinBox(ControlTabOrderEdit);
+        bottom->setObjectName(QString::fromUtf8("bottom"));
 
-        gridLayout->addWidget(spinBox_3, 2, 1, 1, 1);
+        gridLayout->addWidget(bottom, 2, 1, 1, 1);
 
         widget_4 = new QWidget(ControlTabOrderEdit);
         widget_4->setObjectName(QString::fromUtf8("widget_4"));

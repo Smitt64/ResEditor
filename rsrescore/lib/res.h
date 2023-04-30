@@ -313,7 +313,7 @@ typedef struct tagLibStream
 
 // -----------------------------------------------------------------------------
 // Types of resources
-#define  RES_MENU         1    // Меню
+/*#define  RES_MENU         1    // Меню
 #define  RES_STAT         2    // Строка статюса
 #define  RES_DIALOG       3    // Окно диалог
 #define  RES_HIST         4    // Строки подсказок
@@ -338,7 +338,7 @@ typedef struct tagLibStream
 #define  RES_RSREPORT   102
 #define  RES_IMGLST     104
 #define  RES_RSAXEXP    110
-#define  RES_RSCODEGEN  111
+#define  RES_RSCODEGEN  111*/
 
 // Types of objects in RES_MENU resource
 #define  RES_MITEM        1

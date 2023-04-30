@@ -20,7 +20,7 @@ class PanelItem : public ContainerItem
     Q_PROPERTY(bool isRightText READ isRightText WRITE setIsRightText NOTIFY isRightTextChanged)
     Q_PROPERTY(PanelExcludeFlags panelExclude READ panelExclude WRITE setPanelExclude NOTIFY panelExcludeChanged)
     Q_PROPERTY(QString comment READ comment WRITE setComment NOTIFY commentChanged)
-    Q_PROPERTY(quint32 helpPage READ helpPage WRITE setHelpPage NOTIFY helpPageChanged)
+    Q_PROPERTY(quint16 helpPage READ helpPage WRITE setHelpPage NOTIFY helpPageChanged)
 
     Q_CLASSINFO(CLASSINFO_UNDOREDO, "PANEL")
     Q_CLASSINFO(CLASSINFO_PROPERTYLIST, ":/json/Panel.json")
@@ -39,7 +39,7 @@ public:
     Q_INVOKABLE PanelItem(CustomRectItem* parent = nullptr);
     virtual ~PanelItem();
 
-    void setPanel(ResPanel *panel);
+    void setPanel(ResPanel *panel, const QString &comment = QString());
 
     const ResStyle::PanelStyle &panelStyle() const;
     void setPanelStyle(const ResStyle::PanelStyle &style);
@@ -65,11 +65,12 @@ public:
     PanelExcludeFlags panelExclude() const;
     void setPanelExclude(const PanelItem::PanelExcludeFlags &val);
 
-    const quint32 &helpPage() const;
-    void setHelpPage(const quint32 &val);
+    const quint16 &helpPage() const;
+    void setHelpPage(const quint16 &val);
 
     virtual QVariant userAction(const qint32 &action, const QVariant &param = QVariant()) Q_DECL_OVERRIDE;
 
+    void updateChildControlsOrder();
 signals:
     void panelStyleChanged();
     void titleChanged();
@@ -98,7 +99,7 @@ private:
     ResStyle::PanelStyle m_PanelStyle;
     QString m_Title, m_Status, m_Status2, m_Comment;
     PanelExcludeFlags m_PanelExclude;
-    quint32 m_HelpPage;
+    quint16 m_HelpPage;
 
     bool m_isCentered, m_isRightText;
 

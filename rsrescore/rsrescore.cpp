@@ -1,9 +1,10 @@
 #include "rsrescore.h"
 #include "ResourceEditorInterface.h"
 #include "controtaborder.h"
+#include "propertymodel/ctrltabordertreeitem.h"
 #include "propertymodel/labeltextpropertyitem.h"
 #include "qapplication.h"
-#include "reslib.h"
+#include "lbrobject.h"
 #include "controlitem.h"
 #include "textitem.h"
 #include "panelitem.h"
@@ -16,7 +17,12 @@
 Q_IMPORT_PLUGIN(BaseResourceEditor)
 
 RsResCore *RsResCore::m_Inst = nullptr;
+
 RsResCore::RsResCore()
+{
+}
+
+void RsResCore::init()
 {
     loadPlugins();
     QFontDatabase::addApplicationFont("TerminalVector.ttf");
@@ -29,6 +35,7 @@ RsResCore::RsResCore()
     qRegisterMetaType<EwTextStyle>();
     qRegisterMetaType<ControTabOrder>();
     qRegisterMetaType<EwTextStylePropertyTreeItem*>();
+    qRegisterMetaType<CtrlTabOrderTreeItem*>();
     qRegisterMetaType<LabelTextPropertyItem*>();
     qRegisterMetaType<QJsonObject>();
 
@@ -45,7 +52,6 @@ RsResCore *RsResCore::inst()
 {
     if (!m_Inst)
         m_Inst = new RsResCore();
-
     return m_Inst;
 }
 
@@ -54,13 +60,13 @@ QIcon RsResCore::iconFromResType(const qint16 &Type)
     QIcon val;
     switch(Type)
     {
-    case RES_PANEL:
+    case LbrObject::RES_PANEL:
         val = QIcon(":/img/Panel.png");
         break;
-    case RES_SCROL:
+    case LbrObject::RES_SCROL:
         val = QIcon(":/img/Scrol.png");
         break;
-    case RES_BS:
+    case LbrObject::RES_BS:
         val = QIcon(":/img/BScrol.png");
         break;
     default:
@@ -75,49 +81,49 @@ QString RsResCore::typeNameFromResType(const qint16 &Type)
     QString val;
     switch(Type)
     {
-    case RES_MENU:
+    case LbrObject::RES_MENU:
         val = "MENU";
         break;
-    case RES_STAT:
+    case LbrObject::RES_STAT:
         val = "STAT";
         break;
-    case RES_DIALOG:
+    case LbrObject::RES_DIALOG:
         val = "DIALOG";
         break;
-    case RES_HIST:
+    case LbrObject::RES_HIST:
         val = "HIST";
         break;
-    case RES_REPORT:
+    case LbrObject::RES_REPORT:
         val = "REPORT";
         break;
-    case RES_BFSTRUCT:
+    case LbrObject::RES_BFSTRUCT:
         val = "BFSTRUCT";
         break;
-    case RES_DBLINK:
+    case LbrObject::RES_DBLINK:
         val = "DBLINK";
         break;
-    case RES_PANEL:
+    case LbrObject::RES_PANEL:
         val = "PANEL";
         break;
-    case RES_SCROL:
+    case LbrObject::RES_SCROL:
         val = "SCROL";
         break;
-    case RES_REP:
+    case LbrObject::RES_REP:
         val = "REP";
         break;
-    case RES_BS:
+    case LbrObject::RES_BS:
         val = "BSCROL";
         break;
-    case RES_LS:
+    case LbrObject::RES_LS:
         val = "LS";
         break;
-    case RES_ACCEL:
+    case LbrObject::RES_ACCEL:
         val = "ACCEL";
         break;
-    case RES_STRTABLE:
+    case LbrObject::RES_STRTABLE:
         val = "STRTABLE";
         break;
-    case RES_MENU2:
+    case LbrObject::RES_MENU2:
         val = "MENU2";
         break;
     }
@@ -148,11 +154,39 @@ ResourceEditorInterface *RsResCore::pluginForType(const qint16 &Type)
     QList<ResourceEditorInterface*> values = m_PluginTypes.values(Type);
 
     if (!values.empty())
-    {
         return values.first();
-    }
 
     return nullptr;
+}
+
+ResourceEditorInterface *RsResCore::pluginForNewAction(const QString &guid)
+{
+    ResourceEditorInterface *plugin = nullptr;
+    for (ResourceEditorInterface *item : m_Plugins)
+    {
+        if (item->newItemsActionAvalible(guid))
+        {
+            plugin = item;
+            break;
+        }
+    }
+
+    return plugin;
+}
+
+QStringList RsResCore::newItemsMetaList() const
+{
+    QStringList metalist;
+
+    for (ResourceEditorInterface *item : m_Plugins)
+    {
+        QString str = item->newItemsMetaList();
+
+        if (!str.isEmpty())
+            metalist.push_back(str);
+    }
+
+    return metalist;
 }
 
 static QString strippedActionText(QString s)

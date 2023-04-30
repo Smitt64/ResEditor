@@ -486,17 +486,27 @@ void CustomRectItem::insertUndoRedoMove()
             UndoItemMove *undocmd = new UndoItemMove(customScene, uuid());
             undocmd->setPositions(mousePos, pos());
 
+            qDebug() << this;
             undoStack()->beginMacro(undocmd->text());
             undoStack()->push(undocmd);
             onInsertUndoRedoMove(MousePressPoint);
+            customScene->sceneItemPosChanged();
             undoStack()->endMacro();
         }
     }
     else if (!MousePressPoint.empty())
     {
+        enum
+        {
+            id_uid = 0,
+            id_item_value,
+            id_item_pos,
+            id_item
+        };
+
         if (undoStack())
         {
-            using UndoTuple = std::tuple<QUuid, QPointF, QPointF>;
+            using UndoTuple = std::tuple<QUuid, QPointF, QPointF, CustomRectItem*>;
             QVector<UndoTuple> undoData;
 
             QMapIterator<CustomRectItem*, QPointF> items(MousePressPoint);
@@ -508,9 +518,9 @@ void CustomRectItem::insertUndoRedoMove()
 
                 QPointF item_value = item.value();
                 QPointF item_pos = rectitem->pos();
-                UndoTuple tmp = std::make_tuple(rectitem->uuid(), item_value, item_pos);
+                UndoTuple tmp = std::make_tuple(rectitem->uuid(), item_value, item_pos, rectitem);
 
-                if (std::get<1>(tmp) != std::get<2>(tmp))
+                if (std::get<id_item_value>(tmp) != std::get<id_item_pos>(tmp))
                     undoData.append(tmp);
             }
 
@@ -519,12 +529,15 @@ void CustomRectItem::insertUndoRedoMove()
                 undoStack()->beginMacro(tr("Перемещение группы элементов"));
                 for (const auto &_tuple : undoData)
                 {
-                    UndoItemMove *undocmd = new UndoItemMove(customScene, std::get<0>(_tuple));
-                    undocmd->setPositions(std::get<1>(_tuple), std::get<2>(_tuple));
+                    UndoItemMove *undocmd = new UndoItemMove(customScene, std::get<id_uid>(_tuple));
+                    undocmd->setPositions(std::get<id_item_value>(_tuple), std::get<id_item_pos>(_tuple));
                     undoStack()->push(undocmd);
+
+                    std::get<id_item>(_tuple)->onInsertUndoRedoMove(MousePressPoint);
                 }
 
-                onInsertUndoRedoMove(MousePressPoint);
+                customScene->sceneItemPosChanged();
+                //onInsertUndoRedoMove(MousePressPoint);
                 undoStack()->endMacro();
             }
 

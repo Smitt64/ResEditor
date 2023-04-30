@@ -12,7 +12,7 @@ PropertyTreeView::PropertyTreeView(QWidget *parent) :
     QTreeView(parent)
 {
     setIndentation(10);
-    setUniformRowHeights(true);
+    //setUniformRowHeights(true);
 
     m_pDelegate = new PropertyTreeDelegate(this);
     setItemDelegate(m_pDelegate);

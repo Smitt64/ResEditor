@@ -1,6 +1,7 @@
 #ifndef CONTROLITEM_H
 #define CONTROLITEM_H
 
+#include "controtaborder.h"
 #include "customrectitem.h"
 #include "styles/resstyle.h"
 #include <QObject>
@@ -21,6 +22,7 @@ class ControlItem : public CustomRectItem
     Q_PROPERTY(ResStyle::PanelStyle controlStyle READ controlStyle WRITE setControlStyle NOTIFY controlStyleChanged)
     Q_PROPERTY(quint16 controlGroup READ controlGroup WRITE setControlGroup NOTIFY controlGroupChanged)
     Q_PROPERTY(quint16 helpPage READ helpPage WRITE setHelpPage NOTIFY helpPageChanged)
+    Q_PROPERTY(ControTabOrder tabOrder READ tabOrder WRITE setTabOrder NOTIFY tabOrderChanged)
 
     Q_CLASSINFO(CLASSINFO_UNDOREDO, "CONTROL")
     Q_CLASSINFO(CLASSINFO_PROPERTYLIST, ":/json/Control.json")
@@ -71,7 +73,7 @@ public:
     Q_INVOKABLE ControlItem(QGraphicsItem* parent = nullptr);
     virtual ~ControlItem();
 
-    void setFieldStruct(struct FieldStruct *value);
+    void setFieldStruct(struct FieldStruct *value, const int &id);
 
     int lines() const;
 
@@ -110,6 +112,9 @@ public:
     const quint16 &helpPage() const;
     void setHelpPage(const quint16 &val);
 
+    ControTabOrder tabOrder() const;
+    void setTabOrder(const ControTabOrder &val);
+
     virtual QVariant userAction(const qint32 &action, const QVariant &param = QVariant()) Q_DECL_OVERRIDE;
 
 signals:
@@ -126,6 +131,7 @@ signals:
     void controlGroupChanged();
     void helpPageChanged();
     void toolTipChanged();
+    void tabOrderChanged();
 
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
@@ -145,6 +151,8 @@ private:
 
     quint16 m_ControlGroup;
     quint16 m_HelpPage;
+
+    ControTabOrder m_TabOrder;
 };
 
 Q_DECLARE_METATYPE(ControlItem*)

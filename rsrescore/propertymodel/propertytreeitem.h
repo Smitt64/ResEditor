@@ -60,6 +60,7 @@ public:
     virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
     virtual bool setEditorData(QWidget *editor, const QModelIndex &index) const;
     virtual bool setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
+    virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
     virtual void initFromJson(const QJsonObject &obj);
 signals:
@@ -72,6 +73,7 @@ public slots:
 
 protected:
     void ConnectNotify();
+    QMetaMethod findMethod(const QString &name) const;
     QString m_PropertyName, m_PropertyAlias;
     QObject *m_pItem;
 

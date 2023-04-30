@@ -72,7 +72,7 @@ void ControlItem::updateCorners()
     setAvailableCorners(flags);
 }
 
-void ControlItem::setFieldStruct(struct FieldStruct *value)
+void ControlItem::setFieldStruct(struct FieldStruct *value, const int &id)
 {
     m_pFieldStruct = new FieldStruct(*value);
 
@@ -87,6 +87,12 @@ void ControlItem::setFieldStruct(struct FieldStruct *value)
     m_ControlGroup = m_pFieldStruct->_field->group;
     m_HelpPage = m_pFieldStruct->_field->FHelp;
 
+    m_TabOrder.setPrevious(m_pFieldStruct->_field->kl);
+    m_TabOrder.setNext(m_pFieldStruct->_field->kr);
+    m_TabOrder.setUp(m_pFieldStruct->_field->ku);
+    m_TabOrder.setBottom(m_pFieldStruct->_field->kd);
+    m_TabOrder.setThisId(id);
+
     updateCorners();
 }
 
@@ -100,7 +106,6 @@ bool ControlItem::isIntersects(const QRectF &thisBound, QGraphicsItem *item, con
 {
     TextItem *pIsText = dynamic_cast<TextItem*>(item);
     ContainerItem *pIsContainer = dynamic_cast<ContainerItem*>(item);
-
 
     if (pIsText && IsIn(m_FieldType, 2, ControlItem::FBT, ControlItem::FVT) && IsIn(m_DataType, 2, CHAR, UCHAR))
     {
@@ -383,12 +388,33 @@ void ControlItem::setHelpPage(const quint16 &val)
         pushUndoPropertyData("helpPage", val);
 }
 
+ControTabOrder ControlItem::tabOrder() const
+{
+    return m_TabOrder;
+}
+
+void ControlItem::setTabOrder(const ControTabOrder &val)
+{
+    checkPropSame("tabOrder", QVariant::fromValue(val));
+
+    if (isSkipUndoStack() || !undoStack())
+    {
+        m_TabOrder = val;
+        emit tabOrderChanged();
+        update();
+        scene()->update();
+    }
+    else
+        pushUndoPropertyData("tabOrder", QVariant::fromValue(val));
+}
+
 QVariant ControlItem::userAction(const qint32 &action, const QVariant &param)
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
     if (action == ActionKeyEnter)
     {
-        ControlPropertysDlg dlg(customScene->views().first());
+        QGraphicsView *view = customScene->views().first();
+        ControlPropertysDlg dlg(view);
 
         if (dlg.exec() == QDialog::Accepted)
             ;

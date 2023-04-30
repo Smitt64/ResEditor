@@ -138,3 +138,8 @@ void BaseScene::clearMousePressPoints()
 {
     m_MousePressPoint.clear();
 }
+
+void BaseScene::sceneItemPosChanged()
+{
+
+}

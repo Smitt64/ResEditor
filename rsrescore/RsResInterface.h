@@ -1,7 +1,7 @@
 #ifndef RSRESINTERFACE_H
 #define RSRESINTERFACE_H
 
-class ResLib;
+/*class ResLib;
 class RsResInterface
 {
     friend class ResLib;
@@ -11,6 +11,6 @@ public:
 
 private:
     ResLib *m_pLib;
-};
+};*/
 
 #endif // RSRESINTERFACE_H

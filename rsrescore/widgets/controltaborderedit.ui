@@ -32,7 +32,7 @@
       <widget class="QWidget" name="widget_2" native="true"/>
      </item>
      <item row="0" column="1">
-      <widget class="QSpinBox" name="spinBox">
+      <widget class="QSpinBox" name="up">
        <property name="minimumSize">
         <size>
          <width>40</width>
@@ -45,7 +45,7 @@
       <widget class="QWidget" name="widget" native="true"/>
      </item>
      <item row="1" column="0">
-      <widget class="QSpinBox" name="spinBox_5">
+      <widget class="QSpinBox" name="left">
        <property name="minimumSize">
         <size>
          <width>40</width>
@@ -55,10 +55,10 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QSpinBox" name="spinBox_2"/>
+      <widget class="QSpinBox" name="self"/>
      </item>
      <item row="1" column="2">
-      <widget class="QSpinBox" name="spinBox_4">
+      <widget class="QSpinBox" name="right">
        <property name="minimumSize">
         <size>
          <width>40</width>
@@ -71,7 +71,7 @@
       <widget class="QWidget" name="widget_3" native="true"/>
      </item>
      <item row="2" column="1">
-      <widget class="QSpinBox" name="spinBox_3"/>
+      <widget class="QSpinBox" name="bottom"/>
      </item>
      <item row="2" column="2">
       <widget class="QWidget" name="widget_4" native="true"/>

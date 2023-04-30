@@ -1,13 +1,13 @@
 #include "mainwindow.h"
+#include "lbrobject.h"
 #include "ui_mainwindow.h"
 #include "reslistdockwidget.h"
-#include "reslib.h"
-#include "reslibdirmodel.h"
 #include "rsrescore.h"
 #include "ResourceEditorInterface.h"
 #include "baseeditorwindow.h"
 #include "propertymodel/propertydockwidget.h"
 #include "toolbox/toolboxdockwidget.h"
+#include "newitemsdlg.h"
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QDebug>
@@ -37,18 +37,19 @@ MainWindow::MainWindow(QWidget *parent)
     m_Mdi->setViewMode(QMdiArea::TabbedView);
     setCentralWidget(m_Mdi);
 
-    m_Lib = new ResLib(this);
-   // qDebug() << m_Lib->loadResLibDll();
-
+    m_pLbrObj = new LbrObject(this);
 
     QDir dir = qApp->applicationDirPath();
     QString filename = dir.absoluteFilePath("BANK.lbr");
-    m_Lib->open(filename);
+    m_pLbrObj->open(filename);
 
-    m_ResListDock->setModel(m_Lib->model());
+    m_ResListDock->setModel(m_pLbrObj->list());
+
+    SetupMenus();
 
     connect(m_ResListDock, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
     connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
+    connect(ui->actionNew, &QAction::triggered, this, &MainWindow::onNew);
 }
 
 MainWindow::~MainWindow()
@@ -56,23 +57,34 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::doubleResClicked(const QModelIndex &index)
+void MainWindow::SetupMenus()
 {
-    const tResLibDirElement &element = m_Lib->model()->element(index.row());
-    ResourceEditorInterface *interface = RsResCore::inst()->pluginForType(element.Type);
+    ui->actionNew->setIcon(QIcon(":/img/DocumentHS.png"));
+    ui->actionNew->setShortcuts(QKeySequence::New);
+
+    ui->actionOpen->setIcon(QIcon(":/img/openHS.png"));
+    ui->actionOpen->setShortcuts(QKeySequence::Open);
+}
+
+void MainWindow::doubleResClicked(const QString &name, const int &type)
+{
+    ResourceEditorInterface *interface = RsResCore::inst()->pluginForType(type);
 
     if (interface)
     {
-        BaseEditorWindow *editor = interface->editor(element.Type, element.name, m_Lib);
+        BaseEditorWindow *editor = interface->editor(type, name, m_pLbrObj);
 
         if (editor)
-        {
-            QMdiSubWindow *wnd = m_Mdi->addSubWindow(editor, Qt::SubWindow);
-            wnd->setAttribute(Qt::WA_DeleteOnClose);
-            connect(editor, &BaseEditorWindow::propertyModelChanged, m_PropertyDock, &PropertyDockWidget::setPropertyModel);
-            wnd->showMaximized();
-        }
+            AddEditorWindow(editor);
     }
+}
+
+void MainWindow::AddEditorWindow(BaseEditorWindow *editor)
+{
+    QMdiSubWindow *wnd = m_Mdi->addSubWindow(editor, Qt::SubWindow);
+    wnd->setAttribute(Qt::WA_DeleteOnClose);
+    connect(editor, &BaseEditorWindow::propertyModelChanged, m_PropertyDock, &PropertyDockWidget::setPropertyModel);
+    wnd->showMaximized();
 }
 
 void MainWindow::subWindowActivated(QMdiSubWindow *window)
@@ -89,5 +101,26 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
         m_ToolBoxDock->setModel(nullptr);
     else
         m_ToolBoxDock->setModel(wnd->toolBox());
+}
+
+void MainWindow::onNew()
+{
+    NewItemsDlg dlg(this);
+    dlg.buildStandartNewItems();
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        QString guid = dlg.action();
+        QString name = dlg.name();
+        QString path = dlg.path();
+        ResourceEditorInterface *interface = RsResCore::inst()->pluginForNewAction(guid);
+
+        if (interface)
+        {
+            BaseEditorWindow *editor = interface->newItemsAction(guid, name, path);
+
+            if (editor)
+                AddEditorWindow(editor);
+        }
+    }
 }
 

@@ -10,14 +10,18 @@ class ResourceEditorInterface;
 class RSRESCORE_EXPORT RsResCore
 {
 public:
+    RsResCore();
     static RsResCore *inst();
 
     static QIcon iconFromResType(const qint16 &Type);
     static QString typeNameFromResType(const qint16 &Type);
 
     ResourceEditorInterface *pluginForType(const qint16 &Type);
+    ResourceEditorInterface *pluginForNewAction(const QString &guid);
+    QStringList newItemsMetaList() const;
+    void init();
+
 private:
-    RsResCore();
     void loadPlugins();
 
     static RsResCore *m_Inst;
@@ -25,6 +29,8 @@ private:
     QList<ResourceEditorInterface*> m_Plugins;
     QMultiHash<qint16,ResourceEditorInterface*> m_PluginTypes;
 };
+
+//Q_GLOBAL_STATIC(RsResCore, staticResCore)
 
 RSRESCORE_EXPORT void AddShortcutToToolTip(QAction *action);
 RSRESCORE_EXPORT void AddShortcutToToolTip(QToolButton *action);

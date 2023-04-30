@@ -1,0 +1,12 @@
+{
+    "enum" : [
+        { "key" : "MainStyle", "alias" : "Основной" },
+        { "key" : "SCOM", "alias" : "SCOM Основной стиль" },
+        { "key" : "SMES", "alias" : "SMES Стиль сообщений" },
+        { "key" : "RMES", "alias" : "RMES Стиль аварийных сообщений" },
+        { "key" : "SHLP", "alias" : "SHLP Стиль помощи" },
+        { "key" : "SMEN", "alias" : "SMEN Стиль меню" },
+        { "key" : "SBCM", "alias" : "SBCM Стиль с яркой рамкой" },
+        { "key" : "SCRL", "alias" : "SCRL Стиль справочных скролингов" }
+    ]
+}

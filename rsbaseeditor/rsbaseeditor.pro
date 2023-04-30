@@ -25,3 +25,10 @@ HEADERS += \
 
 SOURCES += \
     baseresourceeditor.cpp
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../rsreslbrfn/release/ -lrsreslbrfn
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../rsreslbrfn/debug/ -lrsreslbrfn
+else:unix:!macx: LIBS += -L$$OUT_PWD/../rsreslbrfn/ -lrsreslbrfn
+
+INCLUDEPATH += $$PWD/../rsreslbrfn
+DEPENDPATH += $$PWD/../rsreslbrfn

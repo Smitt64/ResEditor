@@ -1,8 +1,8 @@
 #include "respanel.h"
-#include "reslib.h"
-#include "res_lbr.h"
+#include "resbuffer.h"
 #include "rscoreheader.h"
 #include <QDebug>
+#include <QDataStream>
 
 const qint8 &TextStruct::x() const
 {
@@ -57,6 +57,26 @@ const qint8 &FieldStruct::height() const
     return _field->h;
 }
 
+const qint8 &FieldStruct::kl() const
+{
+    return _field->kl;
+}
+
+const qint8 &FieldStruct::kr() const
+{
+    return _field->kr;
+}
+
+const qint8 &FieldStruct::ku() const
+{
+    return _field->ku;
+}
+
+const qint8 &FieldStruct::kd() const
+{
+    return _field->kd;
+}
+
 // ----------------------------------------------------------------
 
 ResPanel::ResPanel(QObject *parent) :
@@ -73,7 +93,7 @@ ResPanel::~ResPanel()
         delete m_pPanel;
 }
 
-static int rds(int hd, char **s, r_coord vfl, r_coord lens, HRSLCVT hcvtRd)
+/*static int rds(int hd, char **s, r_coord vfl, r_coord lens, HRSLCVT hcvtRd)
 {
     int  err = 0;
 
@@ -89,9 +109,9 @@ static int rds(int hd, char **s, r_coord vfl, r_coord lens, HRSLCVT hcvtRd)
     }
 
     return err;
-}
+}*/
 
-int ResPanel::loadProc(ResLib *res)
+/*int ResPanel::loadProc(ResLib *res)
 {
     int err = 0;
     int ver = res->resHeaderVersion();
@@ -130,9 +150,9 @@ int ResPanel::loadProc(ResLib *res)
     }
 
     return err;
-}
+}*/
 
-int ResPanel::readItems(struct PanelR *pp, ResLib *res, bool readName2)
+/*int ResPanel::readItems(struct PanelR *pp, ResLib *res, bool readName2)
 {
     int err = 0;
     int ver = res->resHeaderVersion();
@@ -296,17 +316,251 @@ int ResPanel::readItems(struct PanelR *pp, ResLib *res, bool readName2)
             }
         }
 
-        //qDebug() << "element._field->FVt: " << element._field->FVt;
         m_Fields.append(element);
     }
 
     return err;
-}
+}*/
 
-int ResPanel::load(const QString &name, ResLib *res)
+/*int ResPanel::load(const QString &name, ResLib *res)
 {
     m_Name = name;
     return res->loadResource(name, RES_PANEL, this);
+}*/
+
+bool ResPanel::readString(ResBuffer *data, char **s, qint16 vfl, qint16 lens)
+{
+    qint64 pos = data->pos() + lens;
+
+    if (vfl)
+    {
+        if (!data->seek(pos))
+            return false;
+    }
+    else if (lens)
+    {
+        char *tmp = nullptr;
+        if (*s)
+            tmp = *s;
+        else
+            tmp = (char*)malloc(lens + 1);
+
+        if (data->read(tmp, lens) != lens)
+            return false;
+    }
+
+    return true;
+}
+
+int ResPanel::load(ResBuffer *data)
+{
+    int err = 0;
+    int ver = data->headerVersion();
+    bool readName2 = false;
+    m_Name = data->name();
+
+    if (ver >= 1)
+    {
+        r_coord lens = 0;
+        err = data->read((char*)&lens, sizeof(lens));
+
+        if(!(err = (err != sizeof(lens))))
+        {
+            if(lens)
+                readString(data, NULL, 1, lens);
+        }
+    }
+
+    int toRead = 0;
+    if(ver == 0)
+        toRead = sizeof(PanelR_0);
+    else if(ver == 1)
+        toRead = sizeof(PanelR_1);
+    else
+        toRead = sizeof(PanelR);
+
+    int readed = data->read((char*)m_pPanel, toRead);
+    if (readed == toRead)
+    {
+        if(m_pPanel->flags & P_NAME2ALLOCED)
+        {
+            readName2 = true;
+            m_pPanel->flags &= ~P_NAME2ALLOCED;
+        }
+    }
+
+    readItems(m_pPanel, data, readName2);
+
+    return 0;
+}
+
+int ResPanel::readItems(struct PanelR *pp, ResBuffer *data, bool readName2)
+{
+    int err = 0;
+    int ver = data->headerVersion();
+
+    r_coord  lens;
+    err = data->read((char*)&lens, sizeof(lens));
+    if(!(err = (err != sizeof(lens))))
+    {
+        if(lens)
+        {
+            char *s = (char*)malloc(sizeof(char)*(lens + 1));
+            memset(s, 0, lens + 1);
+
+            err = !readString(data, (char**)&s, 0, lens);
+            m_Status = data->decodeString(s);
+            free(s);
+        }
+    }
+
+    if(ver >= 1)
+    {
+        err = data->read((char*)&lens, sizeof(lens));
+        if(!(err = (err != sizeof(lens))))
+        {
+            if(lens)
+            {
+                char *s = (char*)malloc(sizeof(char)*(lens + 1));
+                memset(s, 0, lens + 1);
+
+                err = !readString(data, &s, 0, lens);
+                m_StatusRD = data->decodeString(s);
+                free(s);
+            }
+        }
+    }
+
+    err = data->read((char*)&lens, sizeof(lens));
+    if(!(err = (err != sizeof(lens))))
+    {
+        if(lens)
+        {
+            char *s = (char*)malloc(sizeof(char)*(lens + 1));
+            memset(s, 0, lens + 1);
+
+            err = !readString(data, &s, 0, lens);
+            m_Title = data->decodeString(s);
+            qDebug() << m_Title;
+            free(s);
+        }
+    }
+
+    for(int i = 0; i < pp->Nb && !err; i++)
+    {
+        BordR  bb;
+        err = data->read((char*)&bb, sizeof(BordR));
+
+        if(!(err = (err != sizeof(BordR))))
+        {
+            //RslCvtUShort(hcvtRd, &bb.St);
+            m_BordR.append(bb);
+            //InsertB(p, bb.St, bb.x, bb.y, bb.l, bb.h, bb.fl);
+        }
+    }
+
+    for(int i = 0; i < pp->Nt && !err; i++)
+    {
+        TextR  tt;
+        err = data->read((char*)&tt, sizeof(TextR));
+
+        if(!(err = (err != sizeof(TextR))) && tt.lens)
+        {
+            //RslCvtUShort(hcvtRd, &tt.St);
+
+            char *s = (char*)malloc(sizeof(char)*(tt.lens + 1));
+            memset(s, 0, tt.lens + 1);
+            readString(data, &s, tt.vfl, tt.lens);
+
+            TextStruct text;
+            text._text = new TextR();
+            memcpy(text._text, &tt, sizeof(TextR));
+            text.value = data->decodeString(s);
+            m_Texts.append(text);
+            free(s);
+        }
+    }
+
+    for(int i = 0; i < pp->Pnumf && !err; i++)
+    {
+        FieldStruct element;
+        element._field = new FieldR();
+        memset(element._field, 0, sizeof(FieldR));
+
+        int toRead;
+        if(ver == 0)
+            toRead = sizeof(FieldR_0);
+        else if(ver == 1)
+            toRead = sizeof(FieldR_1);
+        else
+            toRead = sizeof(FieldR);
+
+        element._field->flags = 0;
+        element._field->group = 0;
+        element._field->nameLen = element._field->formLen = 0;
+
+        err = data->read((char*)element._field, toRead);
+
+        if(!(err = (err != toRead)))
+        {
+            if(element._field->FVt == FT_LDOUBLE10)
+                element._field->FVt = FT_DOUBLE;
+
+            if(element._field->FVt == FT_NUMERIC)
+               element._field->FVp &= 0xFF;
+
+            char *s = (char*)malloc(sizeof(char)*(element._field->lens + 1));
+            memset(s, 0, element._field->lens + 1);
+            if(readName2 || !element._field->vfl)
+            {
+                err = !readString(data, &s, 0, element._field->lens);
+                element.name2 = data->decodeString(s);
+            }
+            else
+                err = !readString(data, &s, element._field->vfl, element._field->lens);
+            free(s);
+
+            if(ver >= 1)
+            {
+                if(element._field->nameLen)
+                {
+                    s = (char*)malloc(sizeof(char)*(element._field->nameLen + 1));
+                    memset(s, 0, element._field->nameLen + 1);
+
+                    err = !readString(data, &s, 0, element._field->nameLen);
+                    element.name = data->decodeString(s);
+                    free(s);
+                }
+
+                if(element._field->formLen)
+                {
+                    s = (char*)malloc(sizeof(char)*(element._field->formLen + 1));
+                    memset(s, 0, element._field->formLen + 1);
+
+                    err = !readString(data, &s, 0, element._field->formLen);
+                    element.formatStr = data->decodeString(s);
+                    free(s);
+                }
+
+                if(ver >= 2)
+                {
+                    if(element._field->tooltipLen)
+                    {
+                        s = (char*)malloc(sizeof(char)*(element._field->tooltipLen + 1));
+                        memset(s, 0, element._field->tooltipLen + 1);
+
+                        err = !readString(data, &s, 0, element._field->tooltipLen);
+                        element.toolTip = data->decodeString(s);
+                        free(s);
+                    }
+                }
+            }
+        }
+
+        m_Fields.append(element);
+    }
+
+    return err;
 }
 
 QPoint ResPanel::pos() const

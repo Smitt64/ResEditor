@@ -1,0 +1,10 @@
+{
+    "enum" : [
+        { "key" : "Border_NoLine", "alias" : "Отсутствует" },
+        { "key" : "Border_SingleLine", "alias" : "Одинарная" },
+        { "key" : "Border_DoubleLine", "alias" : "Двойная" },
+        { "key" : "Border_Combine1", "alias" : "Комбинированная 1" },
+        { "key" : "Border_Combine2", "alias" : "Комбинированная 2" },
+        { "key" : "Border_Solid", "alias" : "Сплошная" }
+    ]
+}

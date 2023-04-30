@@ -75,6 +75,11 @@
         {
             "name" : "helpPage",
             "alias" : "Страница помощи"
+        },
+        {
+            "name" : "tabOrder",
+            "alias" : "Порядок полей",
+            "viewclass" : "CtrlTabOrderTreeItem"
         }
     ]
 }

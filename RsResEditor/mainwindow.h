@@ -1,7 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "rsrescore_global.h"
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
@@ -9,11 +8,13 @@ namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 class ResLib;
+class LbrObject;
 class QMdiArea;
 class ResListDockWidget;
 class PropertyDockWidget;
 class ToolBoxDockWidget;
 class QMdiSubWindow;
+class BaseEditorWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -23,10 +24,13 @@ public:
     ~MainWindow();
 
 private slots:
-    void doubleResClicked(const QModelIndex &index);
+    void doubleResClicked(const QString &name, const int &type);
     void subWindowActivated(QMdiSubWindow *window);
+    void onNew();
 
 private:
+    void AddEditorWindow(BaseEditorWindow *editor);
+    void SetupMenus();
     Ui::MainWindow *ui;
 
     ResListDockWidget *m_ResListDock;
@@ -34,6 +38,6 @@ private:
     ToolBoxDockWidget *m_ToolBoxDock;
     QMdiArea *m_Mdi;
 
-    ResLib *m_Lib;
+    LbrObject *m_pLbrObj;
 };
 #endif // MAINWINDOW_H

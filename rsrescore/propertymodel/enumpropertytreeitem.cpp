@@ -1,5 +1,6 @@
 #include "enumpropertytreeitem.h"
 #include "customrectitem.h"
+#include "enumlistmodel.h"
 #include <QMetaObject>
 #include <QMetaProperty>
 #include <QMetaEnum>
@@ -9,7 +10,7 @@
 EnumPropertyTreeItem::EnumPropertyTreeItem(CustomRectItem *rectItem, QObject *parent)
     : PropertyTreeItem{rectItem, parent}
 {
-
+    m_pModel = new EnumListModel(this);
 }
 
 EnumPropertyTreeItem::~EnumPropertyTreeItem()
@@ -29,19 +30,7 @@ QVariant EnumPropertyTreeItem::data(const int &role) const
         else
         {
             QVariant value = m_pItem->property(m_PropertyName.toLocal8Bit().data());
-
-            QMetaProperty prop = metaobject->property(propIndex);
-            QMetaEnum metaenum = prop.enumerator();
-
-            const char *key = metaenum.valueToKey(value.toInt());
-
-            if (!key)
-                return value;
-
-            if (m_KeyAlias.empty())
-                return key;
-
-            return m_KeyAlias[key];
+            return m_pModel->valueToAlias(value.toInt());
         }
     }
 
@@ -50,44 +39,34 @@ QVariant EnumPropertyTreeItem::data(const int &role) const
 
 void EnumPropertyTreeItem::loadEnumAlias(const QJsonArray &array)
 {
-    for (const auto &element : array)
-    {
-        QJsonObject obj = element.toObject();
-        QString key = element["key"].toString();
-        QString alias = element["alias"].toString();
-
-        m_KeyAlias.insert(key, alias);
-        m_AliasKey.insert(alias, key);
-    }
+    m_pModel->loadFromJsonArray(array);
 }
 
-QWidget *EnumPropertyTreeItem::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+void EnumPropertyTreeItem::loadEnumAlias(const QString &filename)
 {
+    m_pModel->loadFromJsonFile(filename);
+}
+
+void EnumPropertyTreeItem::setPropertyName(const QString &name)
+{
+    PropertyTreeItem::setPropertyName(name);
+
     const QMetaObject *metaobject = m_pItem->metaObject();
     int propIndex = metaobject->indexOfProperty(m_PropertyName.toLocal8Bit().data());
 
     if (propIndex < 0)
-        return nullptr;
+        return;
 
-    QComboBox *combo = new QComboBox(parent);
     QMetaProperty prop = metaobject->property(propIndex);
     QMetaEnum metaenum = prop.enumerator();
 
-    if (m_KeyAlias.empty())
-    {
-        for (int i = 0; i < metaenum.keyCount(); i++)
-            combo->addItem(metaenum.key(i), metaenum.key(i));
-    }
-    else
-    {
-        for (int i = 0; i < metaenum.keyCount(); i++)
-        {
-            const char *key = metaenum.key(i);
+    m_pModel->setMetaEnum(metaenum);
+}
 
-            if (m_KeyAlias.contains(key))
-                combo->addItem(m_KeyAlias[key], key);
-        }
-    }
+QWidget *EnumPropertyTreeItem::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QComboBox *combo = new QComboBox(parent);
+    combo->setModel(m_pModel);
 
     return combo;
 }
@@ -99,24 +78,9 @@ bool EnumPropertyTreeItem::setEditorData(QWidget *editor, const QModelIndex &ind
     if (!combo)
         return false;
 
-    const QMetaObject *metaobject = m_pItem->metaObject();
-    int propIndex = metaobject->indexOfProperty(m_PropertyName.toLocal8Bit().data());
-
-    if (propIndex < 0)
-        return false;
-
-    QMetaProperty prop = metaobject->property(propIndex);
-    QMetaEnum metaenum = prop.enumerator();
-
     QVariant varData = index.data(Qt::EditRole);
     int value = varData.toInt();
-    const char *key = metaenum.valueToKey(value);
-
-    for (int i = 0; i < metaenum.keyCount(); i++)
-    {
-        if (!strcmp(metaenum.key(i), key))
-            combo->setCurrentIndex(i);
-    }
+    combo->setCurrentIndex(m_pModel->indexFromValue(value));
 
     return true;
 }
@@ -128,18 +92,7 @@ bool EnumPropertyTreeItem::setModelData(QWidget *editor, QAbstractItemModel *mod
     if (!combo)
         return false;
 
-    const QMetaObject *metaobject = m_pItem->metaObject();
-    int propIndex = metaobject->indexOfProperty(m_PropertyName.toLocal8Bit().data());
-
-    if (propIndex < 0)
-        return false;
-
-    QMetaProperty prop = metaobject->property(propIndex);
-    QMetaEnum metaenum = prop.enumerator();
-
-    QVariant userData = combo->currentData();
-    QString key = userData.toString();
-    int keyValue = metaenum.keyToValue(key.toLocal8Bit().data());
+    int keyValue = m_pModel->valueFromIndex(combo->currentIndex());
     model->setData(index, keyValue);
 
     return true;

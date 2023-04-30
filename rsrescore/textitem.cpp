@@ -349,6 +349,8 @@ void TextItem::onInsertUndoRedoMove(const QMap<CustomRectItem *, QPointF> &Mouse
         pAttachMove->setPositions(m_AttachedPos, attachedRect->pos());
         undoStack()->push(pAttachMove);
     }
+
+    CustomRectItem::onInsertUndoRedoMove(MousePressPoint);
 }
 
 QString TextItem::text() const

@@ -19,6 +19,7 @@
 #include <QDynamicPropertyChangeEvent>
 #include <QGraphicsSceneDragDropEvent>
 #include <QKeyEvent>
+#include <algorithm>
 
 PanelItem::PanelItem(CustomRectItem *parent) :
     ContainerItem(parent),
@@ -65,18 +66,20 @@ QVariant PanelItem::userAction(const qint32 &action, const QVariant &param)
     {
         PanelPropertysDlg dlg(scene()->views().first());
         dlg.setPanelMode(true);
+        dlg.setRectItem(this);
         dlg.exec();
     }
     return QVariant();
 }
 
-void PanelItem::setPanel(ResPanel *panel)
+void PanelItem::setPanel(ResPanel *panel, const QString &comment)
 {
     m_Panel = panel;
     m_Title = m_Panel->title();
     m_Status = m_Panel->status();
     m_Status2 = m_Panel->status2();
     m_HelpPage = m_Panel->helpPage();
+    m_Comment = comment;
 
     setCoord(panel->pos());
     setSize(panel->size());
@@ -92,7 +95,9 @@ void PanelItem::setPanel(ResPanel *panel)
     {
         FieldStruct &fieldElement = *i;
         ControlItem *item = new ControlItem(this);
-        item->setFieldStruct(&fieldElement);
+
+        int self = std::distance(m_Panel->fieldBegin(), i);
+        item->setFieldStruct(&fieldElement, self);
     }
 }
 
@@ -291,12 +296,12 @@ void PanelItem::setComment(const QString &text)
         pushUndoPropertyData("comment", text);
 }
 
-const quint32 &PanelItem::helpPage() const
+const quint16 &PanelItem::helpPage() const
 {
     return m_HelpPage;
 }
 
-void PanelItem::setHelpPage(const quint32 &val)
+void PanelItem::setHelpPage(const quint16 &val)
 {
     if (isSkipUndoStack() || !undoStack())
     {
@@ -414,4 +419,170 @@ void PanelItem::setChildsVisible(const bool &value)
     QList<QGraphicsItem*> childs = childItems();
     for (QGraphicsItem *child : qAsConst(childs))
         child->setVisible(value);
+}
+
+void PanelItem::updateChildControlsOrder()
+{
+    BaseScene *pScene = dynamic_cast<BaseScene*>(scene());
+
+    QList<ControlItem*> pItems = pScene->findItems<ControlItem>();
+    //QList<ControlItem*> pItems = pScene->findItems<ControlItem>();
+
+    if (pItems.empty())
+        return;
+
+    /*std::sort(pItems.begin(), pItems.end(), [](ControlItem *a, ControlItem *b)
+    {
+        QRect rectA = a->geometry(),
+                rectB = b->geometry();
+
+        if (rectA.y() == rectB.y())
+        {
+            if (rectA.x() > rectB.x())
+                return true;
+        }
+
+        return rectA.y() > rectB.y();
+    });*/
+
+    std::sort(pItems.begin(), pItems.end(), [](ControlItem *a, ControlItem *b)
+    {
+        QRect rectA = a->geometry(),
+                rectB = b->geometry();
+
+        if (rectA.y() == rectB.y())
+        {
+            if (rectA.x() < rectB.x())
+                return true;
+        }
+
+        return rectA.y() < rectB.y();
+    });
+
+    auto GetFldsSameY = [pItems](int y) -> QList<ControlItem*>
+    {
+        QList<ControlItem*> lst;
+
+        for (ControlItem *item : pItems)
+        {
+            if (item->geometry().y() == y)
+                lst.append(item);
+        }
+        return lst;
+    };
+
+    auto GetBottomField = [=](ControlItem *Current) -> int
+    {
+        if (pItems.last() == Current)
+            return 0;
+
+        int id = -1;
+        int intexOf = pItems.indexOf(Current);
+        QRect curGeometry = Current->geometry();
+
+        for (int i = intexOf + 1; i < pItems.size(); i++)
+        {
+            QRect geometry = pItems.at(i)->geometry();
+
+            if (geometry.y() > curGeometry.y())
+            {
+                // первое поле с большим y
+                QList<ControlItem*> lst = GetFldsSameY(geometry.y());
+                for (ControlItem *item : qAsConst(lst))
+                {
+                    if (item->geometry().intersects(geometry))
+                    {
+                        id = pItems.indexOf(item);
+                        break;
+                    }
+                }
+
+                if (id == -1)
+                    id = pItems.indexOf(lst.first());
+
+                break;
+            }
+        }
+
+        if (id == -1)
+            id = 0;
+
+        return id;
+    };
+
+    auto GetUpField = [=](ControlItem *Current) -> int
+    {
+        if (pItems.first() == Current)
+            return pItems.size() - 1;
+
+        int id = -1;
+        int intexOf = pItems.indexOf(Current);
+        QRect curGeometry = Current->geometry();
+
+        for (int i = intexOf - 1; i >= 0; i--)
+        {
+            QRect geometry = pItems.at(i)->geometry();
+
+            if (geometry.y() < curGeometry.y())
+            {
+                // первое поле с большим y
+                QList<ControlItem*> lst = GetFldsSameY(geometry.y());
+                for (ControlItem *item : qAsConst(lst))
+                {
+                    if (item->geometry().intersects(geometry))
+                    {
+                        id = pItems.indexOf(item);
+                        break;
+                    }
+                }
+
+                if (id == -1)
+                    id = pItems.indexOf(lst.first());
+
+                break;
+            }
+        }
+
+        if (id == -1)
+            id = pItems.size() - 1;
+
+        return id;
+    };
+
+    QHash<ControlItem*, ControTabOrder> NewOrders;
+    for (ControlItem *item : qAsConst(pItems))
+    {
+        int selfId = pItems.indexOf(item);
+        NewOrders[item] = item->tabOrder();
+
+        ControTabOrder &tabOrder = NewOrders[item];
+        tabOrder.setThisId(selfId);
+
+        if (pItems.last() != item)
+            tabOrder.setNext(selfId + 1);
+        else
+            tabOrder.setNext(0);
+
+        if (pItems.first() != item)
+            tabOrder.setPrevious(selfId - 1);
+        else
+            tabOrder.setPrevious(pItems.size() - 1);
+
+        int bottom = GetBottomField(item);
+        int up = GetUpField(item);
+        tabOrder.setBottom(bottom);
+        tabOrder.setUp(up);
+    }
+
+    QHashIterator<ControlItem*, ControTabOrder> NewOrdersIter(NewOrders);
+    while (NewOrdersIter.hasNext())
+    {
+        NewOrdersIter.next();
+
+        ControlItem *item = NewOrdersIter.key();
+        const ControTabOrder &tabOrder = NewOrdersIter.value();
+
+        if (item->tabOrder().thisid() != tabOrder.thisid())
+            item->setTabOrder(tabOrder);
+    }
 }

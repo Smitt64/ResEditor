@@ -169,6 +169,8 @@ template<class T> bool operator ==(const T& a1, const EwTextStyle& a2)
 
 template<class T>bool operator <(const T& a1, const EwTextStyle& a2)
 {
+    Q_UNUSED(a1)
+    Q_UNUSED(a2)
     return false;
 }
 

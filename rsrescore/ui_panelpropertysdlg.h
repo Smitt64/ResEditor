@@ -34,22 +34,22 @@ public:
     QHBoxLayout *horizontalLayout;
     QFormLayout *formLayout_2;
     QLabel *label;
-    QComboBox *comboBox;
+    QComboBox *typeBox;
     QLabel *label_2;
-    QComboBox *comboBox_2;
+    QComboBox *borderStyle;
     QFormLayout *formLayout;
     QSpacerItem *horizontalSpacer;
     QSpacerItem *horizontalSpacer_2;
     QLabel *label_3;
-    QComboBox *comboBox_3;
+    QComboBox *panelStyle;
     QFrame *frame;
     QFormLayout *formLayout_3;
     QLabel *label_4;
-    QLineEdit *lineEdit;
+    QLineEdit *titleEdit;
     QLabel *label_5;
-    QLineEdit *lineEdit_2;
+    QLineEdit *statusEdit;
     QLabel *label_6;
-    QLineEdit *lineEdit_3;
+    QLineEdit *statusEdit2;
     QGroupBox *groupBoxScrol;
     QHBoxLayout *horizontalLayout_3;
     QFormLayout *formLayout_4;
@@ -72,28 +72,31 @@ public:
     QHBoxLayout *horizontalLayout_7;
     QGroupBox *groupBox_3;
     QVBoxLayout *verticalLayout_2;
-    QCheckBox *checkBox_4;
-    QCheckBox *checkBox_5;
-    QCheckBox *checkBox_6;
+    QCheckBox *excludeAutoTab;
+    QCheckBox *excludeAutoNum;
+    QCheckBox *excludeShadow;
     QSpacerItem *verticalSpacer_2;
     QVBoxLayout *verticalLayout_3;
     QHBoxLayout *horizontalLayout_5;
     QSpacerItem *horizontalSpacer_4;
-    QCheckBox *checkBox_7;
+    QCheckBox *alignTextRight;
     QHBoxLayout *horizontalLayout_6;
     QSpacerItem *horizontalSpacer_5;
-    QCheckBox *checkBox_8;
+    QCheckBox *alignPanCenter;
     QHBoxLayout *horizontalLayout_4;
     QLabel *label_11;
-    QSpinBox *spinBox_6;
+    QSpinBox *helpPage;
     QSpacerItem *verticalSpacer;
+    QHBoxLayout *horizontalLayout_8;
+    QLabel *label_12;
+    QLineEdit *commentEdit;
     QDialogButtonBox *buttonBox;
 
     void setupUi(QDialog *PanelPropertysDlg)
     {
         if (PanelPropertysDlg->objectName().isEmpty())
             PanelPropertysDlg->setObjectName(QString::fromUtf8("PanelPropertysDlg"));
-        PanelPropertysDlg->resize(600, 478);
+        PanelPropertysDlg->resize(600, 508);
         PanelPropertysDlg->setMinimumSize(QSize(600, 0));
         PanelPropertysDlg->setMaximumSize(QSize(600, 16777215));
         verticalLayout_4 = new QVBoxLayout(PanelPropertysDlg);
@@ -107,24 +110,25 @@ public:
 
         formLayout_2->setWidget(0, QFormLayout::LabelRole, label);
 
-        comboBox = new QComboBox(PanelPropertysDlg);
-        comboBox->setObjectName(QString::fromUtf8("comboBox"));
-        comboBox->setMinimumSize(QSize(200, 0));
-        comboBox->setMaximumSize(QSize(200, 16777215));
+        typeBox = new QComboBox(PanelPropertysDlg);
+        typeBox->setObjectName(QString::fromUtf8("typeBox"));
+        typeBox->setEnabled(false);
+        typeBox->setMinimumSize(QSize(200, 0));
+        typeBox->setMaximumSize(QSize(200, 16777215));
 
-        formLayout_2->setWidget(0, QFormLayout::FieldRole, comboBox);
+        formLayout_2->setWidget(0, QFormLayout::FieldRole, typeBox);
 
         label_2 = new QLabel(PanelPropertysDlg);
         label_2->setObjectName(QString::fromUtf8("label_2"));
 
         formLayout_2->setWidget(1, QFormLayout::LabelRole, label_2);
 
-        comboBox_2 = new QComboBox(PanelPropertysDlg);
-        comboBox_2->setObjectName(QString::fromUtf8("comboBox_2"));
-        comboBox_2->setMinimumSize(QSize(200, 0));
-        comboBox_2->setMaximumSize(QSize(200, 16777215));
+        borderStyle = new QComboBox(PanelPropertysDlg);
+        borderStyle->setObjectName(QString::fromUtf8("borderStyle"));
+        borderStyle->setMinimumSize(QSize(200, 0));
+        borderStyle->setMaximumSize(QSize(200, 16777215));
 
-        formLayout_2->setWidget(1, QFormLayout::FieldRole, comboBox_2);
+        formLayout_2->setWidget(1, QFormLayout::FieldRole, borderStyle);
 
 
         horizontalLayout->addLayout(formLayout_2);
@@ -144,10 +148,10 @@ public:
 
         formLayout->setWidget(1, QFormLayout::LabelRole, label_3);
 
-        comboBox_3 = new QComboBox(PanelPropertysDlg);
-        comboBox_3->setObjectName(QString::fromUtf8("comboBox_3"));
+        panelStyle = new QComboBox(PanelPropertysDlg);
+        panelStyle->setObjectName(QString::fromUtf8("panelStyle"));
 
-        formLayout->setWidget(1, QFormLayout::FieldRole, comboBox_3);
+        formLayout->setWidget(1, QFormLayout::FieldRole, panelStyle);
 
 
         horizontalLayout->addLayout(formLayout);
@@ -169,30 +173,33 @@ public:
 
         formLayout_3->setWidget(0, QFormLayout::LabelRole, label_4);
 
-        lineEdit = new QLineEdit(PanelPropertysDlg);
-        lineEdit->setObjectName(QString::fromUtf8("lineEdit"));
+        titleEdit = new QLineEdit(PanelPropertysDlg);
+        titleEdit->setObjectName(QString::fromUtf8("titleEdit"));
+        titleEdit->setMaxLength(255);
 
-        formLayout_3->setWidget(0, QFormLayout::FieldRole, lineEdit);
+        formLayout_3->setWidget(0, QFormLayout::FieldRole, titleEdit);
 
         label_5 = new QLabel(PanelPropertysDlg);
         label_5->setObjectName(QString::fromUtf8("label_5"));
 
         formLayout_3->setWidget(1, QFormLayout::LabelRole, label_5);
 
-        lineEdit_2 = new QLineEdit(PanelPropertysDlg);
-        lineEdit_2->setObjectName(QString::fromUtf8("lineEdit_2"));
+        statusEdit = new QLineEdit(PanelPropertysDlg);
+        statusEdit->setObjectName(QString::fromUtf8("statusEdit"));
+        statusEdit->setMaxLength(255);
 
-        formLayout_3->setWidget(1, QFormLayout::FieldRole, lineEdit_2);
+        formLayout_3->setWidget(1, QFormLayout::FieldRole, statusEdit);
 
         label_6 = new QLabel(PanelPropertysDlg);
         label_6->setObjectName(QString::fromUtf8("label_6"));
 
         formLayout_3->setWidget(2, QFormLayout::LabelRole, label_6);
 
-        lineEdit_3 = new QLineEdit(PanelPropertysDlg);
-        lineEdit_3->setObjectName(QString::fromUtf8("lineEdit_3"));
+        statusEdit2 = new QLineEdit(PanelPropertysDlg);
+        statusEdit2->setObjectName(QString::fromUtf8("statusEdit2"));
+        statusEdit2->setMaxLength(255);
 
-        formLayout_3->setWidget(2, QFormLayout::FieldRole, lineEdit_3);
+        formLayout_3->setWidget(2, QFormLayout::FieldRole, statusEdit2);
 
 
         verticalLayout_4->addLayout(formLayout_3);
@@ -293,20 +300,20 @@ public:
         groupBox_3->setObjectName(QString::fromUtf8("groupBox_3"));
         verticalLayout_2 = new QVBoxLayout(groupBox_3);
         verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
-        checkBox_4 = new QCheckBox(groupBox_3);
-        checkBox_4->setObjectName(QString::fromUtf8("checkBox_4"));
+        excludeAutoTab = new QCheckBox(groupBox_3);
+        excludeAutoTab->setObjectName(QString::fromUtf8("excludeAutoTab"));
 
-        verticalLayout_2->addWidget(checkBox_4);
+        verticalLayout_2->addWidget(excludeAutoTab);
 
-        checkBox_5 = new QCheckBox(groupBox_3);
-        checkBox_5->setObjectName(QString::fromUtf8("checkBox_5"));
+        excludeAutoNum = new QCheckBox(groupBox_3);
+        excludeAutoNum->setObjectName(QString::fromUtf8("excludeAutoNum"));
 
-        verticalLayout_2->addWidget(checkBox_5);
+        verticalLayout_2->addWidget(excludeAutoNum);
 
-        checkBox_6 = new QCheckBox(groupBox_3);
-        checkBox_6->setObjectName(QString::fromUtf8("checkBox_6"));
+        excludeShadow = new QCheckBox(groupBox_3);
+        excludeShadow->setObjectName(QString::fromUtf8("excludeShadow"));
 
-        verticalLayout_2->addWidget(checkBox_6);
+        verticalLayout_2->addWidget(excludeShadow);
 
         verticalSpacer_2 = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
 
@@ -323,10 +330,11 @@ public:
 
         horizontalLayout_5->addItem(horizontalSpacer_4);
 
-        checkBox_7 = new QCheckBox(PanelPropertysDlg);
-        checkBox_7->setObjectName(QString::fromUtf8("checkBox_7"));
+        alignTextRight = new QCheckBox(PanelPropertysDlg);
+        alignTextRight->setObjectName(QString::fromUtf8("alignTextRight"));
+        alignTextRight->setMinimumSize(QSize(182, 0));
 
-        horizontalLayout_5->addWidget(checkBox_7);
+        horizontalLayout_5->addWidget(alignTextRight);
 
 
         verticalLayout_3->addLayout(horizontalLayout_5);
@@ -337,10 +345,11 @@ public:
 
         horizontalLayout_6->addItem(horizontalSpacer_5);
 
-        checkBox_8 = new QCheckBox(PanelPropertysDlg);
-        checkBox_8->setObjectName(QString::fromUtf8("checkBox_8"));
+        alignPanCenter = new QCheckBox(PanelPropertysDlg);
+        alignPanCenter->setObjectName(QString::fromUtf8("alignPanCenter"));
+        alignPanCenter->setMinimumSize(QSize(182, 0));
 
-        horizontalLayout_6->addWidget(checkBox_8);
+        horizontalLayout_6->addWidget(alignPanCenter);
 
 
         verticalLayout_3->addLayout(horizontalLayout_6);
@@ -353,11 +362,11 @@ public:
 
         horizontalLayout_4->addWidget(label_11);
 
-        spinBox_6 = new QSpinBox(PanelPropertysDlg);
-        spinBox_6->setObjectName(QString::fromUtf8("spinBox_6"));
-        spinBox_6->setMaximumSize(QSize(100, 16777215));
+        helpPage = new QSpinBox(PanelPropertysDlg);
+        helpPage->setObjectName(QString::fromUtf8("helpPage"));
+        helpPage->setMaximumSize(QSize(100, 16777215));
 
-        horizontalLayout_4->addWidget(spinBox_6);
+        horizontalLayout_4->addWidget(helpPage);
 
 
         verticalLayout_3->addLayout(horizontalLayout_4);
@@ -371,6 +380,22 @@ public:
 
 
         verticalLayout_4->addLayout(horizontalLayout_7);
+
+        horizontalLayout_8 = new QHBoxLayout();
+        horizontalLayout_8->setObjectName(QString::fromUtf8("horizontalLayout_8"));
+        label_12 = new QLabel(PanelPropertysDlg);
+        label_12->setObjectName(QString::fromUtf8("label_12"));
+
+        horizontalLayout_8->addWidget(label_12);
+
+        commentEdit = new QLineEdit(PanelPropertysDlg);
+        commentEdit->setObjectName(QString::fromUtf8("commentEdit"));
+        commentEdit->setMaxLength(255);
+
+        horizontalLayout_8->addWidget(commentEdit);
+
+
+        verticalLayout_4->addLayout(horizontalLayout_8);
 
         buttonBox = new QDialogButtonBox(PanelPropertysDlg);
         buttonBox->setObjectName(QString::fromUtf8("buttonBox"));
@@ -406,12 +431,13 @@ public:
         checkBox_2->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\240\320\260\320\267\320\274\320\265\321\211\320\260\321\202\321\214 \320\277\320\276\320\273\321\217", nullptr));
         checkBox_3->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\244\320\276\321\200\320\274\320\270\321\200\320\276\320\262\320\260\321\202\321\214 \320\267\320\260\320\263\320\276\320\273\320\276\320\262\320\276\320\272", nullptr));
         groupBox_3->setTitle(QCoreApplication::translate("PanelPropertysDlg", "\320\230\321\201\320\272\320\273\321\216\321\207\320\270\321\202\321\214", nullptr));
-        checkBox_4->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\220\320\262\321\202\320\276\320\274\320\260\321\202\320\270\321\207\320\265\321\201\320\272\320\270\320\271 \320\276\320\261\321\205\320\276\320\264", nullptr));
-        checkBox_5->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\220\320\262\321\202\320\276\320\274\320\260\321\202\320\270\321\207\320\265\321\201\320\272\321\203\321\216 \320\275\321\203\320\274\320\265\321\200\320\260\321\206\320\270\321\216 \320\277\320\276\320\273\320\265\320\271", nullptr));
-        checkBox_6->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\236\321\202\320\276\320\261\321\200\320\260\320\266\320\265\320\275\320\270\320\265 \321\202\320\265\320\275\320\270", nullptr));
-        checkBox_7->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\222\321\213\321\200\320\260\320\262\320\275\320\270\320\262\320\260\320\275\320\270\320\265 \321\202\320\265\320\272\321\201\321\202\320\260 \321\201\320\277\321\200\320\260\320\262\320\260", nullptr));
-        checkBox_8->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\222\321\213\320\262\320\276\320\264\320\270\321\202\321\214 \320\277\320\260\320\275\320\265\320\273\321\214 \320\277\320\276 \321\206\320\265\320\275\321\202\321\200\321\203", nullptr));
+        excludeAutoTab->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\220\320\262\321\202\320\276\320\274\320\260\321\202\320\270\321\207\320\265\321\201\320\272\320\270\320\271 \320\276\320\261\321\205\320\276\320\264", nullptr));
+        excludeAutoNum->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\220\320\262\321\202\320\276\320\274\320\260\321\202\320\270\321\207\320\265\321\201\320\272\321\203\321\216 \320\275\321\203\320\274\320\265\321\200\320\260\321\206\320\270\321\216 \320\277\320\276\320\273\320\265\320\271", nullptr));
+        excludeShadow->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\236\321\202\320\276\320\261\321\200\320\260\320\266\320\265\320\275\320\270\320\265 \321\202\320\265\320\275\320\270", nullptr));
+        alignTextRight->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\222\321\213\321\200\320\260\320\262\320\275\320\270\320\262\320\260\320\275\320\270\320\265 \321\202\320\265\320\272\321\201\321\202\320\260 \321\201\320\277\321\200\320\260\320\262\320\260", nullptr));
+        alignPanCenter->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\222\321\213\320\262\320\276\320\264\320\270\321\202\321\214 \320\277\320\260\320\275\320\265\320\273\321\214 \320\277\320\276 \321\206\320\265\320\275\321\202\321\200\321\203", nullptr));
         label_11->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\241\321\202\321\200\320\260\320\275\320\270\321\206\320\260 \320\277\320\276\320\274\320\276\321\211\320\270:", nullptr));
+        label_12->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\232\320\276\320\274\320\274\320\265\320\275\321\202\320\260\321\200\320\270\320\271:", nullptr));
     } // retranslateUi
 
 };

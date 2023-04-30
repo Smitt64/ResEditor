@@ -14,7 +14,11 @@ public:
     virtual ~BaseResourceEditor();
 
     virtual QList<qint16> resTypes() const Q_DECL_FINAL;
-    virtual BaseEditorWindow *editor(const qint16 &Type, const QString &name, ResLib *pResLib) Q_DECL_FINAL;
+    virtual BaseEditorWindow *editor(const qint16 &Type, const QString &name, LbrObject *pLbrObj) Q_DECL_OVERRIDE;
+
+    virtual QString newItemsMetaList() Q_DECL_FINAL;
+    virtual bool newItemsActionAvalible(const QString &guid) Q_DECL_FINAL;
+    virtual BaseEditorWindow *newItemsAction(const QString &guid, const QString &name, const QString &path) Q_DECL_FINAL;
 };
 
 #endif // BASERESOURCEEDITOR_H

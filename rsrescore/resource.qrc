@@ -51,5 +51,11 @@
         <file>img/Properties.png</file>
         <file>img/CustomControl_16x.png</file>
         <file>img/DocumentHS.png</file>
+        <file>img/filecabinet.png</file>
+        <file>json/BaseResourceNewItems.json</file>
+        <file>img/NewDocumentHS.png</file>
+        <file>json/BorderStyle.json</file>
+        <file>json/PanelStyleEnum.json</file>
+        <file>img/openHS.png</file>
     </qresource>
 </RCC>
