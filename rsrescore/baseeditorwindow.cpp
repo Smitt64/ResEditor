@@ -16,6 +16,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QMimeData>
+#include <QMessageBox>
+#include <QCloseEvent>
 
 class UndoActionWidget : public QWidgetAction
 {
@@ -44,6 +46,8 @@ BaseEditorWindow::BaseEditorWindow(QWidget *parent)
 {
     m_pUndoStack = new QUndoStack(this);
     m_ToolBoxModel = new ToolBoxModel(this);
+
+    m_UndoIndexUnchanged = m_pUndoStack->index();
 }
 
 BaseEditorWindow::~BaseEditorWindow()
@@ -82,7 +86,23 @@ void BaseEditorWindow::initUndoRedo(QToolBar *toolbar)
 
     AddShortcutToToolTip(m_pRedoActionBtn);
 
+    connect(m_pUndoStack, &QUndoStack::indexChanged, [=](const int index) -> void
+    {
+        emit modifyChanged(index != m_UndoIndexUnchanged);
+    });
     connect(m_pRedoActionBtn, &QToolButton::clicked, m_pRedoAction, &QAction::trigger);
+}
+
+bool BaseEditorWindow::isChanged() const
+{
+    return m_pUndoStack->index() != m_UndoIndexUnchanged;
+}
+
+bool BaseEditorWindow::save(ResBuffer *res, QString *error)
+{
+    Q_UNUSED(res)
+    m_UndoIndexUnchanged = m_pUndoStack->index();
+    return true;
 }
 
 QUndoStack *BaseEditorWindow::undoStack()
@@ -103,6 +123,21 @@ QAction *BaseEditorWindow::undoAction()
 QAction *BaseEditorWindow::redoAction()
 {
     return m_pRedoAction;
+}
+
+QString BaseEditorWindow::name() const
+{
+    return QString();
+}
+
+QString BaseEditorWindow::title() const
+{
+    return QString("Unnamed");
+}
+
+qint16 BaseEditorWindow::type() const
+{
+    return -1;
 }
 
 void BaseEditorWindow::initpropertyModelSignals(BaseScene *scene)

@@ -99,6 +99,13 @@ void PanelItem::setPanel(ResPanel *panel, const QString &comment)
         int self = std::distance(m_Panel->fieldBegin(), i);
         item->setFieldStruct(&fieldElement, self);
     }
+
+    int borderCount = panel->borderCount();
+    for (int i = 0; i < borderCount; i++)
+    {
+        BorderItem *item = new BorderItem(this);
+        item->setBorderParams(panel->borderRect(i), panel->borderStyle(i));
+    }
 }
 
 void PanelItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -424,26 +431,10 @@ void PanelItem::setChildsVisible(const bool &value)
 void PanelItem::updateChildControlsOrder()
 {
     BaseScene *pScene = dynamic_cast<BaseScene*>(scene());
-
     QList<ControlItem*> pItems = pScene->findItems<ControlItem>();
-    //QList<ControlItem*> pItems = pScene->findItems<ControlItem>();
 
     if (pItems.empty())
         return;
-
-    /*std::sort(pItems.begin(), pItems.end(), [](ControlItem *a, ControlItem *b)
-    {
-        QRect rectA = a->geometry(),
-                rectB = b->geometry();
-
-        if (rectA.y() == rectB.y())
-        {
-            if (rectA.x() > rectB.x())
-                return true;
-        }
-
-        return rectA.y() > rectB.y();
-    });*/
 
     std::sort(pItems.begin(), pItems.end(), [](ControlItem *a, ControlItem *b)
     {

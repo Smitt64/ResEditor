@@ -14,6 +14,7 @@ class QToolButton;
 class UndoActionWidget;
 class BaseScene;
 class ToolBoxModel;
+class ResBuffer;
 class QAbstractItemModel;
 class RSRESCORE_EXPORT BaseEditorWindow : public QMainWindow
 {
@@ -22,6 +23,7 @@ public:
     explicit BaseEditorWindow(QWidget *parent = nullptr);
     virtual ~BaseEditorWindow();
     virtual void setupEditor() = 0;
+    virtual bool save(ResBuffer *res, QString *error);
 
     QUndoStack *undoStack();
     ToolBoxModel *toolBox();
@@ -29,8 +31,17 @@ public:
     QAction *undoAction();
     QAction *redoAction();
 
+    virtual QString name() const;
+    virtual QString title() const;
+    virtual qint16 type() const;
+
+    bool isChanged() const;
+
 signals:
     void propertyModelChanged(QAbstractItemModel *model);
+    void readySave(bool closeAfterSave = false);
+    void modifyChanged(bool changed);
+    void titleChanged(QString);
 
 protected:
     void initUndoRedo(QToolBar *toolbar);
@@ -47,6 +58,7 @@ private:
     ToolBoxModel *m_ToolBoxModel;
 
     QMenu *m_pUndoMenu;
+    int m_UndoIndexUnchanged;
     UndoActionWidget *m_pUndoViewMenuAction;
 };
 

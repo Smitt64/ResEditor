@@ -30,9 +30,54 @@
     <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
    </widget>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>Окно</string>
+    </property>
+    <addaction name="actionNextWnd"/>
+    <addaction name="actionPrevWnd"/>
+    <addaction name="separator"/>
+    <addaction name="actionCloseWnd"/>
+    <addaction name="actionCloseAllWnd"/>
+   </widget>
    <addaction name="menu"/>
+   <addaction name="menuWindow"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>16</width>
+     <height>16</height>
+    </size>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QToolBar" name="windowToolBar">
+   <property name="windowTitle">
+    <string>toolBar_2</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>16</width>
+     <height>16</height>
+    </size>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
   <action name="actionNew">
    <property name="text">
     <string>Создать</string>
@@ -43,7 +88,45 @@
     <string>Открыть</string>
    </property>
   </action>
+  <action name="actionNextWnd">
+   <property name="icon">
+    <iconset resource="../rsrescore/resource.qrc">
+     <normaloff>:/img/nextwin.png</normaloff>:/img/nextwin.png</iconset>
+   </property>
+   <property name="text">
+    <string>Следующее</string>
+   </property>
+  </action>
+  <action name="actionPrevWnd">
+   <property name="icon">
+    <iconset resource="../rsrescore/resource.qrc">
+     <normaloff>:/img/prevwin.png</normaloff>:/img/prevwin.png</iconset>
+   </property>
+   <property name="text">
+    <string>Предыдущее</string>
+   </property>
+  </action>
+  <action name="actionCloseWnd">
+   <property name="icon">
+    <iconset resource="../rsrescore/resource.qrc">
+     <normaloff>:/img/closewnd.png</normaloff>:/img/closewnd.png</iconset>
+   </property>
+   <property name="text">
+    <string>Закрыть</string>
+   </property>
+  </action>
+  <action name="actionCloseAllWnd">
+   <property name="icon">
+    <iconset resource="../rsrescore/resource.qrc">
+     <normaloff>:/img/closewnds.png</normaloff>:/img/closewnds.png</iconset>
+   </property>
+   <property name="text">
+    <string>Закрыть все</string>
+   </property>
+  </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../rsrescore/resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

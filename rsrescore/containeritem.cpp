@@ -107,3 +107,29 @@ void ContainerItem::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
 {
     //event->accept();
 }
+
+// =====================================================================
+
+BorderItem::BorderItem(QGraphicsItem *parent) :
+    ContainerItem(parent)
+{
+
+}
+
+BorderItem::BorderItem(const QRect& rect, CustomRectItem* parent) :
+    ContainerItem(rect, parent)
+{
+
+}
+
+BorderItem::~BorderItem()
+{
+
+}
+
+void BorderItem::setBorderParams(const QRect &rect, const qint16 &St)
+{
+    setCoord(rect.topLeft());
+    setSize(rect.size());
+    m_BorderStyle = (ResStyle::BorderStyle)St;
+}

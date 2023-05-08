@@ -23,6 +23,8 @@ public:
     virtual QString propertyAlias() const Q_DECL_OVERRIDE;
     virtual void setObject(QObject *object) Q_DECL_OVERRIDE;
 
+    virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const Q_DECL_OVERRIDE;
+
     void loadEnumAlias(const QJsonArray &array);
 
 public slots:

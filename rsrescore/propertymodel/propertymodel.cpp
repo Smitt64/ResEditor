@@ -66,7 +66,8 @@ QVariant PropertyModel::data(const QModelIndex &index, int role) const
              role == Qt::BackgroundRole ||
              role == PropertyTreeItem::RoleTypeItem ||
              role == PropertyTreeItem::RoleGroup ||
-             role == Qt::ForegroundRole)
+             role == Qt::ForegroundRole ||
+             role == Qt::FontRole)
     {
         EwTextStylePropertyTreeItem *tmp = qobject_cast<EwTextStylePropertyTreeItem*>(item);
 

@@ -1,4 +1,6 @@
 #include "flagpropertytreeitem.h"
+#include "qcheckbox.h"
+#include "qfont.h"
 #include <QMetaObject>
 #include <QMetaProperty>
 #include <QMetaEnum>
@@ -47,7 +49,13 @@ QString FlagPropertyTreeItem::propertyAlias() const
     if (m_SubType != SubTypeRoot)
     {
         FlagPropertyTreeItem *parentFlag = dynamic_cast<FlagPropertyTreeItem*>(parentItem());
-        return parentFlag->m_KeyAlias[m_flagName];
+
+        QString Alias = parentFlag->m_KeyAlias[m_flagName];
+
+        if (Alias.isEmpty())
+            Alias = m_flagName;
+
+        return Alias;
     }
 
     return PropertyTreeItem::propertyAlias();
@@ -123,6 +131,15 @@ QVariant FlagPropertyTreeItem::data(const int &role) const
             else
                 return false;
         }
+        else if (role == Qt::FontRole)
+        {
+            if (data(Qt::EditRole).toBool())
+            {
+                QFont f;
+                f.setBold(true);
+                return f;
+            }
+        }
     }
     else
     {
@@ -162,4 +179,10 @@ void FlagPropertyTreeItem::loadEnumAlias(const QJsonArray &array)
         m_KeyAlias.insert(key, alias);
         m_AliasKey.insert(alias, key);
     }
+}
+
+QWidget *FlagPropertyTreeItem::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QCheckBox *editor = new QCheckBox(parent);
+    return editor;
 }

@@ -8,7 +8,9 @@
 #include "baseeditorview.h"
 #include "undoredo/undoitemadd.h"
 #include "undoredo/undoitemdelete.h"
+#include "lbrobject.h"
 #include "textitem.h"
+#include "controlitem.h"
 #include <QStatusBar>
 #include <QHBoxLayout>
 #include <QGraphicsSceneMouseEvent>
@@ -121,12 +123,27 @@ protected:
             return;
 
         QSize gridSize = getGridSize();
-        qreal xV = round(mouseEvent->scenePos().x() / gridSize.width()) * gridSize.width();
-        qreal yV = round(mouseEvent->scenePos().y() / gridSize.height())* gridSize.height();
+        QPointF scenePos = mouseEvent->scenePos();
+        qreal xV = round(scenePos.x() / gridSize.width()) * gridSize.width();
+        qreal yV = round(scenePos.y() / gridSize.height())* gridSize.height();
+
+        QList<QRectF> mouseRects =
+        {
+            QRectF(QPoint(xV, yV - gridSize.height()), gridSize), // Up rect
+            QRectF(QPoint(xV, yV + gridSize.height()), gridSize), // Bottom rect
+            QRectF(QPoint(xV - gridSize.width(), yV), gridSize),  // Left rect
+            QRectF(QPoint(xV + gridSize.width(), yV), gridSize)   // Right rect
+        };
 
         QPointF nPos = QPointF(xV, yV);
-        QRectF panelSceneBound = panelItem->mapRectToScene(panelItem->boundingRect());
+        for (QRectF rect : mouseRects)
+        {
+            rect.adjusted(-1, -1, -1, -1);
+            if (rect.contains(scenePos))
+                nPos = rect.topLeft();
+        }
 
+        QRectF panelSceneBound = panelItem->mapRectToScene(panelItem->boundingRect());
         if (panelSceneBound.contains(mouseEvent->scenePos()))
         {
             bool hasBounds = false;
@@ -183,6 +200,7 @@ public:
 
 StdPanelEditor::StdPanelEditor(QWidget *parent) :
     BaseEditorWindow(parent),
+    m_pPanel(nullptr),
     panelItem(nullptr),
     m_StatusBar(nullptr)
 {
@@ -248,6 +266,8 @@ void StdPanelEditor::setupEditor()
 
     setupNameLine();
     m_pToolBar->addSeparator();
+    m_pSave = addAction(QIcon(":/img/saveHS.png"), tr("Сохранить"), QKeySequence::Save);
+    m_pToolBar->addSeparator();
     initUndoRedo(m_pToolBar);
     setupCopyPaste();
 
@@ -264,6 +284,11 @@ void StdPanelEditor::setupEditor()
     loadToolBox();
 
     connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
+    connect(m_pSave, &QAction::triggered, this, &StdPanelEditor::readySave);
+    connect(panelItem, &PanelItem::titleChanged, [=]()
+    {
+        emit titleChanged(panelItem->title());
+    });
 }
 
 void StdPanelEditor::setupContrastAction()
@@ -342,6 +367,26 @@ void StdPanelEditor::setPanel(ResPanel *panel, const QString &comment)
     panelItem->setPanel(m_pPanel, comment);
 
     m_pNameLineEdit->setText(m_pPanel->name());
+
+    emit titleChanged(m_pPanel->title());
+}
+
+QString StdPanelEditor::name() const
+{
+    return m_pNameLineEdit->text();
+}
+
+QString StdPanelEditor::title() const
+{
+    if (panelItem)
+        return panelItem->title();
+
+    return BaseEditorWindow::title();
+}
+
+qint16 StdPanelEditor::type() const
+{
+    return LbrObject::RES_PANEL;
 }
 
 bool StdPanelEditor::eventFilter(QObject *obj, QEvent *event)
@@ -545,4 +590,26 @@ void StdPanelEditor::clipboardChanged()
         m_pPasteAction->setEnabled(true);
     else
         m_pPasteAction->setEnabled(false);
+}
+
+bool StdPanelEditor::save(ResBuffer *res, QString *error)
+{
+    BaseScene *pScene = dynamic_cast<BaseScene*>(m_pView->scene());
+    *error = "еще не реализовано";
+
+    ResPanel resPanel;
+    QList<ControlItem*> controls = pScene->findItems<ControlItem>();
+
+    for (ControlItem *item : qAsConst(controls))
+    {
+        resPanel.beginAddField(item->controlName(), item->controlName2());
+        resPanel.setFieldDataType(item->fieldType(), item->dataType(), item->dataLength());
+        resPanel.setLenHeight(item->length(), item->lines());
+        resPanel.setFormatTooltip(item->valueTemplate(), item->toolTip());
+        resPanel.setFieldStyle((quint16)item->controlStyle());
+        resPanel.setFieldGroup(item->controlGroup());
+        resPanel.setFieldHelp(item->helpPage());
+        resPanel.endAddField();
+    }
+    return false;
 }

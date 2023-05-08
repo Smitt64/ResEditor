@@ -3,6 +3,7 @@
 #include "rscoreheader.h"
 #include <QDebug>
 #include <QDataStream>
+#include <QDomElement>
 
 const qint8 &TextStruct::x() const
 {
@@ -35,6 +36,11 @@ FieldStruct::FieldStruct(const FieldStruct &other)
     name2 = other.name2;
     formatStr = other.formatStr;
     toolTip = other.toolTip;
+}
+
+FieldStruct::FieldStruct()
+{
+    _field = nullptr;
 }
 
 const qint8 &FieldStruct::x() const
@@ -77,6 +83,20 @@ const qint8 &FieldStruct::kd() const
     return _field->kd;
 }
 
+void FieldStruct::reset()
+{
+    if (_field)
+        delete _field;
+
+    _field = new FieldR();
+    memset(_field, 0, sizeof(FieldR));
+
+    name = QString();
+    name2 = QString();
+    formatStr = QString();
+    toolTip = QString();
+}
+
 // ----------------------------------------------------------------
 
 ResPanel::ResPanel(QObject *parent) :
@@ -91,6 +111,12 @@ ResPanel::~ResPanel()
 {
     if (m_pPanel)
         delete m_pPanel;
+
+    for (const TextStruct &item : qAsConst(m_Texts))
+        delete item._text;
+
+    for (const FieldStruct &item : qAsConst(m_Fields))
+        delete item._field;
 }
 
 /*static int rds(int hd, char **s, r_coord vfl, r_coord lens, HRSLCVT hcvtRd)
@@ -461,7 +487,7 @@ int ResPanel::readItems(struct PanelR *pp, ResBuffer *data, bool readName2)
 
     for(int i = 0; i < pp->Nt && !err; i++)
     {
-        TextR  tt;
+        TextR tt;
         err = data->read((char*)&tt, sizeof(TextR));
 
         if(!(err = (err != sizeof(TextR))) && tt.lens)
@@ -616,4 +642,144 @@ FieldStructList::iterator ResPanel::fieldBegin()
 FieldStructList::iterator ResPanel::fieldEnd()
 {
     return m_Fields.end();
+}
+
+int ResPanel::loadXmlNode(const QDomElement &reslib)
+{
+    m_Name = reslib.attribute("name", "0");
+    m_pPanel->St = reslib.attribute("St", "0").toInt();
+    m_pPanel->x1 = reslib.attribute("x1", "0").toInt();
+    m_pPanel->x2 = reslib.attribute("x2", "0").toInt();
+    m_pPanel->y1 = reslib.attribute("y1", "0").toInt();
+    m_pPanel->y2 = reslib.attribute("y2", "0").toInt();
+
+    m_pPanel->PHelp = reslib.attribute("PHelp", "0").toInt();
+    m_pPanel->Pff = reslib.attribute("Pff", "0").toInt();
+    m_pPanel->flags = reslib.attribute("flags", "0").toInt();
+
+    QDomNode n = reslib.firstChild();
+    while(!n.isNull())
+    {
+        QDomElement e = n.toElement();
+
+        if (e.tagName() == "stline")
+            m_Status = e.text();
+        else if (e.tagName() == "headLine")
+            m_Title = e.text();
+        else if (e.tagName() == "text")
+        {
+            TextStruct text;
+            text._text = new TextR();
+            text._text->St = e.attribute("St", "0").toInt();
+            text._text->x = e.attribute("x", "0").toInt();
+            text._text->y = e.attribute("y", "0").toInt();
+            text.value = e.text();
+            m_Texts.append(text);
+        }
+        else if (e.tagName() == "field")
+        {
+            FieldStruct element;
+            element._field = new FieldR();
+            element._field->Ftype = e.attribute("Ftype", "0").toInt();
+            element._field->St = e.attribute("St", "0").toInt();
+            element._field->FVt = e.attribute("FVt", "0").toInt();
+            element._field->FVp = e.attribute("FVp", "0").toInt();
+            element._field->x = e.attribute("x", "0").toInt();
+            element._field->y = e.attribute("y", "0").toInt();
+            element._field->l = e.attribute("l", "0").toInt();
+            element._field->h = e.attribute("h", "0").toInt();
+            element._field->kl = e.attribute("kl", "0").toInt();
+            element._field->kr = e.attribute("kr", "0").toInt();
+            element._field->ku = e.attribute("ku", "0").toInt();
+            element._field->kd = e.attribute("kd", "0").toInt();
+            element._field->FHelp = e.attribute("FHelp", "0").toInt();
+            element._field->vfl = e.attribute("vfl", "0").toInt();
+            element._field->flags = e.attribute("flags", "0").toInt();
+            element._field->group = e.attribute("group", "0").toInt();
+
+            m_Fields.append(element);
+        }
+        n = n.nextSibling();
+    }
+    return 0;
+}
+
+void ResPanel::setName(const QString &val)
+{
+    m_Name = val;
+}
+
+void ResPanel::beginAddField(const QString &name, const QString &name2)
+{
+    m_NewField.reset();
+    m_NewField.name  = name;
+    m_NewField.name2 = name2;
+}
+
+void ResPanel::setFieldDataType(const quint8 &FieldType, const quint8 &DataType, const quint16 &DataLength)
+{
+    /*
+     *     m_FieldType = static_cast<FieldType>(m_pFieldStruct->_field->Ftype);
+    m_DataType = static_cast<DataType>(m_pFieldStruct->_field->FVt);
+    m_DataLength = m_pFieldStruct->_field->FVp;
+
+    m_ValueTemplate = m_pFieldStruct->formatStr;
+    m_ToolTip = m_pFieldStruct->toolTip;
+    m_ControlGroup = m_pFieldStruct->_field->group;
+    m_HelpPage = m_pFieldStruct->_field->FHelp;
+    m_Style = static_cast<ResStyle::PanelStyle>(m_pFieldStruct->_field->St);
+    */
+    m_NewField._field->Ftype = FieldType;
+    m_NewField._field->FVt = DataType;
+    m_NewField._field->FVp = DataLength;
+    //m_NewField._field->h = lines;
+}
+
+void ResPanel::setLenHeight(const quint8 &len, const quint8 &height)
+{
+    m_NewField._field->l = len;
+    m_NewField._field->h = height;
+}
+
+void ResPanel::setFormatTooltip(const QString &formatStr, const QString &toolTip)
+{
+    m_NewField.formatStr = formatStr;
+    m_NewField.toolTip = toolTip;
+}
+
+void ResPanel::setFieldStyle(const quint16 &St)
+{
+    m_NewField._field->St = St;
+}
+
+void ResPanel::setFieldGroup(const quint16 &ControlGroup)
+{
+    m_NewField._field->group = ControlGroup;
+}
+
+void ResPanel::setFieldHelp(const quint16 &HelpPage)
+{
+    m_NewField._field->FHelp = HelpPage;
+}
+
+void ResPanel::endAddField()
+{
+    m_Fields.append(m_NewField);
+}
+
+int ResPanel::borderCount() const
+{
+    return m_BordR.size();
+}
+
+QRect ResPanel::borderRect(const int &index) const
+{
+    const BordR &border = m_BordR[index];
+    return QRect(border.x, border.y, border.l, border.h);
+}
+
+qint16 ResPanel::borderStyle(const int &index) const
+{
+    const BordR &border = m_BordR[index];
+    return border.fl;
 }

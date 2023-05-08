@@ -8,11 +8,13 @@
 #include "controlitem.h"
 #include "textitem.h"
 #include "panelitem.h"
+#include "respanel.h"
 #include "propertymodel/ewtextstylepropertytreeitem.h"
 #include "styles/extextstyle.h"
 #include <QPluginLoader>
 #include <QFontDatabase>
 #include <QToolButton>
+#include <QDomDocument>
 
 Q_IMPORT_PLUGIN(BaseResourceEditor)
 
@@ -32,6 +34,8 @@ void RsResCore::init()
     qRegisterMetaType<TextItem*>();
     qRegisterMetaType<ContainerItem*>();
     qRegisterMetaType<PanelItem*>();
+    qRegisterMetaType<BorderItem*>();
+    qRegisterMetaType<ContainerItem*>();
     qRegisterMetaType<EwTextStyle>();
     qRegisterMetaType<ControTabOrder>();
     qRegisterMetaType<EwTextStylePropertyTreeItem*>();
@@ -162,7 +166,7 @@ ResourceEditorInterface *RsResCore::pluginForType(const qint16 &Type)
 ResourceEditorInterface *RsResCore::pluginForNewAction(const QString &guid)
 {
     ResourceEditorInterface *plugin = nullptr;
-    for (ResourceEditorInterface *item : m_Plugins)
+    for (ResourceEditorInterface *item : qAsConst(m_Plugins))
     {
         if (item->newItemsActionAvalible(guid))
         {
@@ -187,6 +191,27 @@ QStringList RsResCore::newItemsMetaList() const
     }
 
     return metalist;
+}
+
+void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel)
+{
+    QDomDocument doc;
+    doc.setContent(device);
+
+    QDomElement root = doc.documentElement();
+
+    if (root.tagName() == "reslib")
+    {
+        QDomNode reslibnode = root.firstChild();
+        QDomElement reslib = reslibnode.toElement();
+
+        if (reslib.tagName() == "panel")
+        {
+            *panel = new ResPanel();
+            ResPanel *ptr = *panel;
+            ptr->loadXmlNode(reslib);
+        }
+    }
 }
 
 static QString strippedActionText(QString s)

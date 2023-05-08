@@ -1,5 +1,6 @@
 #include "propertytreeitem.h"
 #include "propertymodel.h"
+#include "qcheckbox.h"
 #include "qsize.h"
 #include <QMetaObject>
 #include <QMetaProperty>
@@ -263,6 +264,12 @@ QWidget *CreateStringEditor(QWidget *parent)
     return editor;
 }
 
+QWidget *CreateBoolEditor(QWidget *parent)
+{
+    QCheckBox *editor = new QCheckBox(parent);
+    return editor;
+}
+
 QWidget *PropertyTreeItem::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     QWidget *pEditor = nullptr;
@@ -276,6 +283,9 @@ QWidget *PropertyTreeItem::createEditor(QWidget *parent, const QStyleOptionViewI
         int type = prop.type();
         switch(type)
         {
+        case QMetaType::Bool:
+            pEditor = CreateBoolEditor(parent);
+            break;
         case QMetaType::Int:
             pEditor = CreateNumberEditor<int>(parent);
             break;

@@ -6,6 +6,7 @@
 #include <QIcon>
 #include <QMultiHash>
 
+class ResPanel;
 class ResourceEditorInterface;
 class RSRESCORE_EXPORT RsResCore
 {
@@ -20,6 +21,8 @@ public:
     ResourceEditorInterface *pluginForNewAction(const QString &guid);
     QStringList newItemsMetaList() const;
     void init();
+
+    void loadFromXml(QIODevice *device, ResPanel **panel);
 
 private:
     void loadPlugins();

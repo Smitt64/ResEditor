@@ -43,7 +43,11 @@
         },
         {
             "name" : "controlName",
-            "alias" : "Имя/Текст"
+            "alias" : "Наименование поля"
+        },
+        {
+            "name" : "controlName2",
+            "alias" : "Имя/Текст 2"
         },
         {
             "name" : "toolTip",
@@ -80,6 +84,10 @@
             "name" : "tabOrder",
             "alias" : "Порядок полей",
             "viewclass" : "CtrlTabOrderTreeItem"
+        },
+        {
+            "name" : "controlFlags",
+            "alias" : "Доп. признаки"
         }
     ]
 }

@@ -40,6 +40,7 @@ public:
     QAbstractItemModel *list();
 
     void getResource(const QString &name, const int &type, ResBuffer **buffer);
+    bool isResExists(const QString &name, const int &type);
 
 private:
     LbrObjectPrivate * const d_ptr;

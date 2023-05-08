@@ -76,11 +76,11 @@ QListWidget *NewItemsDlg::CreateSubList()
 {
     QListWidget *list = new QListWidget(this);
     list->setViewMode(QListView::IconMode);
-    list->setIconSize(QSize(48, 48));
+    list->setIconSize(QSize(32, 32));
     list->setFrameShape(QFrame::NoFrame);
     list->setSortingEnabled(true);
     list->setWordWrap(true);
-    list->setResizeMode(QListView::Adjust);
+    list->setResizeMode(QListView::Fixed);
     list->setMovement(QListView::Static);
     list->setUniformItemSizes(true);
     list->setSpacing(2);

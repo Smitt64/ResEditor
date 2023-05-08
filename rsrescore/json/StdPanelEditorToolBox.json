@@ -672,7 +672,7 @@
             "mimedata": {
                 "items": [
                     {
-                        "class": "ContainerItem",
+                        "class": "BorderItem",
                         "parent": "",
                         "uuid": "{1970200b-c0ed-4184-b331-07d7a44ee00d}",
                         "properties": [
@@ -702,7 +702,7 @@
             "mimedata": {
                 "items": [
                     {
-                        "class": "ContainerItem",
+                        "class": "BorderItem",
                         "parent": "",
                         "uuid": "{1970200b-c0ed-4184-b331-07d7a44ee00d}",
                         "properties": [

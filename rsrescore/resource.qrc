@@ -57,5 +57,12 @@
         <file>json/BorderStyle.json</file>
         <file>json/PanelStyleEnum.json</file>
         <file>img/openHS.png</file>
+        <file>templates/EMPTY_PANEL_DOUBLE.xml</file>
+        <file>img/PanelFromDoc.png</file>
+        <file>img/saveHS.png</file>
+        <file>img/closewnd.png</file>
+        <file>img/closewnds.png</file>
+        <file>img/nextwin.png</file>
+        <file>img/prevwin.png</file>
     </qresource>
 </RCC>

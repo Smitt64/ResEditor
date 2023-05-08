@@ -54,6 +54,12 @@ void LbrObject::getResource(const QString &name, const int &type, ResBuffer **bu
     //qDebug() << "getResource" << (*buffer)->buffer().size();
 }
 
+bool LbrObject::isResExists(const QString &name, const int &type)
+{
+    Q_D(LbrObject);
+    return d->GetResource(name, type) != nullptr;
+}
+
 QString LbrObject::getResTypeName(const int &type)
 {
     QString val;

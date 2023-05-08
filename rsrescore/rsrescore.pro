@@ -1,4 +1,4 @@
-QT += widgets uitools
+QT += widgets uitools xml
 
 TEMPLATE = lib
 DEFINES += RSRESCORE_LIBRARY

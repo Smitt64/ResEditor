@@ -24,6 +24,11 @@ public:
     virtual void setupEditor() Q_DECL_FINAL;
     void setPanel(ResPanel *panel, const QString &comment = QString());
 
+    virtual bool save(ResBuffer *res, QString *error) Q_DECL_OVERRIDE;
+    virtual QString name() const Q_DECL_OVERRIDE;
+    virtual QString title() const Q_DECL_OVERRIDE;
+    virtual qint16 type() const Q_DECL_OVERRIDE;
+
 private slots:
     void sceneSelectionChanged();
     void sceneDeleteItems();
@@ -34,7 +39,6 @@ private slots:
 
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
-     //virtual void mouseMoveEvent(QMouseEvent *event);
 
 private:
     enum FillItemsChildMode
@@ -65,6 +69,7 @@ private:
     QHBoxLayout *m_pStatusContainerLayout;
     QLineEdit *m_pNameLineEdit;
 
+    QAction *m_pSave;
     QAction *m_pContrst, *m_pDelete, *m_pProperty;
     QAction *m_pCutAction, *m_pCopyAction, *m_pPasteAction;
 

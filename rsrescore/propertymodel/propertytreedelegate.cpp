@@ -121,11 +121,7 @@ QSize PropertyTreeDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
 
         if (sz.isValid())
             return QSize(cell.width(), sz.height());
-        /*QVariant value = index.data(Qt::SizeHintRole);
-        QSize sz = item->sizeHint(option, index);
-        QSize real = !sz.isValid() ? value.toSize() : sz;
-        qDebug() << "sizeHint" << sz << real << option.rect;
-        return real;*/
+
         return cell;
     }
 

@@ -30,7 +30,14 @@ QVariant EnumPropertyTreeItem::data(const int &role) const
         else
         {
             QVariant value = m_pItem->property(m_PropertyName.toLocal8Bit().data());
-            return m_pModel->valueToAlias(value.toInt());
+            QString alias = m_pModel->valueToAlias(value.toInt());
+
+            if (alias.isEmpty())
+            {
+                QMetaEnum metaenum = metaobject->property(propIndex).enumerator();
+                alias = metaenum.valueToKey(value.toInt());
+            }
+            return alias;
         }
     }
 

@@ -59,6 +59,12 @@ int ResBuffer::version() const
     return d->m_ResHeader.ver;
 }
 
+void ResBuffer::setResVersion(const int &version)
+{
+    Q_D(ResBuffer);
+    d->m_ResHeader.ver = version;
+}
+
 QString ResBuffer::decodeString(const char *str) const
 {
     QTextCodec *codec = QTextCodec::codecForName("IBM 866");

@@ -22,7 +22,7 @@ ControlItem::ControlItem(QGraphicsItem *parent) :
     m_DataType(INT16),
     m_DataLength(0),
     m_Fdm(false),
-    m_IsText(false),
+    m_Flags(ControlFlags()),
     m_Style(ResStyle::MainStyle),
     m_ControlGroup(0),
     m_HelpPage(0)
@@ -79,13 +79,18 @@ void ControlItem::setFieldStruct(struct FieldStruct *value, const int &id)
     setCoord(QPoint(value->x(), value->y()));
     setSize(QSize(value->len(), value->height()));
 
-    m_FieldType = static_cast<FieldType>(m_pFieldStruct->_field->Ftype);
+    m_FieldType = static_cast<FieldType>(typeF(m_pFieldStruct->_field->Ftype));
+    m_Fdm = !isActF(m_pFieldStruct->_field->Ftype);
+    //m_FieldType = static_cast<FieldType>(m_pFieldStruct->_field->Ftype);
     m_DataType = static_cast<DataType>(m_pFieldStruct->_field->FVt);
     m_DataLength = m_pFieldStruct->_field->FVp;
     m_ValueTemplate = m_pFieldStruct->formatStr;
     m_ToolTip = m_pFieldStruct->toolTip;
     m_ControlGroup = m_pFieldStruct->_field->group;
     m_HelpPage = m_pFieldStruct->_field->FHelp;
+    m_Style = static_cast<ResStyle::PanelStyle>(m_pFieldStruct->_field->St);
+    m_ControlName = value->name;
+    m_Flags = ControlFlags(m_pFieldStruct->_field->flags);
 
     m_TabOrder.setPrevious(m_pFieldStruct->_field->kl);
     m_TabOrder.setNext(m_pFieldStruct->_field->kr);
@@ -248,9 +253,9 @@ void ControlItem::setFdm(const bool &val)
         pushUndoPropertyData("fdm", val);
 }
 
-const bool &ControlItem::isText() const
+bool ControlItem::isText() const
 {
-    return m_IsText;
+    return m_Flags & RF_ASTEXT;
 }
 
 void ControlItem::setIsText(const bool &val)
@@ -259,8 +264,13 @@ void ControlItem::setIsText(const bool &val)
 
     if (isSkipUndoStack() || !undoStack())
     {
-        m_IsText = val;
+        if (val)
+            m_Flags |= RF_ASTEXT;
+        else
+            m_Flags &= ~RF_ASTEXT;
+
         emit isTextChanged();
+        emit controlFlagsChanged();
         update();
         scene()->update();
     }
@@ -286,6 +296,26 @@ void ControlItem::setControlName(const QString &val)
     }
     else
         pushUndoPropertyData("controlName", val);
+}
+
+const QString &ControlItem::controlName2() const
+{
+    return m_ControlName2;
+}
+
+void ControlItem::setControlName2(const QString &val)
+{
+    checkPropSame("controlName2", val);
+
+    if (isSkipUndoStack() || !undoStack())
+    {
+        m_ControlName2 = val;
+        emit controlName2Changed();
+        update();
+        scene()->update();
+    }
+    else
+        pushUndoPropertyData("controlName2", val);
 }
 
 const QString &ControlItem::toolTip() const
@@ -330,7 +360,7 @@ void ControlItem::setControlStyle(const ResStyle::PanelStyle &val)
 
 const QString &ControlItem::valueTemplate() const
 {
-    return m_ControlName;
+    return m_ValueTemplate;
 }
 
 void ControlItem::setValueTemplate(const QString &val)
@@ -406,6 +436,27 @@ void ControlItem::setTabOrder(const ControTabOrder &val)
     }
     else
         pushUndoPropertyData("tabOrder", QVariant::fromValue(val));
+}
+
+quint32 ControlItem::controlFlags() const
+{
+    return m_Flags;
+}
+
+void ControlItem::setControlFlags(quint32 val)
+{
+    checkPropSame("controlFlags", val);
+
+    if (isSkipUndoStack() || !undoStack())
+    {
+        m_Flags = ControlFlags(val);
+        emit controlFlagsChanged();
+        emit isTextChanged();
+        update();
+        scene()->update();
+    }
+    else
+        pushUndoPropertyData("controlFlags", val);
 }
 
 QVariant ControlItem::userAction(const qint32 &action, const QVariant &param)

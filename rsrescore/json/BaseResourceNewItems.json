@@ -13,11 +13,23 @@
             "action": "{57f88805-7474-42fb-bc00-24a90cd5e85d}",
             "title": "Панель (двойная рамка)",
             "icon": ":/img/Panel.png",
-            "group": "Ресурсы",
+            "group": "Панели",
             "description": "Создание панелии с двойной рамкой",
             "needname": true,
             "needpath": false,
-            "namelen": 8
+            "namelen": 8,
+            "validator": "StdPanNameValidator"
+        },
+        {
+            "action": "{c01bd070-a483-482c-9a30-2946a4317b71}",
+            "title": "Панель из текста",
+            "icon": ":/img/PanelFromDoc.png",
+            "group": "Панели",
+            "description": "Создание панелии с двойной рамкой<br><font color='red'>не реализовано</font>",
+            "needname": true,
+            "needpath": false,
+            "namelen": 8,
+            "validator": "StdPanNameValidator"
         }
     ]
 }

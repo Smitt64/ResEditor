@@ -32,10 +32,26 @@ protected:
 
     virtual bool isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const Q_DECL_OVERRIDE;
 
-private:
     ResStyle::BorderStyle m_BorderStyle;
 };
 
+class BorderItem : public ContainerItem
+{
+    Q_OBJECT
+    Q_PROPERTY(ResStyle::BorderStyle borderStyle READ borderStyle WRITE setBorderStyle NOTIFY borderStyleChanged)
+
+    Q_CLASSINFO(CLASSINFO_UNDOREDO, "BORDER")
+    Q_CLASSINFO(CLASSINFO_PROPERTYLIST, ":/json/Container.json")
+    Q_CLASSINFO(CLASSINFO_PROPERTYGROUP, "Border")
+public:
+    Q_INVOKABLE BorderItem(QGraphicsItem *parent = nullptr);
+    BorderItem(const QRect& rect, CustomRectItem* parent = nullptr);
+    virtual ~BorderItem();
+
+    void setBorderParams(const QRect &rect, const qint16 &St);
+};
+
 Q_DECLARE_OPAQUE_POINTER(ContainerItem)
+Q_DECLARE_OPAQUE_POINTER(BorderItem)
 
 #endif // CONTAINERITEM_H

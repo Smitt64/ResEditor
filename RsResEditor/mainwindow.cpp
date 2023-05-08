@@ -12,6 +12,9 @@
 #include <QMdiArea>
 #include <QDebug>
 #include <QDir>
+#include <QMessageBox>
+#include <QWidgetAction>
+#include <QComboBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -46,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_ResListDock->setModel(m_pLbrObj->list());
 
     SetupMenus();
+    CreateWindowsCombo();
 
     connect(m_ResListDock, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
     connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
@@ -64,6 +68,9 @@ void MainWindow::SetupMenus()
 
     ui->actionOpen->setIcon(QIcon(":/img/openHS.png"));
     ui->actionOpen->setShortcuts(QKeySequence::Open);
+
+    ui->toolBar->addAction(ui->actionNew);
+    ui->toolBar->addAction(ui->actionOpen);
 }
 
 void MainWindow::doubleResClicked(const QString &name, const int &type)
@@ -82,9 +89,80 @@ void MainWindow::doubleResClicked(const QString &name, const int &type)
 void MainWindow::AddEditorWindow(BaseEditorWindow *editor)
 {
     QMdiSubWindow *wnd = m_Mdi->addSubWindow(editor, Qt::SubWindow);
+    SetupEditorTitle(editor, editor->type(), editor->name(), editor->title());
     wnd->setAttribute(Qt::WA_DeleteOnClose);
     connect(editor, &BaseEditorWindow::propertyModelChanged, m_PropertyDock, &PropertyDockWidget::setPropertyModel);
+    connect(editor, &BaseEditorWindow::readySave, this, qOverload<bool>(&MainWindow::readySave));
+    connect(editor, &BaseEditorWindow::titleChanged, this, &MainWindow::titleChanged);
+    connect(editor, &BaseEditorWindow::modifyChanged, this, &MainWindow::modifyChanged);
+
+    wnd->installEventFilter(this);
     wnd->showMaximized();
+}
+
+void MainWindow::readySave(BaseEditorWindow *editor)
+{
+    if (!editor)
+        return;
+
+    ResBuffer *resBuffer = nullptr;
+    QString name = editor->name();
+    qint16 type = editor->type();
+    if (m_pLbrObj->isResExists(name, type))
+    {
+        QString msg = tr("Перезаписать существующий ресурс %1 [<b>%2</b>]?")
+                .arg(RsResCore::inst()->typeNameFromResType(type), name);
+
+        if (QMessageBox::question(this, tr("Сохранение"), msg, QMessageBox::Yes | QMessageBox::No) == QMessageBox::No)
+            return;
+
+        m_pLbrObj->getResource(name, type, &resBuffer);
+    }
+
+    QString errorMsg;
+    if (editor->save(resBuffer, &errorMsg))
+    {
+
+    }
+    else
+    {
+        QString text = tr("Ошибка сохранения ресурса %1 [<b>%2</b>]")
+                .arg(RsResCore::inst()->typeNameFromResType(type), name);
+
+        if (errorMsg.isEmpty())
+            QMessageBox::critical(this, tr("Сохранение"), text);
+        else
+        {
+            QMessageBox dlg(this);
+            dlg.setIcon(QMessageBox::Critical);
+            dlg.setText(text);
+            dlg.setInformativeText(errorMsg);
+            dlg.exec();
+        }
+    }
+}
+
+void MainWindow::readySave(bool closeAfterSave)
+{
+    BaseEditorWindow *wnd = qobject_cast<BaseEditorWindow*>(sender());
+
+    if (!wnd)
+        return;
+
+    readySave(wnd);
+    if (closeAfterSave)
+    {
+        QList<QMdiSubWindow*> wndlist = m_Mdi->subWindowList();
+
+        for (QMdiSubWindow *w : qAsConst(wndlist))
+        {
+            if (w->widget() == wnd)
+            {
+                w->close();
+                break;
+            }
+        }
+    }
 }
 
 void MainWindow::subWindowActivated(QMdiSubWindow *window)
@@ -124,3 +202,83 @@ void MainWindow::onNew()
     }
 }
 
+void MainWindow::SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
+                      const QString &name, const QString &title, bool changed)
+{
+    QString typeName = RsResCore::inst()->typeNameFromResType(Type);
+    QString titlestr = QString("%1 [%2]: %3")
+            .arg(typeName, name, title);
+
+    if (changed)
+        titlestr += " 🖊";
+
+    wnd->setWindowTitle(titlestr);
+}
+
+void MainWindow::titleChanged(const QString &title)
+{
+    BaseEditorWindow *wnd = dynamic_cast<BaseEditorWindow*>(sender());
+
+    if (!wnd)
+        return;
+
+    SetupEditorTitle(wnd, wnd->type(), wnd->name(), title, wnd->isChanged());
+}
+
+void MainWindow::modifyChanged(bool changed)
+{
+    BaseEditorWindow *wnd = dynamic_cast<BaseEditorWindow*>(sender());
+
+    if (!wnd)
+        return;
+
+    SetupEditorTitle(wnd, wnd->type(), wnd->name(), wnd->title(), wnd->isChanged());
+}
+
+void MainWindow::CreateWindowsCombo()
+{
+    pWindowsComboBox = new QComboBox(this);
+    pWindowsComboBox->setMinimumWidth(250);
+    ui->actionNextWnd->setShortcut(QKeySequence(QKeySequence::NextChild));
+    ui->actionPrevWnd->setShortcut(QKeySequence(QKeySequence::PreviousChild));
+
+    ui->windowToolBar->addAction(ui->actionPrevWnd);
+    ui->windowToolBar->addAction(ui->actionNextWnd);
+    ui->windowToolBar->addWidget(pWindowsComboBox);
+    ui->windowToolBar->addAction(ui->actionCloseWnd);
+    ui->windowToolBar->addAction(ui->actionCloseAllWnd);
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    QMdiSubWindow *wnd = qobject_cast<QMdiSubWindow*>(watched);
+
+    if (wnd && event->type() == QEvent::Close)
+    {
+        BaseEditorWindow *editor = dynamic_cast<BaseEditorWindow*>(wnd->widget());
+
+        if (!editor)
+            return QObject::eventFilter(watched, event);
+
+        if (editor->isChanged())
+        {
+            QString typeName = RsResCore::inst()->typeNameFromResType(editor->type());
+            QString msg = tr("Сохранить изменения в ресурсе %1 [<b>%2</b>]")
+                    .arg(typeName, editor->name());
+
+            QMessageBox::StandardButton btn = QMessageBox::question(this, tr("Сохранение"),
+                                  msg, QMessageBox::Save | QMessageBox::Discard | QMessageBox::Abort);
+
+            if (btn == QMessageBox::Abort)
+                event->ignore();
+            else if (btn == QMessageBox::Save)
+            {
+                readySave(editor);
+                event->accept();
+            }
+            return true;
+        }
+    }
+
+    return QObject::eventFilter(watched, event);
+}

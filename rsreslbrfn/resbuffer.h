@@ -14,6 +14,7 @@ public:
 
     int headerVersion() const;
     int version() const;
+    void setResVersion(const int &version);
 
     QString decodeString(const char *str) const;
     const QString &name() const;
