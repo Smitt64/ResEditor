@@ -60,6 +60,19 @@ bool PanelItem::event(QEvent *e)
     return ContainerItem::event(e);
 }
 
+void PanelItem::FillItemPanel(PanelPropertysDlg &dlg)
+{
+    setBorderStyle(dlg.borderStyle());
+    setPanelStyle(dlg.panelStyle());
+    setPanelExclude(dlg.excludeFlags());
+    setTitle(dlg.title());
+    setStatus(dlg.status());
+    setStatus2(dlg.status2());
+    setHelpPage(dlg.helpPage());
+    setIsCentered(dlg.alignPanelCenter());
+    setIsRightText(dlg.alignTextRight());
+}
+
 QVariant PanelItem::userAction(const qint32 &action, const QVariant &param)
 {
     if (action == ActionKeyEnter)
@@ -67,7 +80,13 @@ QVariant PanelItem::userAction(const qint32 &action, const QVariant &param)
         PanelPropertysDlg dlg(scene()->views().first());
         dlg.setPanelMode(true);
         dlg.setRectItem(this);
-        dlg.exec();
+
+        if (dlg.exec() == QDialog::Accepted)
+        {
+            undoStack()->beginMacro(tr("Изменение параметров панели"));
+            FillItemPanel(dlg);
+            undoStack()->endMacro();
+        }
     }
     return QVariant();
 }
@@ -166,6 +185,8 @@ const ResStyle::PanelStyle &PanelItem::panelStyle() const
 
 void PanelItem::setPanelStyle(const ResStyle::PanelStyle &style)
 {
+    checkPropSame("panelStyle", style);
+
     if (isSkipUndoStack() || !undoStack())
     {
         m_PanelStyle = style;
@@ -184,6 +205,8 @@ QString PanelItem::title() const
 
 void PanelItem::setTitle(const QString &text)
 {
+    checkPropSame("title", text);
+
     if (isSkipUndoStack() || !undoStack())
     {
         m_Title = text;
@@ -202,6 +225,8 @@ QString PanelItem::status() const
 
 void PanelItem::setStatus(const QString &text)
 {
+    checkPropSame("status", text);
+
     if (isSkipUndoStack() || !undoStack())
     {
         m_Status = text;
@@ -220,6 +245,8 @@ QString PanelItem::status2() const
 
 void PanelItem::setStatus2(const QString &text)
 {
+    checkPropSame("status2", text);
+
     if (isSkipUndoStack() || !undoStack())
     {
         m_Status2 = text;
@@ -238,6 +265,8 @@ const bool &PanelItem::isCentered() const
 
 void PanelItem::setIsCentered(const bool &val)
 {
+    checkPropSame("isCentered", val);
+
     if (isSkipUndoStack() || !undoStack())
     {
         m_isCentered = val;
@@ -256,6 +285,8 @@ const bool &PanelItem::isRightText() const
 
 void PanelItem::setIsRightText(const bool &val)
 {
+    checkPropSame("isRightText", val);
+
     if (isSkipUndoStack() || !undoStack())
     {
         m_isRightText = val;
@@ -274,6 +305,8 @@ PanelItem::PanelExcludeFlags PanelItem::panelExclude() const
 
 void PanelItem::setPanelExclude(const PanelItem::PanelExcludeFlags &val)
 {
+    checkPropSame("panelExclude", QVariant::fromValue((int)val));
+
     if (isSkipUndoStack() || !undoStack())
     {
         m_PanelExclude = val;
@@ -292,6 +325,8 @@ QString PanelItem::comment() const
 
 void PanelItem::setComment(const QString &text)
 {
+    checkPropSame("comment", text);
+
     if (isSkipUndoStack() || !undoStack())
     {
         m_Comment = text;
@@ -310,6 +345,8 @@ const quint16 &PanelItem::helpPage() const
 
 void PanelItem::setHelpPage(const quint16 &val)
 {
+    checkPropSame("helpPage", val);
+
     if (isSkipUndoStack() || !undoStack())
     {
         m_HelpPage = val;

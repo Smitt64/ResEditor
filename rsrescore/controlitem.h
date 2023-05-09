@@ -15,6 +15,7 @@ class ControlItem : public CustomRectItem
     Q_PROPERTY(quint16 dataLength READ dataLength WRITE setDataLength NOTIFY dataLengthChanged)
     Q_PROPERTY(quint16 length READ length NOTIFY lengthChanged)
     Q_PROPERTY(quint16 lines READ lines NOTIFY linesChanged)
+    Q_PROPERTY(quint16 point READ point WRITE setPoint NOTIFY pointChanged)
     Q_PROPERTY(bool fdm READ fdm WRITE setFdm NOTIFY fdmChanged)
     Q_PROPERTY(bool isText READ isText WRITE setIsText NOTIFY isTextChanged)
     Q_PROPERTY(QString controlName READ controlName WRITE setControlName NOTIFY controlNameChanged)
@@ -95,7 +96,7 @@ public:
 
         RF_ASTEXT = 0x01000000,
         RF_NOEDGE = 0x02000000,
-        //RF_BLOCKHIDE = 0x04000000,
+        RF_BLOCKHIDE = 0x04000000,
         RF_FLAT = 0x08000000,
 
         RF_GROUPING = 0x10000000,
@@ -151,6 +152,9 @@ public:
     const quint16 &controlGroup() const;
     void setControlGroup(const quint16 &val);
 
+    const quint16 &point() const;
+    void setPoint(const quint16 &val);
+
     const quint16 &helpPage() const;
     void setHelpPage(const quint16 &val);
 
@@ -179,6 +183,7 @@ signals:
     void toolTipChanged();
     void tabOrderChanged();
     void controlFlagsChanged();
+    void pointChanged();
 
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
@@ -190,7 +195,7 @@ private:
 
     FieldType m_FieldType;
     DataType m_DataType;
-    quint16 m_DataLength;
+    quint16 m_DataLength, m_Point;
     bool m_Fdm;
     ControlFlags m_Flags;
 

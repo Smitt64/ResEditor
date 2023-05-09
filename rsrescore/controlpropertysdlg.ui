@@ -33,7 +33,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="comboBox">
+      <widget class="QComboBox" name="fieldTypeBox">
        <property name="minimumSize">
         <size>
          <width>150</width>
@@ -69,7 +69,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QComboBox" name="comboBox_2"/>
+        <widget class="QComboBox" name="dataTypeBox"/>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_3">
@@ -79,7 +79,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QSpinBox" name="spinBox"/>
+        <widget class="QSpinBox" name="dataLength"/>
        </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_5">
@@ -89,14 +89,14 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QSpinBox" name="spinBox_2"/>
+        <widget class="QSpinBox" name="length"/>
        </item>
       </layout>
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QCheckBox" name="checkBox">
+        <widget class="QCheckBox" name="fdmBox">
          <property name="layoutDirection">
           <enum>Qt::RightToLeft</enum>
          </property>
@@ -115,7 +115,7 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QSpinBox" name="spinBox_3"/>
+          <widget class="QSpinBox" name="point"/>
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_6">
@@ -125,7 +125,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QSpinBox" name="spinBox_4"/>
+          <widget class="QSpinBox" name="lines"/>
          </item>
         </layout>
        </item>
@@ -136,10 +136,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
-      <widget class="QCheckBox" name="checkBox_2">
-       <property name="layoutDirection">
-        <enum>Qt::RightToLeft</enum>
-       </property>
+      <widget class="QCheckBox" name="isText">
        <property name="text">
         <string>Признак текста</string>
        </property>
@@ -172,7 +169,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLineEdit" name="lineEdit"/>
+        <widget class="QLineEdit" name="nameTextEdit"/>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_8">
@@ -182,10 +179,10 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QComboBox" name="comboBox_3"/>
+        <widget class="QComboBox" name="controlStyle"/>
        </item>
        <item row="2" column="1">
-        <widget class="QLineEdit" name="lineEdit_2"/>
+        <widget class="QLineEdit" name="valueTemplate"/>
        </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_9">
@@ -208,7 +205,7 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QSpinBox" name="spinBox_5"/>
+          <widget class="QSpinBox" name="controlGroup"/>
          </item>
         </layout>
        </item>
@@ -228,7 +225,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QSpinBox" name="spinBox_6">
+        <widget class="QSpinBox" name="helpPage">
          <property name="minimumSize">
           <size>
            <width>65</width>
@@ -264,7 +261,7 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="lineEdit_3"/>
+      <widget class="QLineEdit" name="controlName"/>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="label_13">
@@ -274,7 +271,7 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="lineEdit_4"/>
+      <widget class="QLineEdit" name="toolTip"/>
      </item>
     </layout>
    </item>
@@ -283,21 +280,21 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QCheckBox" name="checkBox_3">
+        <widget class="QCheckBox" name="flagRadio">
          <property name="text">
           <string>Радиокластер</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="checkBox_4">
+        <widget class="QCheckBox" name="flagText">
          <property name="text">
           <string>Как текст</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="checkBox_5">
+        <widget class="QCheckBox" name="flagGroup">
          <property name="text">
           <string>Группировка</string>
          </property>
@@ -341,14 +338,14 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <widget class="QCheckBox" name="checkBox_6">
+        <widget class="QCheckBox" name="flagExcludeTab">
          <property name="text">
           <string>Исключить из обхода</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="checkBox_7">
+        <widget class="QCheckBox" name="flagSelectList">
          <property name="text">
           <string>Выбор из списка</string>
          </property>

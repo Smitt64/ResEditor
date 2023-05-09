@@ -718,21 +718,9 @@ void ResPanel::beginAddField(const QString &name, const QString &name2)
 
 void ResPanel::setFieldDataType(const quint8 &FieldType, const quint8 &DataType, const quint16 &DataLength)
 {
-    /*
-     *     m_FieldType = static_cast<FieldType>(m_pFieldStruct->_field->Ftype);
-    m_DataType = static_cast<DataType>(m_pFieldStruct->_field->FVt);
-    m_DataLength = m_pFieldStruct->_field->FVp;
-
-    m_ValueTemplate = m_pFieldStruct->formatStr;
-    m_ToolTip = m_pFieldStruct->toolTip;
-    m_ControlGroup = m_pFieldStruct->_field->group;
-    m_HelpPage = m_pFieldStruct->_field->FHelp;
-    m_Style = static_cast<ResStyle::PanelStyle>(m_pFieldStruct->_field->St);
-    */
     m_NewField._field->Ftype = FieldType;
     m_NewField._field->FVt = DataType;
     m_NewField._field->FVp = DataLength;
-    //m_NewField._field->h = lines;
 }
 
 void ResPanel::setLenHeight(const quint8 &len, const quint8 &height)

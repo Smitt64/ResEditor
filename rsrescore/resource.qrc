@@ -64,5 +64,7 @@
         <file>img/closewnds.png</file>
         <file>img/nextwin.png</file>
         <file>img/prevwin.png</file>
+        <file>json/FieldTypeEnum.json</file>
+        <file>json/DataTypeEnum.json</file>
     </qresource>
 </RCC>

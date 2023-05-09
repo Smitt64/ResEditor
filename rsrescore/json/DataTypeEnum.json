@@ -1,0 +1,27 @@
+{
+    "enum" : [
+        { "key" : "INT16", "alias" : "INT16" },
+        { "key" : "INT32", "alias" : "INT32" },
+        { "key" : "INT64", "alias" : "INT64" },
+        { "key" : "FLOAT", "alias" : "FLOAT" },
+        { "key" : "FLOATG", "alias" : "FLOATG" },
+        { "key" : "DOUBLE", "alias" : "DOUBLE" },
+        { "key" : "DOUBLEG", "alias" : "DOUBLEG" },
+        { "key" : "LDOUBLE", "alias" : "LDOUBLE" },
+        { "key" : "MONEY", "alias" : "MONEY" },
+        { "key" : "MONEYR", "alias" : "MONEYR" },
+        { "key" : "LMONEY", "alias" : "LMONEY" },
+        { "key" : "LMONEYR", "alias" : "LMONEYR" },
+        { "key" : "DECIMAL", "alias" : "DECIMAL" },
+        { "key" : "NUMERIC", "alias" : "NUMERIC" },
+        { "key" : "STRING", "alias" : "STRING" },
+        { "key" : "SNR", "alias" : "SNR" },
+        { "key" : "NUMSTR", "alias" : "NUMSTR" },
+        { "key" : "DATE", "alias" : "DATE" },
+        { "key" : "TIME", "alias" : "TIME" },
+        { "key" : "SHTM", "alias" : "SHTM" },
+        { "key" : "CHAR", "alias" : "CHAR" },
+        { "key" : "UCHAR", "alias" : "UCHAR" },
+        { "key" : "PICTURE", "alias" : "PICTURE" }
+    ]
+}

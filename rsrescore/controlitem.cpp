@@ -21,6 +21,7 @@ ControlItem::ControlItem(QGraphicsItem *parent) :
     m_FieldType(FET),
     m_DataType(INT16),
     m_DataLength(0),
+    m_Point(0),
     m_Fdm(false),
     m_Flags(ControlFlags()),
     m_Style(ResStyle::MainStyle),
@@ -90,6 +91,7 @@ void ControlItem::setFieldStruct(struct FieldStruct *value, const int &id)
     m_HelpPage = m_pFieldStruct->_field->FHelp;
     m_Style = static_cast<ResStyle::PanelStyle>(m_pFieldStruct->_field->St);
     m_ControlName = value->name;
+    m_ControlName2 = value->name2;
     m_Flags = ControlFlags(m_pFieldStruct->_field->flags);
 
     m_TabOrder.setPrevious(m_pFieldStruct->_field->kl);
@@ -459,6 +461,26 @@ void ControlItem::setControlFlags(quint32 val)
         pushUndoPropertyData("controlFlags", val);
 }
 
+const quint16 &ControlItem::point() const
+{
+    return m_Point;
+}
+
+void ControlItem::setPoint(const quint16 &val)
+{
+    checkPropSame("point", val);
+
+    if (isSkipUndoStack() || !undoStack())
+    {
+        m_Point = val;
+        emit pointChanged();
+        update();
+        scene()->update();
+    }
+    else
+        pushUndoPropertyData("point", val);
+}
+
 QVariant ControlItem::userAction(const qint32 &action, const QVariant &param)
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
@@ -466,6 +488,7 @@ QVariant ControlItem::userAction(const qint32 &action, const QVariant &param)
     {
         QGraphicsView *view = customScene->views().first();
         ControlPropertysDlg dlg(view);
+        dlg.setControlItem(this);
 
         if (dlg.exec() == QDialog::Accepted)
             ;

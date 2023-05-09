@@ -69,3 +69,52 @@ void PanelPropertysDlg::setRectItem(CustomRectItem *item)
     ui->alignPanCenter->setChecked(m_pItem->property("isCentered").toBool());
     ui->alignTextRight->setChecked(m_pItem->property("isRightText").toBool());
 }
+
+ResStyle::BorderStyle PanelPropertysDlg::borderStyle() const
+{
+    return (ResStyle::BorderStyle)m_pBorderStyle->valueFromIndex(ui->borderStyle->currentIndex());
+}
+
+ResStyle::PanelStyle PanelPropertysDlg::panelStyle() const
+{
+    return (ResStyle::PanelStyle)m_pPanelStyle->valueFromIndex(ui->panelStyle->currentIndex());
+}
+
+PanelItem::PanelExcludeFlags PanelPropertysDlg::excludeFlags() const
+{
+    PanelItem::PanelExcludeFlags flags;
+    flags.setFlag(PanelItem::ExcludeAutoNum, ui->excludeAutoNum->isChecked());
+    flags.setFlag(PanelItem::ExcludeNavigation, ui->excludeAutoTab->isChecked());
+    flags.setFlag(PanelItem::ExcludeShadow, ui->excludeShadow->isChecked());
+    return flags;
+}
+
+QString PanelPropertysDlg::title() const
+{
+    return ui->titleEdit->text();
+}
+
+QString PanelPropertysDlg::status() const
+{
+    return ui->statusEdit->text();
+}
+
+QString PanelPropertysDlg::status2() const
+{
+    return ui->statusEdit2->text();
+}
+
+quint16 PanelPropertysDlg::helpPage() const
+{
+    return ui->helpPage->value();
+}
+
+bool PanelPropertysDlg::alignTextRight() const
+{
+    return ui->alignTextRight->isChecked();
+}
+
+bool PanelPropertysDlg::alignPanelCenter() const
+{
+    return ui->alignPanCenter->isChecked();
+}

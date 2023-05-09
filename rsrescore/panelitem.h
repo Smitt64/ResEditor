@@ -8,6 +8,7 @@
 
 class ResPanel;
 class QTextDocument;
+class PanelPropertysDlg;
 class PanelItem : public ContainerItem
 {
     Q_OBJECT
@@ -91,6 +92,8 @@ protected:
     virtual void dragMoveEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
     virtual void dropEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
     virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
+
+    virtual void FillItemPanel(PanelPropertysDlg &dlg);
 
 private:
     void setChildsVisible(const bool &value);

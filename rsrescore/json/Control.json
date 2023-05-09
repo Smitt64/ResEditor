@@ -3,21 +3,12 @@
         {
             "name" : "fieldType",
             "alias" : "Тип поля",
-
-            "enum" : [
-                { "key" : "FET", "alias" : "FET Редактируемое поле" },
-                { "key" : "FBT", "alias" : "FBT Кнопка" },
-                { "key" : "FBS", "alias" : "FBS Кнопка с тенью" },
-                { "key" : "FWR", "alias" : "FWR Редактируемое поле многострочное" },
-                { "key" : "FVT", "alias" : "FVT Нередактируемое поле" },
-                { "key" : "FSP", "alias" : "FSP Subpanel" },
-                { "key" : "FCL", "alias" : "FCL Cluster (Check box or Radio button)" },
-                { "key" : "FVW", "alias" : "FVW Многострочное нередактируюемое" }
-            ]
+            "enum" : ":/json/FieldTypeEnum.json"
         },
         {
             "name" : "dataType",
-            "alias" : "Тип значения"
+            "alias" : "Тип значения",
+            "enum" : ":/json/DataTypeEnum.json"
         },
         {
             "name" : "dataLength",
@@ -32,6 +23,10 @@
             "name" : "lines",
             "alias" : "Высота",
             "enable" : false
+        },
+        {
+            "name" : "point",
+            "alias" : "Точка"
         },
         {
             "name" : "fdm",
@@ -60,17 +55,7 @@
         {
             "name" : "controlStyle",
             "alias" : "Цвет",
-
-            "enum" : [
-                { "key" : "MainStyle", "alias" : "Наследуемый" },
-                { "key" : "SCOM", "alias" : "SCOM Основной стиль" },
-                { "key" : "SMES", "alias" : "SMES Стиль сообщений" },
-                { "key" : "RMES", "alias" : "RMES Стиль аварийных сообщений" },
-                { "key" : "SHLP", "alias" : "SHLP Стиль помощи" },
-                { "key" : "SMEN", "alias" : "SMEN Стиль меню" },
-                { "key" : "SBCM", "alias" : "SBCM Стиль с яркой рамкой" },
-                { "key" : "SCRL", "alias" : "SCRL Стиль справочных скролингов" }
-            ]
+            "enum" : ":/json/PanelStyleEnum.json"
         },
         {
             "name" : "controlGroup",
