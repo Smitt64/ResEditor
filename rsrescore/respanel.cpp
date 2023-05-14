@@ -5,6 +5,27 @@
 #include <QDataStream>
 #include <QDomElement>
 
+#define  RFP_REJREQ        0x00000004
+#define  RFP_UPDREQ        0x00000008
+#define  RFP_DELREQ        0x00000010
+
+#define  RFP_CHNGF         0x00000020   // ширина поля скроллинга была изменена
+                                        // динамически в EasyWin
+
+#define  RFP_NOCLOSE       0x00000040   // для EasyWin
+
+#define  RFP_RIGHTTEXT     0x00000080   // все тексты в панели имеют правое выравнивание
+#define  RFP_TRANSPARENT   0x00000100   // Не используется (см. RFP_CENTERED)
+#define  RFP_ANIMATED      0x00000200   // Не используется
+#define  RFP_FLOATING      0x00000400
+#define  RFP_PINX          0x00000800
+#define  RFP_PINY          0x00001000
+#define  RFP_NOAUTODIR     0x00002000
+#define  RFP_NOAUTONUM     0x00004000
+#define  RFP_NOSHADOW      0x00008000
+
+#define  RFP_CENTERED      0x00000100   // Вместо RFP_TRANSPARENT
+
 const qint8 &TextStruct::x() const
 {
     return _text->x;
@@ -624,6 +645,18 @@ quint32 ResPanel::helpPage() const
     return m_pPanel->PHelp;
 }
 
+ResStyle::BorderStyle ResPanel::panelBorder() const
+{
+    quint16 border = m_pPanel->St >> 8;
+    return (ResStyle::BorderStyle)border;
+}
+
+ResStyle::PanelStyle ResPanel::panelStyle() const
+{
+    quint16 style = m_pPanel->St & 0x00ff;
+    return (ResStyle::PanelStyle)style;
+}
+
 TextStructList::iterator ResPanel::textBegin()
 {
     return m_Texts.begin();
@@ -770,4 +803,37 @@ qint16 ResPanel::borderStyle(const int &index) const
 {
     const BordR &border = m_BordR[index];
     return border.fl;
+}
+
+bool ResPanel::isCentered() const
+{
+    return m_pPanel->flags & RFP_CENTERED;
+}
+
+bool ResPanel::isRightText() const
+{
+    return m_pPanel->flags & RFP_RIGHTTEXT;
+}
+
+bool ResPanel::isExcludeNavigation() const
+{
+    return m_pPanel->flags & RFP_NOAUTODIR;
+}
+
+bool ResPanel::isExcludeAutoNum() const
+{
+    return m_pPanel->flags & RFP_NOAUTONUM;
+}
+
+bool ResPanel::isExcludeShadowNum() const
+{
+    return m_pPanel->flags & RFP_NOSHADOW;
+}
+
+void ResPanel::setPanelRect(const QRect &geometry)
+{
+    m_pPanel->x1 = geometry.x();
+    m_pPanel->y1 = geometry.y();
+    m_pPanel->x2 = geometry.x() + geometry.width() - 1;
+    m_pPanel->y2 = geometry.y() + geometry.height() - 1;
 }

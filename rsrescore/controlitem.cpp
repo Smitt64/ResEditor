@@ -89,7 +89,10 @@ void ControlItem::setFieldStruct(struct FieldStruct *value, const int &id)
     m_ToolTip = m_pFieldStruct->toolTip;
     m_ControlGroup = m_pFieldStruct->_field->group;
     m_HelpPage = m_pFieldStruct->_field->FHelp;
-    m_Style = static_cast<ResStyle::PanelStyle>(m_pFieldStruct->_field->St);
+
+    qint16 st = m_pFieldStruct->_field->St >> 8;
+    m_Style = static_cast<ResStyle::PanelStyle>((st) - 1);
+
     m_ControlName = value->name;
     m_ControlName2 = value->name2;
     m_Flags = ControlFlags(m_pFieldStruct->_field->flags);

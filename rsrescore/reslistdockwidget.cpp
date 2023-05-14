@@ -141,6 +141,7 @@ void ResListDockWidget::setModel(QAbstractItemModel *model)
 {
     m_pFiler->setSourceModel(model);
     m_List->header()->resizeSection(1, 50);
+    model->sort(0);
 }
 
 void ResListDockWidget::onDoubleClicked(const QModelIndex &index)

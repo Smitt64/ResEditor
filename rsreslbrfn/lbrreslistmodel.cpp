@@ -75,3 +75,27 @@ QVariant LbrResListModel::data(const QModelIndex &index, int role) const
     }
     return QVariant();
 }
+
+void LbrResListModel::sort(int column, Qt::SortOrder order)
+{
+    Q_D(LbrResListModel);
+    std::sort(d->m_Elements.begin(), d->m_Elements.end(), [=](RLibDirElem *item1, RLibDirElem *item2)
+    {
+        if (column == ColumnName)
+        {
+            if (order == Qt::AscendingOrder)
+                return strcmp(item1->name, item2->name) < 0;
+            else
+                return strcmp(item1->name, item2->name) > 0;
+        }
+        else if (column == ColumnType)
+        {
+            if (order == Qt::AscendingOrder)
+                return item1->type < item2->type;
+            else
+                return item1->type > item2->type;
+        }
+
+        return false;
+    });
+}

@@ -5,41 +5,11 @@
 #include <QSize>
 #include <QRect>
 #include <QPoint>
+#include "styles/resstyle.h"
 
 #define TYPEF 0x0F
 #define DUMMF 0x10
 #define HIDEF 0x20 // Поле спрятано пользователем
-
-// Константы для FIELD::FFlags
-/*#define RF_REQUIRED     0x00000004
-#define RF_NEGATIVE     0x00000008
-
-#define RF_ELIPSBTN     0x00001000  // Поле с кнопкой "..." (вызов справочника)
-#define RF_DOWNBTN      0x00002000  // Поле с кнопкой "" (выбор из списка)
-#define RF_EMPTY        0x00004000
-#define RF_TRIMZEROS    0x00008000
-
-#define RF_3STATE       0x00000100  // Признак CheckBox'а с тремя состояниями (совместно с RF_CHECKBOX)
-
-#define RF_GROUP        0x00010000
-#define RF_CHECKBOX     0x00020000
-#define RF_RADIO        0x00040000
-#define RF_PASSWORD     0x00080000
-
-#define RF_PROGRESS     0x00100000
-#define RF_TREEITEM     0x00200000
-#define RF_DYNLEN       0x00400000
-#define RF_INDIC        0x00800000
-
-#define RF_ASTEXT       0x01000000
-#define RF_NOEDGE       0x02000000
-#define RF_BLOCKHIDE    0x04000000  // Запретить скрывать колонку в автоскроллингах
-#define RF_FLAT         0x08000000
-
-#define RF_GROUPING     0x10000000
-#define RF_NOTABSTOP    0x20000000
-#define RF_NOCHECK      0x40000000
-#define RF_ANSI_STRING  0x80000000*/
 
 #define isActF(t) (!((t)&DUMMF))
 #define setDF(t) ((t) | DUMMF)
@@ -103,6 +73,9 @@ public:
     QString name() const;
     quint32 helpPage() const;
 
+    ResStyle::BorderStyle panelBorder() const;
+    ResStyle::PanelStyle panelStyle() const;
+
     TextStructList::iterator textBegin();
     TextStructList::iterator textEnd();
 
@@ -123,6 +96,13 @@ public:
     int borderCount() const;
     QRect borderRect(const int &index) const;
     qint16 borderStyle(const int &index) const;
+    bool isCentered() const;
+    bool isRightText() const;
+    bool isExcludeNavigation() const;
+    bool isExcludeAutoNum() const;
+    bool isExcludeShadowNum() const;
+
+    void setPanelRect(const QRect &geometry);
 
 protected:
     virtual int readItems(struct PanelR *pp, ResBuffer *data, bool readName2);

@@ -38,11 +38,11 @@ public:
     enum BorderStyle
     {
         Border_NoLine,
-        Border_SingleLine,
         Border_DoubleLine,
+        Border_SingleLine,
+        Border_Solid,
         Border_Combine1,
         Border_Combine2,
-        Border_Solid,
 
         Border_Count
     };
@@ -68,14 +68,14 @@ public:
 
     enum PanelStyle
     {
-        MainStyle = 0,
-        SCOM, // Основной стиль
-        SMES, // Стиль сообщений
-        RMES, // Стиль аварийных сообщений
-        SHLP, // Стиль помощи
-        SMEN, // Стиль меню
-        SBCM, // Стиль с яркой рамкой
-        SCRL, // Стиль справочных скролингов
+        MainStyle = -1,
+        SCOM = 4, // Основной стиль
+        SMES = 0, // Стиль сообщений
+        RMES = 1, // Стиль аварийных сообщений
+        SHLP = 2, // Стиль помощи
+        SMEN = 3, // Стиль меню
+        SBCM = 5, // Стиль с яркой рамкой
+        SCRL = 6, // Стиль справочных скролингов
     };
 
     typedef struct BorderChars

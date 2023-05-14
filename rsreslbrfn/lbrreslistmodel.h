@@ -26,6 +26,8 @@ public:
     virtual int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
+    virtual void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) Q_DECL_OVERRIDE;
+
 private:
     LbrResListModelPrivate * const d_ptr;
     Q_DECLARE_PRIVATE(LbrResListModel);

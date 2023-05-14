@@ -72,6 +72,7 @@ public:
     virtual QVariant userAction(const qint32 &action, const QVariant &param = QVariant()) Q_DECL_OVERRIDE;
 
     void updateChildControlsOrder();
+
 signals:
     void panelStyleChanged();
     void titleChanged();

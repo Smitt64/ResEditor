@@ -144,7 +144,7 @@ typedef struct PanelR
     ResUChar        Pnumf, Pnumt, Nb, Nt;
     r_coord      x1, y1, x2, y2;
     ResInt16     PHelp;
-    ResUChar        Pff;
+    ResUChar        Pff; // first field
 
     ResInt16     Mn;
     r_coord      x, y, l, h;

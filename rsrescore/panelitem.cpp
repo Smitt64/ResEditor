@@ -99,6 +99,15 @@ void PanelItem::setPanel(ResPanel *panel, const QString &comment)
     m_Status2 = m_Panel->status2();
     m_HelpPage = m_Panel->helpPage();
     m_Comment = comment;
+    m_BorderStyle = m_Panel->panelBorder();
+    m_PanelStyle = m_Panel->panelStyle();
+    m_isCentered = m_Panel->isCentered();
+    m_isRightText = m_Panel->isRightText();
+
+    m_PanelExclude.setFlag(PanelExcludeFlag::ExcludeAutoNum, m_Panel->isExcludeAutoNum());
+    m_PanelExclude.setFlag(PanelExcludeFlag::ExcludeNavigation, m_Panel->isExcludeNavigation());
+    m_PanelExclude.setFlag(PanelExcludeFlag::ExcludeAutoNum, m_Panel->isExcludeAutoNum());
+    m_PanelExclude.setFlag(PanelExcludeFlag::ExcludeShadow, m_Panel->isExcludeShadowNum());
 
     setCoord(panel->pos());
     setSize(panel->size());
@@ -185,17 +194,21 @@ const ResStyle::PanelStyle &PanelItem::panelStyle() const
 
 void PanelItem::setPanelStyle(const ResStyle::PanelStyle &style)
 {
-    checkPropSame("panelStyle", style);
+    ResStyle::PanelStyle St = style;
+    if (style == ResStyle::MainStyle)
+        St = ResStyle::SCOM;
 
+    checkPropSame("panelStyle", St);
     if (isSkipUndoStack() || !undoStack())
     {
-        m_PanelStyle = style;
+
+        m_PanelStyle = St;
         emit panelStyleChanged();
         update();
         scene()->update();
     }
     else
-        pushUndoPropertyData("panelStyle", style);
+        pushUndoPropertyData("panelStyle", St);
 }
 
 QString PanelItem::title() const
