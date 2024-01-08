@@ -1,17 +1,20 @@
+//#include "res_lbr.h"
 #include "lbrobjectprivate.h"
 #include "lbrreslistmodel.h"
 #include <QDebug>
 #include <QTextCodec>
 
-#define  dHRES_NAME            9  // Длина наименования ресурса в LBR
-#define  dHRES_COMMENT       136  // Длина комментария к ресурсу (с 0-символом)
-#define  dHRES_ITEM_NAME     101  // Длина наименования пункта меню (с
+#define dHRES_NAME            9  // Длина наименования ресурса в LBR
+#define dHRES_COMMENT       136  // Длина комментария к ресурсу (с 0-символом)
+#define dHRES_ITEM_NAME     101  // Длина наименования пункта меню (с
 
 #define MAKESIZE(rh) ((size_t)(((rh)->resSizeLo) | ((size_t)((rh)->resSizeHi)) << 16))
-#define ELEM_PTR(dir, num)((RLibDirElem *)((char *)((dir)->Elem) + ((dir)->cmtSize + sizeof(RLibDirElem)) * (num)))
-#define CMT_PTR(elem)((char *)((elem) + 1))
+#define RHEADSIZE(rh) ((rh)->headVer == 0 ? sizeof(ResHeaderOld) : sizeof (ResHeader))
+#define ELEM_PTR(dir, num) ((RLibDirElem *)((char *)((dir)->Elem) + ((dir)->cmtSize + sizeof(RLibDirElem)) * (num)))
+#define CMT_PTR(elem) ((char *)((elem) + 1))
 
-LbrObjectPrivate::LbrObjectPrivate()
+LbrObjectPrivate::LbrObjectPrivate() :
+    m_Flags(0)
 {
     m_p866 = QTextCodec::codecForName("IBM 866");
 }
@@ -328,4 +331,194 @@ bool LbrObjectPrivate::Create(const QString &filename, const QString &password)
     strcpy(header.password, password.toLocal8Bit().data());
 
     return Write(&header, &lbr);
+}
+
+int LbrObjectPrivate::ResDelObject(Resource *res)
+{
+    int stat = 0, ind = 0;
+    LibElem *resElem = (LibElem*)res;
+
+    ResHeader rhead;
+    LibElem *rc;
+
+    ResIter iter;
+    InitResIter(&iter);
+
+    while((rc = (LibElem*)ResGetIter(&iter)) != NULL && CompareRes(rc, resElem->name, resElem->type) != 0)
+        ind++;
+
+    if (rc)
+    {
+        size_t sz = m_Header.ElemSize;
+
+        if(ResReadPrefix((Resource*)rc, &rhead))
+        {
+            FreeBlock fb, *pfb, *p;
+            int i, iscombined = 0;
+
+            res->offset = fb.offset = rc->rc.offset;
+            fb.size = (long)(MAKESIZE(&rhead) + RHEADSIZE(&rhead));
+
+            memmove(rc, (char *)rc + sz, sz*(m_Header.NumElem - ind - 1));
+
+            m_Header.NumElem--;
+            m_Flags |= DIR_MODIFIED;
+
+            for(i = 0, pfb = m_pFreeBlock.get(); i < (int)m_Header.NumFree; i++, pfb++)
+            {
+                if(fb.offset < pfb->offset)
+                    break;
+            }
+
+            if(i > 0)  // Есть предыдущий блок
+            {
+                p = m_pFreeBlock.get() + i - 1;
+
+                if(p->offset + p->size == fb.offset)
+                {
+                    p->size += fb.size;
+
+                    fb.offset = p->offset;
+                    fb.size   = p->size;
+
+                    iscombined = 1;
+                }
+            }
+
+            if(i < (int)m_Header.NumFree) // Есть следующий блок
+            {
+                p = m_pFreeBlock.get() + i;
+
+                if(fb.offset + fb.size == p->offset)
+                {
+                    p->size   += fb.size;
+                    p->offset = fb.offset;
+
+                    if(iscombined)
+                        DelFreeBlock(i - 1);
+
+                    iscombined = 1;
+                }
+            }
+            else
+            {
+                if(fb.offset + fb.size >= m_Header.DataOffset)
+                {
+                    m_Header.DataOffset = fb.offset;
+
+                    if(iscombined)
+                        DelFreeBlock(i - 1);
+
+                    iscombined = 1;
+                }
+            }
+
+            if(!iscombined)
+                stat = AddFreeBlock(i, &fb);
+
+            if (!stat)
+                stat = ResFlush();
+        }
+        else
+            stat = 1;
+    }
+
+    return stat;
+}
+
+int LbrObjectPrivate::ResFlush()
+{
+    int stat = 0;
+
+    if (m_Flags & DIR_MODIFIED)
+        stat = ResPutDirectory();
+
+    return stat;
+}
+
+int LbrObjectPrivate::ResPutDirectory()
+{
+    int stat = 0;
+
+    DecodDirectory(m_pDirectory.get(), m_Header.NumElem * m_Header.ElemSize);
+
+    if (m_pFile->seek(m_Header.DataOffset))
+    {
+        qint64 sz = m_Header.ElemSize * m_Header.NumElem;
+        if (m_pFile->write((const char*)m_pDirectory.get(), sz) == sz)
+        {
+            sz = m_Header.NumFree * sizeof(FreeBlock);
+            if (m_pFile->write((const char*)m_pFreeBlock.get(), sz) == sz)
+            {
+                qint64 pos = m_pFile->pos();
+                stat = !m_pFile->resize(pos);
+
+                WriteFileHeader();
+            }
+        }
+        else
+            stat = 1;
+    }
+    else
+        stat = 1;
+
+    DecodDirectory(m_pDirectory.get(), m_Header.NumElem * m_Header.ElemSize);
+
+    return stat;
+}
+
+void LbrObjectPrivate::WriteFileHeader()
+{
+    m_pFile->seek(0);
+    Write(&m_Header);
+
+    m_Flags &= ~DIR_MODIFIED;
+}
+
+void LbrObjectPrivate::DelFreeBlock(int ind)
+{
+    FreeBlock  *fb = m_pFreeBlock.get() + ind;
+    memmove(fb, fb + 1, (m_Header.NumFree - ind - 1) * sizeof(FreeBlock));
+
+    m_Header.NumFree--;
+}
+
+int LbrObjectPrivate::AddFreeBlock(int ind, FreeBlock *block)
+{
+    int stat = L_ADDMEM;
+    FreeBlock *fb;
+    void *ptr = realloc(m_pFreeBlock.get(), (m_Header.NumFree + 1) * sizeof(FreeBlock));
+
+    if(ptr)
+    {
+        m_pFreeBlock.reset((FreeBlock*)ptr);
+
+        fb = m_pFreeBlock.get() + ind;
+        memmove(fb + 1, fb, (m_Header.NumFree - ind) * sizeof(FreeBlock));
+
+        *fb = *block;
+        m_Header.NumFree++;
+        stat = 0;
+    }
+
+    return stat;
+}
+
+void LbrObjectPrivate::ResSetCurTime(ResHeader *rhead)
+{
+    struct ftime *ft = &rhead->ftime;
+    time_t aclock;
+    struct tm *t;
+
+    time(&aclock);
+
+    t = localtime(&aclock);
+
+    ft->ft_year  = (short)t->tm_year + 1900 - 1980;
+    ft->ft_month = t->tm_mon + 1;
+    ft->ft_day   = t->tm_mday;
+
+    ft->ft_hour  = t->tm_hour;
+    ft->ft_min   = t->tm_min;
+    ft->ft_tsec  = t->tm_sec/2;
 }

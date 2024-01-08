@@ -39,6 +39,14 @@ typedef struct tagResHeader
     quint16 resSizeHi;  // Размер объекта Hi bits in header version 1
 } ResHeader;
 
+typedef struct tagResHeaderOld
+{
+    quint16 resSize;  /* Размер объекта   */
+    unsigned char reserv;   /* Object reserved  */
+    unsigned char ver;      /* Object version   */
+    struct ftime ftime;    /* Дата и время создания из io.h */
+} ResHeaderOld;
+
 typedef struct tagResource
 {
     qint32 offset; // Смещение объекта в библиотеке
@@ -69,5 +77,48 @@ typedef struct
 } RLibDirElem;
 
 #include <packpop.h>
+
+//    Коды ошибок
+#define  L_OPENLINK      1  // Не возможно открыть прилинкованый ресурс
+#define  L_OPENLIB       2  // Не возможно открыть библиотеку ресурсов
+#define  L_LIBTYPE       3  // Неверен формат файла
+#define  L_DIRNOPEN      4  // Не возможно прочитать каталог, файл не открыт
+#define  L_DIRNOMEM      5  // Не возможно прочитать каталог, нет памяти
+#define  L_DIRREAD       6  // Ошибка чтения каталога
+#define  L_DIRWR         7  // Ошибка записи каталога
+#define  L_DIREMPTY      8  // Каталог пуст
+#define  L_DIRMISS       9  // Элемент каталога отсутствует
+#define  L_DUPOB        10  // Дублирование элемента каталога
+#define  L_POSLIB       11  // Не возможно спозиционироваться в библиотеке
+#define  L_ADDMEM       12  // Не возможно добавить элемент , нет памяти
+#define  L_RESGET       13  // Не возможно прочитать ресурс
+#define  L_RESPUT       14  // Не возможно записать ресурс
+#define  L_WRSIZE       15  // Размер записанного ресурса не равен запрошенному
+#define  L_VERSION      16  // Неподдерживаемая версия ресурса
+#define  L_TRNACTIV     17  // Transaction already activ
+#define  L_TRN          18  // Error in transaction
+#define  L_OPENFORWR    19  // Error open for write access denide
+#define  L_STRMMODE     20  // Bad stream mode
+#define  L_OLDFORMAT    21  // Устаревший формат файла
+
+#define  L_LASTER       21  // Номер последней ошибки
+
+//  Bit flags for ResOpen
+#define  RO_USELINKED    1  // Позволяет использовать прилинкованный ресурс
+#define  RO_READDIR      2  // При открытии ресурса автоматически читать оглавление
+#define  RO_MODIFY       4  // Позволяет модифицировать ресурсы подразумевает RO_READDIR
+#define  RO_CREATE       8  // Если ресурс-файл не существует, создать его подразумевает RO_MODIFY
+#define  RO_NEW         16  // Используется совместно с RO_CRETE. Если ресурс-файл существует, то он удаляется
+#define  RO_FLUSH       32  // Производить запись оглавления и очистку буферов после каждого изменения
+#define  RO_TRN         64  // Use Transaction
+
+
+//  Флаги состояния
+#define  DIR_READ        1  // Каталог прочитан
+#define  DIR_MODIFIED    2  // Коталог модифицирован
+#define  FREE_READ       4  // Список свободных блоков прочитан
+#define  NEED_FLUSH      8  // Необходимо выполнять flush при модификациях
+#define  USE_TRN        16  // Update operations is transactional
+#define  READ_MODE      32  // Read only mode
 
 #endif // LBROBJECTHEADERS_H

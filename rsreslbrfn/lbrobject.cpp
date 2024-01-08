@@ -54,6 +54,22 @@ void LbrObject::getResource(const QString &name, const int &type, ResBuffer **bu
     //qDebug() << "getResource" << (*buffer)->buffer().size();
 }
 
+bool LbrObject::deleteResource(const QString &name, const int &type)
+{
+    Q_D(LbrObject);
+
+    bool hr = true;
+    LibElem  rc;
+    strncpy_s(rc.name, name.toLocal8Bit().data(), RESNAMELEN - 1);
+    rc.name[RESNAMELEN - 1] = '\0';
+    _strupr_s(rc.name);
+    rc.type = type;
+
+    hr = !d->ResDelObject(&rc.rc);
+
+    return hr;
+}
+
 bool LbrObject::isResExists(const QString &name, const int &type)
 {
     Q_D(LbrObject);

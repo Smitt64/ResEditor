@@ -1,6 +1,7 @@
 #include "resbuffer.h"
 #include "qtextcodec.h"
 #include "LbrObjectHeaders.h"
+#include <QFile>
 #include <QByteArray>
 
 class ResBufferPrivate
@@ -71,6 +72,13 @@ QString ResBuffer::decodeString(const char *str) const
     return codec->toUnicode(str);
 }
 
+void ResBuffer::encodeString(const QString &str, char *encStr, int len) const
+{
+    QTextCodec *codec = QTextCodec::codecForName("IBM 866");
+    QByteArray tmp = codec->fromUnicode(str);
+    strcpy_s(encStr, len, tmp.data());
+}
+
 const QString &ResBuffer::name() const
 {
     Q_D(const ResBuffer);
@@ -93,4 +101,13 @@ void ResBuffer::setComment(const QString &comment)
 {
     Q_D(ResBuffer);
     d->m_Comment = comment;
+}
+
+void ResBuffer::debugSaveToFile(const QString &filename)
+{
+    QFile f(filename);
+
+    if (f.open(QIODevice::WriteOnly))
+        f.write(data());
+    f.close();
 }

@@ -40,6 +40,7 @@ public:
     QAbstractItemModel *list();
 
     void getResource(const QString &name, const int &type, ResBuffer **buffer);
+    bool deleteResource(const QString &name, const int &type);
     bool isResExists(const QString &name, const int &type);
 
 private:

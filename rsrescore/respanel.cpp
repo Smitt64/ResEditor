@@ -26,6 +26,25 @@
 
 #define  RFP_CENTERED      0x00000100   // Вместо RFP_TRANSPARENT
 
+typedef struct
+{
+    r_coord y;
+    r_coord x;
+    int num;
+}FieldSortData;
+
+TextStruct::TextStruct(const TextStruct &other):
+    _text(nullptr)
+{
+    value = other.value;
+
+    if (other._text)
+    {
+        _text = new TextR();
+        memcpy(_text, other._text, sizeof(TextR));
+    }
+}
+
 const qint8 &TextStruct::x() const
 {
     return _text->x;
@@ -133,11 +152,24 @@ ResPanel::~ResPanel()
     if (m_pPanel)
         delete m_pPanel;
 
-    for (const TextStruct &item : qAsConst(m_Texts))
-        delete item._text;
+    for (TextStruct &textitem : m_Texts)
+    {
+        if (textitem._text)
+            delete textitem._text;
 
-    for (const FieldStruct &item : qAsConst(m_Fields))
-        delete item._field;
+        textitem._text = nullptr;
+    }
+
+    for (FieldStruct fielditem : m_Fields)
+    {
+        if (fielditem._field)
+            delete fielditem._field;
+
+        fielditem._field = nullptr;
+    }
+
+    m_Texts.clear();
+    m_Fields.clear();
 }
 
 /*static int rds(int hd, char **s, r_coord vfl, r_coord lens, HRSLCVT hcvtRd)
@@ -513,8 +545,6 @@ int ResPanel::readItems(struct PanelR *pp, ResBuffer *data, bool readName2)
 
         if(!(err = (err != sizeof(TextR))) && tt.lens)
         {
-            //RslCvtUShort(hcvtRd, &tt.St);
-
             char *s = (char*)malloc(sizeof(char)*(tt.lens + 1));
             memset(s, 0, tt.lens + 1);
             readString(data, &s, tt.vfl, tt.lens);
@@ -640,7 +670,7 @@ QString ResPanel::name() const
     return m_Name;
 }
 
-quint32 ResPanel::helpPage() const
+quint16 ResPanel::helpPage() const
 {
     return m_pPanel->PHelp;
 }
@@ -742,6 +772,11 @@ void ResPanel::setName(const QString &val)
     m_Name = val;
 }
 
+void ResPanel::setComment(const QString &val)
+{
+    m_Comment = val;
+}
+
 void ResPanel::beginAddField(const QString &name, const QString &name2)
 {
     m_NewField.reset();
@@ -836,4 +871,280 @@ void ResPanel::setPanelRect(const QRect &geometry)
     m_pPanel->y1 = geometry.y();
     m_pPanel->x2 = geometry.x() + geometry.width() - 1;
     m_pPanel->y2 = geometry.y() + geometry.height() - 1;
+}
+
+void ResPanel::setPanelStrings(const QString &Title, const QString &Status, const QString &StatusRD)
+{
+    m_Status = Status;
+    m_StatusRD = StatusRD;
+    m_Title = Title;
+}
+
+void ResPanel::setPanelStyle(const ResStyle::BorderStyle &border, const ResStyle::PanelStyle &style)
+{
+    m_pPanel->St = border | style;
+}
+
+void ResPanel::setPanelHelp(const quint16 &help)
+{
+    m_pPanel->PHelp = help;
+}
+
+void ResPanel::setPanelExcludeFlags(const quint32 &val)
+{
+    m_pPanel->flags = val;
+}
+
+void ResPanel::setPanelCentered(const bool &val)
+{
+    m_pPanel->flags |= RFP_CENTERED;
+}
+
+void ResPanel::setPanelRightText(const bool &val)
+{
+    m_pPanel->flags |= RFP_RIGHTTEXT;
+}
+
+void ResPanel::addBorder(const QRect &rect, const quint16 &St)
+{
+    BordR border;
+    border.St = St;
+    border.x = rect.x();
+    border.y = rect.y();
+    border.l = rect.width();
+    border.h = rect.height();
+    border.fl = border.y;
+
+    m_BordR.append(border);
+}
+
+void ResPanel::addText(const QString &value, const quint16 &x, const quint16 &y, const quint16 &St)
+{
+    TextStruct text;
+
+    text._text = new TextR();
+    text._text->x = x;
+    text._text->y = y;
+    text._text->St = St;
+    text.value = value;
+
+    m_Texts.append(text);
+}
+
+int ResPanel::save(ResBuffer *data)
+{
+    int stat = 0;
+    QScopedArrayPointer<FieldSortData> fieldsort{};
+    if (!isExcludeAutoNum())
+    {
+        fieldsort.reset(new FieldSortData[m_Fields.size()]);
+        // FieldSortData
+    }
+
+    data->setResVersion(2);
+    stat = savePanel(data);
+
+    if (!stat)
+    {
+        for (const BordR &br : qAsConst(m_BordR))
+        {
+            if (data->write((char*)&br, sizeof(BordR)) != sizeof(BordR))
+                return 1;
+        }
+    }
+    return stat;
+}
+
+int ResPanel::savePanel(ResBuffer *data)
+{
+    r_coord lens = 0;
+
+    lens = (r_coord)m_Comment.size();
+
+    if(lens)
+       lens++;
+
+    if (data->write((char*)&lens, sizeof(r_coord)) != sizeof(r_coord))
+        return 1;
+
+    if(lens)
+    {
+        char *ResComment = (char*)malloc(lens);
+        memset(ResComment, 0, lens);
+
+        data->encodeString(m_Comment, ResComment, lens);
+        if (data->write(ResComment, lens) != lens)
+            return 1;
+
+        free(ResComment);
+    }
+
+    SizesTuple sizes;
+    def_panelsize(sizes, data->version());
+
+    m_pPanel->len = std::get<1>(sizes);
+    m_pPanel->Nb = m_BordR.size();
+    m_pPanel->Pnumt = m_pPanel->Nt = m_Texts.size();
+
+    if (data->write((char*)m_pPanel, sizeof(PanelR)) != sizeof(PanelR))
+        return 1;
+
+    if (saveStatusLine(data))
+        return 1;
+
+    if (saveTitleLine(data))
+        return 1;
+
+    if (saveTextLabels(data))
+        return 1;
+
+    return 0;
+}
+
+int ResPanel::saveStatusLine(ResBuffer *data)
+{
+    r_coord lens = (r_coord)m_Status.size();
+    if(lens)
+        lens++;
+
+    if (data->write((char*)&lens, sizeof(r_coord)) != sizeof(r_coord))
+        return 1;
+
+    if(lens)
+    {
+        char *Status = (char*)malloc(lens);
+        memset(Status, 0, lens);
+
+        data->encodeString(m_Status, Status, lens);
+        if (data->write(Status, lens) != lens)
+            return 1;
+
+        free(Status);
+    }
+
+    lens = (r_coord)m_StatusRD.size();
+    if(lens)
+        lens++;
+
+    if (data->write((char*)&lens, sizeof(r_coord)) != sizeof(r_coord))
+        return 1;
+
+    if(lens)
+    {
+        char *StatusRD = (char*)malloc(lens);
+        memset(StatusRD, 0, lens);
+
+        data->encodeString(m_StatusRD, StatusRD, lens);
+        if (data->write(StatusRD, lens) != lens)
+            return 1;
+
+        free(StatusRD);
+    }
+
+    return 0;
+}
+
+int ResPanel::saveTitleLine(ResBuffer *data)
+{
+    r_coord lens = (r_coord)m_Title.size();
+    if(lens)
+        lens++;
+
+    if (data->write((char*)&lens, sizeof(r_coord)) != sizeof(r_coord))
+        return 1;
+
+    if(lens)
+    {
+        char *Title = (char*)malloc(lens);
+        memset(Title, 0, lens);
+
+        data->encodeString(m_Title, Title, lens);
+        if (data->write(Title, lens) != lens)
+            return 1;
+
+        free(Title);
+    }
+
+    return 0;
+}
+
+int ResPanel::saveTextLabels(ResBuffer *data)
+{
+    for (TextStruct &text : m_Texts)
+    {
+        TextR tr;
+
+        tr.St = text._text->St;
+        tr.x  = (r_coord)text._text->x;
+        tr.y  = (r_coord)text._text->y;
+        tr.lens = (r_coord)text.value.size();
+
+        if(tr.lens)
+        {
+            tr.vfl = 0;
+            tr.lens++;
+        }
+        else
+            tr.vfl = 1;
+
+        if (data->write((char*)&tr, sizeof(TextR)) != sizeof(TextR))
+            return 1;
+
+        if(tr.lens)
+        {
+            char *str = (char*)malloc(tr.lens);
+            memset(str, 0, tr.lens);
+
+            data->encodeString(text.value, str, tr.lens);
+            if(data->write((char*)str, tr.lens) != tr.lens)
+                return 1;
+
+            free(str);
+        }
+    }
+
+    return 0;
+}
+
+void ResPanel::def_panelsize(ResPanel::SizesTuple &sizes, int ver)
+{
+    int   sizePnl = (ver >= 2) ? sizeof(PanelR) : sizeof(PanelR_1);
+    int   sizeFld = (ver >= 2) ? sizeof(FieldR) : sizeof(FieldR_1);
+    long  size = sizePnl + sizeof(r_coord) * 4 + sizeFld * m_Fields.size();
+
+    int adsize = 0;
+
+    if(!m_Comment.isEmpty())
+       size += m_Comment.size() + 1;
+
+    if(!m_Status.isEmpty())
+    {
+        size += m_Status.size() + 1;
+        adsize += m_Status.size() + 1;
+    }
+
+    if(!m_StatusRD.isEmpty())
+    {
+        size += m_StatusRD.size() + 1;
+        adsize += m_StatusRD.size() + 1;
+    }
+
+    if(!m_Title.isEmpty())
+    {
+        size += m_Title.size() + 1;
+        adsize += m_Title.size() + 1;
+    }
+
+    if(!m_Title.isEmpty())
+        size += m_BordR.size() * sizeof(BordR);
+
+    if(!m_Texts.isEmpty())
+    {
+        size += m_Texts.size() * sizeof(TextR);
+
+        for (TextStruct &item : m_Texts)
+            adsize += item.value.size() + 1;
+    }
+
+    sizes = std::make_tuple(size, adsize);
 }

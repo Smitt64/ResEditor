@@ -55,6 +55,9 @@ public:
     int CompareRes(LibElem *rc, const QString &name, const int &type);
     QByteArray GetResourceData(const QString &name, const int &type, ResHeader *header, QString *comment = nullptr);
 
+    int ResDelObject(Resource *res);
+    int ResFlush();
+
 private:
     //  Механизм итерации по каталогу
     typedef struct tagResIter
@@ -82,9 +85,16 @@ private:
     void FillResoursesList();
     bool ResReadPrefix(Resource *rc, ResHeader *rhead);
 
+    int ResPutDirectory();
+    void ResSetCurTime(ResHeader *rhead);
+    void WriteFileHeader();
+
     void InitResIter(ResIter *iter);
     Resource *ResGetIter(ResIter *iter);
+    void DelFreeBlock(int ind);
+    int AddFreeBlock(int ind, FreeBlock *block);
     Header m_Header;
+    quint32 m_Flags;
 
     QScopedPointer<Resource, QScopedPointerPodDeleter> m_pDirectory;
     QScopedPointer<FreeBlock, QScopedPointerPodDeleter> m_pFreeBlock;

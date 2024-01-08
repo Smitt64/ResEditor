@@ -146,6 +146,8 @@ public:
     EwTextStyle& operator=(const EwTextStyle& other);
     bool operator ==(const EwTextStyle& other) const;
 
+    qint16 style() const;
+
 signals:
     void alignChanged();
     void formatChanged();

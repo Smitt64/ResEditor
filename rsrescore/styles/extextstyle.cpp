@@ -1,5 +1,11 @@
 #include "extextstyle.h"
 
+#define SetAlignSt(St, fl) (((fl) << 16) | (St))
+#define SetTextFormatSt(St, fl) (((fl) << 18) | (St))
+#define SetTextColorSt(St, fl) (((fl) << 24) | (St))
+#define SetBackColorSt(St, fl) (((fl) << 28) | (St))
+
+
 EwTextStyle::EwTextStyle(QObject *parent) :
     QObject(parent)
 {
@@ -110,4 +116,14 @@ void EwTextStyle::setBackColor(const EwTextStyle::BackColor &value)
 {
     m_Back = value;
     emit textBackChanged();
+}
+
+qint16 EwTextStyle::style() const
+{
+    qint16 St = SetAlignSt(0, m_Align);
+    St = SetTextFormatSt(St, m_Format);
+    St = SetTextColorSt(St, m_Textcolor);
+    St = SetBackColorSt(St, m_Back);
+
+    return St;
 }

@@ -3,6 +3,7 @@
 #include "ui_mainwindow.h"
 #include "reslistdockwidget.h"
 #include "rsrescore.h"
+#include "resbuffer.h"
 #include "ResourceEditorInterface.h"
 #include "baseeditorwindow.h"
 #include "propertymodel/propertydockwidget.h"
@@ -105,9 +106,12 @@ void MainWindow::readySave(BaseEditorWindow *editor)
     if (!editor)
         return;
 
+    quint64 oldSize = 0;
+    QString errorMsg;
     ResBuffer *resBuffer = nullptr;
     QString name = editor->name();
     qint16 type = editor->type();
+
     if (m_pLbrObj->isResExists(name, type))
     {
         QString msg = tr("Перезаписать существующий ресурс %1 [<b>%2</b>]?")
@@ -117,14 +121,24 @@ void MainWindow::readySave(BaseEditorWindow *editor)
             return;
 
         m_pLbrObj->getResource(name, type, &resBuffer);
+
+        resBuffer->open(QIODevice::ReadWrite);
+        oldSize = resBuffer->size();
+
+        int ver = resBuffer->version();
+        if (ver < 2)
+        {
+            if (!m_pLbrObj->deleteResource(name, type))
+                errorMsg = tr("Не удалось перезаписать ресурс");
+        }
     }
 
-    QString errorMsg;
-    if (editor->save(resBuffer, &errorMsg))
+    if (errorMsg.isEmpty() && editor->save(resBuffer, &errorMsg))
     {
-
+        resBuffer->debugSaveToFile(QString("1_%1").arg(name));
     }
-    else
+
+    if (!errorMsg.isEmpty())
     {
         QString text = tr("Ошибка сохранения ресурса %1 [<b>%2</b>]")
                 .arg(RsResCore::inst()->typeNameFromResType(type), name);

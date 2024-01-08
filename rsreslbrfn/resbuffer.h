@@ -17,11 +17,14 @@ public:
     void setResVersion(const int &version);
 
     QString decodeString(const char *str) const;
+    void encodeString(const QString &str, char *encStr, int len) const;
     const QString &name() const;
     const QString &comment() const;
     const qint16 &type() const;
 
     void setComment(const QString &comment);
+
+    void debugSaveToFile(const QString &filename);
 
 private:
     ResBufferPrivate * const d_ptr;

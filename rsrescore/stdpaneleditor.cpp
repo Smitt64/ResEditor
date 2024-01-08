@@ -11,6 +11,7 @@
 #include "lbrobject.h"
 #include "textitem.h"
 #include "controlitem.h"
+#include "containeritem.h"
 #include <QStatusBar>
 #include <QHBoxLayout>
 #include <QGraphicsSceneMouseEvent>
@@ -599,6 +600,9 @@ bool StdPanelEditor::save(ResBuffer *res, QString *error)
 
     ResPanel resPanel;
     QList<ControlItem*> controls = pScene->findItems<ControlItem>();
+    QList<BorderItem*> borders = pScene->findItems<BorderItem>();
+    QList<TextItem*> texts = pScene->findItems<TextItem>();
+    PanelItem *pPanel = pScene->findFirst<PanelItem>();
 
     for (ControlItem *item : qAsConst(controls))
     {
@@ -611,5 +615,24 @@ bool StdPanelEditor::save(ResBuffer *res, QString *error)
         resPanel.setFieldHelp(item->helpPage());
         resPanel.endAddField();
     }
-    return false;
+
+    for (BorderItem *item : qAsConst(borders))
+        resPanel.addBorder(item->geometry(), item->borderStyle());
+
+    for (TextItem *item : qAsConst(texts))
+    {
+        QRect rc = item->geometry();
+        resPanel.addText(item->text(), rc.x(), rc.y(), item->textStyle().style());
+    }
+
+    resPanel.setComment(pPanel->comment());
+    resPanel.setPanelStrings(pPanel->title(), pPanel->status(), pPanel->status2());
+    resPanel.setPanelStyle(pPanel->borderStyle(), pPanel->panelStyle());
+    resPanel.setPanelHelp(pPanel->helpPage());
+    resPanel.setPanelExcludeFlags(pPanel->panelExclude());
+    resPanel.setPanelCentered(pPanel->isCentered());
+    resPanel.setPanelCentered(pPanel->isCentered());
+    resPanel.setPanelRightText(pPanel->isRightText());
+
+    return !resPanel.save(res);
 }
