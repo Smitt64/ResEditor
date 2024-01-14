@@ -1,4 +1,4 @@
-CONFIG += qt
+CONFIG += qt private
 
 TEMPLATE = lib
 DEFINES += RSRESLBRFN_LIBRARY
@@ -13,6 +13,8 @@ include(../config.pri)
 
 SOURCES += \
     lbrobject.cpp \
+    lbrobjectinterface.cpp \
+    lbrobjectinterfaceprivate.cpp \
     lbrobjectprivate.cpp \
     lbrreslistmodel.cpp \
 #    listobj.cpp
@@ -30,6 +32,8 @@ HEADERS += \
 #    listobj.h \
     LbrObjectHeaders.h \
     lbrobject.h \
+    lbrobjectinterface.h \
+    lbrobjectinterfaceprivate.h \
     lbrobjectprivate.h \
     lbrreslistmodel.h \
     packpop.h \

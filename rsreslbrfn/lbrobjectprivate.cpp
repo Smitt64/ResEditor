@@ -13,10 +13,10 @@
 #define ELEM_PTR(dir, num) ((RLibDirElem *)((char *)((dir)->Elem) + ((dir)->cmtSize + sizeof(RLibDirElem)) * (num)))
 #define CMT_PTR(elem) ((char *)((elem) + 1))
 
-LbrObjectPrivate::LbrObjectPrivate() :
+LbrObjectPrivate::LbrObjectPrivate(LbrObjectInterface *obj) :
+    LbrObjectInterfacePrivate(obj),
     m_Flags(0)
 {
-    m_p866 = QTextCodec::codecForName("IBM 866");
 }
 
 LbrObjectPrivate::~LbrObjectPrivate()

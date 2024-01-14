@@ -1,13 +1,13 @@
 #ifndef LBROBJECTPRIVATE_H
 #define LBROBJECTPRIVATE_H
-
-#include "lbrobject.h"
 //#include "res_lbr.h"
+#include "lbrobject.h"
+#include "lbrobjectinterfaceprivate.h"
 #include "LbrObjectHeaders.h"
 #include <QFile>
 
 class LbrResListModel;
-class LbrObjectPrivate
+class LbrObjectPrivate : public LbrObjectInterfacePrivate
 {
     Q_DECLARE_PUBLIC(LbrObject);
 
@@ -20,10 +20,8 @@ public:
         RS_COMM
     };
 
-    LbrObjectPrivate();
+    LbrObjectPrivate(LbrObjectInterface *obj);
     virtual ~LbrObjectPrivate();
-
-    LbrObject * q_ptr;
 
     static int LibCmp(LibElem *original, LibElem *rc);
     //static void LibDirCvt(ResFile *rf, HRSLCVT hcvt, LibElem *rc);
@@ -102,8 +100,6 @@ private:
     QScopedPointer<LbrResListModel> m_pDirModel;
 
     QVector<RLibDirElem*> m_Elements;
-
-    QTextCodec *m_p866;
 };
 
 #endif // LBROBJECTPRIVATE_H
