@@ -6,6 +6,10 @@
 
 #define RESNAMELEN 9
 #define RESFILELEN 255
+#define dHRES_COMMENT       136  // Длина комментария к ресурсу (с 0-символом)
+
+typedef signed char    r_coord;
+typedef short          coord;
 
 struct ftime
 {
@@ -76,7 +80,85 @@ typedef struct
     quint8  ver;
 } RLibDirElem;
 
+typedef enum
+{
+    RS_NAME, RS_TYPE, RS_DATE, RS_COMM
+} DirSort;
+
+typedef struct
+{
+    RLibDirElem  *Elem;
+    int           NumElem;   // Количество заполненных элементов в списке
+    int           alloced;   // Количество элементов под которое распределена память
+    DirSort       sortby;    // Порядок сортировки
+    int           cmtSize;
+} RLibDir;
+
+
+typedef struct tagResFile
+{
+    Header      head;        /* Заголовок файла                          */
+    int         hd;          /* Дескриптор файла. -1 если файл не открыт */
+    Resource   *Directory;   /* Элементы оглавления                */
+    FreeBlock  *freeblock;   /* Свободные блоки                    */
+    void     *ResCmp;
+    /* Функция сравнения элементов каталога     */
+    unsigned    flags;       /* Каталог прочитан,модифицирован ...       */
+    long        base;        /* Смещение начала файла ресурсов           */
+
+    char       *fileName;
+
+    void     *hcvtRd;
+    void     *hcvtWr;
+    void     *cvtDirProc;
+} ResFile;
+
+typedef struct tagCNTLIST
+{
+    void           *last;
+    int             delta;  // Смещение объекта LOBJ в элементе списка
+    unsigned char   flags;
+
+//#ifdef RSL_MD_FLAT
+    void       *sect;
+//#endif
+} CNTLIST;
+
+typedef struct tagMemStream
+{
+    CNTLIST  pages;
+    size_t curPos;
+} TMemStream;
+
+typedef struct tagResStream
+{
+    ResFile    *rf;
+    int         mode;
+    int         stat;
+    long        size;
+    Resource   *rc;
+    TMemStream  memStrm;
+    size_t      strmCurSize;
+    bool        useMewStrm;
+    // April 19,2001
+    ResHeader   rhead;
+    long        resLibPos;  // Position in LBR for read/write operations
+} ResStream;
+
+typedef struct tagLibStream
+{
+    ResStream  derived;
+    LibElem    rc;
+    int        oldflags;
+    bool       inTrnMode;
+} LibStream;
+
 #include <packpop.h>
+
+#define P_RES(ptr)   ((Resource*)(ptr))
+#define  RES_MODE_CLOSED   0
+#define  RES_MODE_READ     1
+#define  RES_MODE_WRITE    2
 
 //    Коды ошибок
 #define  L_OPENLINK      1  // Не возможно открыть прилинкованый ресурс

@@ -8,6 +8,7 @@
 #include <QHeaderView>
 #include <QSortFilterProxyModel>
 #include <QDebug>
+#include <QMenu>
 
 ResFilterModel::ResFilterModel(QObject *parent) :
     QSortFilterProxyModel(parent)
@@ -104,6 +105,8 @@ ResListDockWidget::ResListDockWidget(QWidget *parent) :
     m_List = new QTreeView();
     m_pFiler = new ResFilterModel(this);
     m_List->setModel(m_pFiler);
+    m_List->setRootIsDecorated(false);
+    m_List->setContextMenuPolicy(Qt::CustomContextMenu);
 
     m_Container = new QMainWindow();
 
@@ -127,6 +130,7 @@ ResListDockWidget::ResListDockWidget(QWidget *parent) :
 
     setWindowTitle(tr("Список ресурсов"));
 
+    connect(m_List, &QTreeView::customContextMenuRequested, this, &ResListDockWidget::onCustomContextMenuRequested);
     connect(m_List, &QTreeView::doubleClicked, this, &ResListDockWidget::onDoubleClicked);
     connect(m_pNameFilter, &QLineEdit::textChanged, m_pFiler, &ResFilterModel::setFilterName);
 }
@@ -139,6 +143,9 @@ ResListDockWidget::~ResListDockWidget()
 
 void ResListDockWidget::setModel(QAbstractItemModel *model)
 {
+    if (!model)
+        return;
+
     m_pFiler->setSourceModel(model);
     m_List->header()->resizeSection(1, 50);
     model->sort(0);
@@ -149,8 +156,35 @@ void ResListDockWidget::onDoubleClicked(const QModelIndex &index)
     QModelIndex source = m_pFiler->mapToSource(index);
     ResFilterModel *model = qobject_cast<ResFilterModel*>(m_pFiler);
 
-    int type = 0;;
+    int type = 0;
     QString name;
     model->getResNameAndType(source, name, type);
     emit doubleClicked(name, type);
+}
+
+void ResListDockWidget::onCustomContextMenuRequested(const QPoint &pos)
+{
+    QModelIndex index = m_pFiler->mapToSource(m_List->indexAt(pos));
+
+    if (index.isValid())
+    {
+        QMenu contextMenu;
+        ResFilterModel *model = qobject_cast<ResFilterModel*>(m_pFiler);
+
+        int type = 0;
+        QString name;
+        model->getResNameAndType(index, name, type);
+
+        QIcon editicon = RsResCore::iconFromResType(type);
+        QAction *edit = contextMenu.addAction(editicon, tr("Редактировать ресурс [%1]").arg(name));
+        QAction *del = contextMenu.addAction(QIcon(":/img/Delete.png"), tr("Удалить ресурс [%1]").arg(name));
+
+        contextMenu.setDefaultAction(edit);
+        QAction *action = contextMenu.exec(m_List->mapToGlobal(pos));
+
+        if (action == del)
+            emit deleteRequest(name, type);
+        else if (action == edit)
+            emit doubleClicked(name, type);
+    }
 }

@@ -596,7 +596,7 @@ void StdPanelEditor::clipboardChanged()
 bool StdPanelEditor::save(ResBuffer *res, QString *error)
 {
     BaseScene *pScene = dynamic_cast<BaseScene*>(m_pView->scene());
-    *error = "еще не реализовано";
+    //*error = "еще не реализовано";
 
     ResPanel resPanel;
     QList<ControlItem*> controls = pScene->findItems<ControlItem>();
@@ -633,6 +633,12 @@ bool StdPanelEditor::save(ResBuffer *res, QString *error)
     resPanel.setPanelCentered(pPanel->isCentered());
     resPanel.setPanelCentered(pPanel->isCentered());
     resPanel.setPanelRightText(pPanel->isRightText());
+    resPanel.setPanelRect(pPanel->geometry());
 
-    return !resPanel.save(res);
+    bool hr = !resPanel.save(res);
+
+    if (hr)
+        hr = BaseEditorWindow::save(res, error);
+
+    return hr;
 }

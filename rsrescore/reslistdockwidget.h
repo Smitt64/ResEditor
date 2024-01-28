@@ -23,9 +23,11 @@ public:
 
 private slots:
     void onDoubleClicked(const QModelIndex &index);
+    void onCustomContextMenuRequested(const QPoint &pos);
 
 signals:
     void doubleClicked(const QString &name, const int &type);
+    void deleteRequest(const QString &name, const int &type);
 
 private:
     QMainWindow *m_Container;

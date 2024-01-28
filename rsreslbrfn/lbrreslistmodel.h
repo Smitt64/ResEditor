@@ -28,11 +28,13 @@ public:
 
     virtual void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) Q_DECL_OVERRIDE;
 
+    void addDirElement(void *elem);
+    void clear();
+    void removeElement(const QString &name, const int &type);
+
 private:
     LbrResListModelPrivate * const d_ptr;
-    Q_DECLARE_PRIVATE(LbrResListModel);
-
-    void addDirElement(void *elem);
+    Q_DECLARE_PRIVATE(LbrResListModel); 
 };
 
 #endif // LBRRESLISTMODEL_H

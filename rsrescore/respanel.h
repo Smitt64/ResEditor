@@ -145,6 +145,7 @@ protected:
     int saveStatusLine(ResBuffer *data);
     int saveTitleLine(ResBuffer *data);
     int saveTextLabels(ResBuffer *data);
+    int saveBorders(ResBuffer *data);
     virtual int readItems(struct PanelR *pp, ResBuffer *data, bool readName2);
     virtual bool readString(ResBuffer *data, char **s, qint16 vfl, qint16 lens);
 

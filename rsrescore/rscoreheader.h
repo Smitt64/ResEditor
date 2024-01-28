@@ -222,4 +222,6 @@ typedef struct FieldR
 
 #include <packpop.h>
 
+#define offsetof(s,m)(size_t)&reinterpret_cast<const volatile char&>((((s *)0)->m))
+
 #endif // RSCOREHEADER_H

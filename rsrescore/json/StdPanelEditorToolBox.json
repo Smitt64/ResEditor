@@ -686,7 +686,7 @@
                             },
                             {
                                 "property": "borderStyle",
-                                "value": 1
+                                "value": 2
                             }
                         ]
                     }
@@ -716,7 +716,7 @@
                             },
                             {
                                 "property": "borderStyle",
-                                "value": 2
+                                "value": 1
                             }
                         ]
                     }

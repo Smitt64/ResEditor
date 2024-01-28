@@ -1,5 +1,6 @@
 #include "lbrobjectinterface.h"
 #include "lbrobjectinterfaceprivate.h"
+#include "resbuffer.h"
 
 LbrObjectInterface::LbrObjectInterface(QObject *parent)
     : QObject(parent),
@@ -18,6 +19,17 @@ LbrObjectInterface::LbrObjectInterface(LbrObjectInterfacePrivate *dd, QObject *p
 LbrObjectInterface::~LbrObjectInterface()
 {
 
+}
+
+void LbrObjectInterface::createResBuffer(const QString &name, const int &type, QByteArray *data, ResBuffer **buffer)
+{
+    *buffer = new ResBuffer(this, data, name, type);
+}
+
+void LbrObjectInterface::createResBuffer(const QString &name, const int &type, ResBuffer **buffer)
+{
+    QByteArray data;
+    *buffer = new ResBuffer(this, &data, name, type);
 }
 
 QString LbrObjectInterface::getResTypeName(const int &type)

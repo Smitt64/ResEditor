@@ -882,7 +882,7 @@ void ResPanel::setPanelStrings(const QString &Title, const QString &Status, cons
 
 void ResPanel::setPanelStyle(const ResStyle::BorderStyle &border, const ResStyle::PanelStyle &style)
 {
-    m_pPanel->St = border | style;
+    m_pPanel->St = (border << 8) | (style & 0x00ff);
 }
 
 void ResPanel::setPanelHelp(const quint16 &help)
@@ -892,28 +892,34 @@ void ResPanel::setPanelHelp(const quint16 &help)
 
 void ResPanel::setPanelExcludeFlags(const quint32 &val)
 {
-    m_pPanel->flags = val;
+    m_pPanel->flags |= val;
 }
 
 void ResPanel::setPanelCentered(const bool &val)
 {
-    m_pPanel->flags |= RFP_CENTERED;
+    if (val)
+        m_pPanel->flags |= RFP_CENTERED;
+    else
+        m_pPanel->flags &= ~RFP_CENTERED;
 }
 
 void ResPanel::setPanelRightText(const bool &val)
 {
-    m_pPanel->flags |= RFP_RIGHTTEXT;
+    if (val)
+        m_pPanel->flags |= RFP_RIGHTTEXT;
+    else
+        m_pPanel->flags &= ~RFP_RIGHTTEXT;
 }
 
 void ResPanel::addBorder(const QRect &rect, const quint16 &St)
 {
     BordR border;
-    border.St = St;
+    border.St = 0;
     border.x = rect.x();
     border.y = rect.y();
     border.l = rect.width();
     border.h = rect.height();
-    border.fl = border.y;
+    border.fl = St;
 
     m_BordR.append(border);
 }
@@ -936,22 +942,11 @@ int ResPanel::save(ResBuffer *data)
     int stat = 0;
     QScopedArrayPointer<FieldSortData> fieldsort{};
     if (!isExcludeAutoNum())
-    {
         fieldsort.reset(new FieldSortData[m_Fields.size()]);
-        // FieldSortData
-    }
 
-    data->setResVersion(2);
+    data->setResVersion(1);
     stat = savePanel(data);
 
-    if (!stat)
-    {
-        for (const BordR &br : qAsConst(m_BordR))
-        {
-            if (data->write((char*)&br, sizeof(BordR)) != sizeof(BordR))
-                return 1;
-        }
-    }
     return stat;
 }
 
@@ -976,6 +971,7 @@ int ResPanel::savePanel(ResBuffer *data)
         if (data->write(ResComment, lens) != lens)
             return 1;
 
+        data->setComment(m_Comment);
         free(ResComment);
     }
 
@@ -985,14 +981,27 @@ int ResPanel::savePanel(ResBuffer *data)
     m_pPanel->len = std::get<1>(sizes);
     m_pPanel->Nb = m_BordR.size();
     m_pPanel->Pnumt = m_pPanel->Nt = m_Texts.size();
+    m_pPanel->flags |= P_NAME2ALLOCED;
 
-    if (data->write((char*)m_pPanel, sizeof(PanelR)) != sizeof(PanelR))
+    if (!m_pPanel->Pff)
+        m_pPanel->Pff = -1;
+
+    int PanelSize = 0;
+    if (data->headerVersion() >= 2)
+        PanelSize = sizeof(PanelR);
+    else
+        PanelSize = sizeof(PanelR_1);
+
+    if (data->write((char*)m_pPanel, PanelSize) != PanelSize)
         return 1;
 
     if (saveStatusLine(data))
         return 1;
 
     if (saveTitleLine(data))
+        return 1;
+
+    if (saveBorders(data))
         return 1;
 
     if (saveTextLabels(data))
@@ -1063,6 +1072,17 @@ int ResPanel::saveTitleLine(ResBuffer *data)
             return 1;
 
         free(Title);
+    }
+
+    return 0;
+}
+
+int ResPanel::saveBorders(ResBuffer *data)
+{
+    for (const BordR &box : m_BordR)
+    {
+        if (data->write((char*)&box, sizeof(BordR)) != sizeof(BordR))
+            return 1;
     }
 
     return 0;

@@ -11,19 +11,22 @@ public:
     ResBufferPrivate()
     {
         memset(&m_ResHeader, 0, sizeof(ResHeader));
+        m_ResStream = nullptr;
     }
 
     ResBuffer * q_ptr;
-    LbrObject *m_pObject;
+    LbrObjectInterface *m_pObject;
     QByteArray m_Buffer;
 
     ResHeader m_ResHeader;
 
     QString m_Name, m_Comment;
     qint16 m_Type;
+
+    Qt::HANDLE m_ResStream;
 };
 
-ResBuffer::ResBuffer(LbrObject *pLbrObj, QByteArray *data, const QString &name, const qint16 &type, const QString &comment) :
+ResBuffer::ResBuffer(LbrObjectInterface *pLbrObj, QByteArray *data, const QString &name, const qint16 &type, const QString &comment) :
     QBuffer(),
     d_ptr(new ResBufferPrivate())
 {
@@ -110,4 +113,16 @@ void ResBuffer::debugSaveToFile(const QString &filename)
     if (f.open(QIODevice::WriteOnly))
         f.write(data());
     f.close();
+}
+
+void ResBuffer::setResStream(Qt::HANDLE handle)
+{
+    Q_D(ResBuffer);
+    d->m_ResStream = handle;
+}
+
+Qt::HANDLE ResBuffer::getResStream()
+{
+    Q_D(ResBuffer);
+    return d->m_ResStream;
 }

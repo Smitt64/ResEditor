@@ -58,7 +58,11 @@ BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const 
         // Создание новой библиотеки ресурсов
         QDir dir(path);
         QString filename = dir.absoluteFilePath(name);
-        QScopedPointer<LbrObject> tmp(new LbrObject());
+
+        LbrObjectInterface *obj = nullptr;
+        CreateLbrObject(&obj);
+
+        QScopedPointer<LbrObjectInterface> tmp(obj);
         QFileInfo fi(filename);
 
         if (fi.completeSuffix().isEmpty())
@@ -93,7 +97,7 @@ BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const 
     return pNewEditor;
 }
 
-BaseEditorWindow *BaseResourceEditor::editor(const qint16 &Type, const QString &name, LbrObject *pLbrObj)
+BaseEditorWindow *BaseResourceEditor::editor(const qint16 &Type, const QString &name, LbrObjectInterface *pLbrObj)
 {
     BaseEditorWindow *wnd = nullptr;
 
@@ -105,13 +109,23 @@ BaseEditorWindow *BaseResourceEditor::editor(const qint16 &Type, const QString &
 
         ResBuffer *buffer = nullptr;
         pLbrObj->getResource(name, Type, &buffer);
-        QScopedPointer<ResPanel> testPan(new ResPanel());
-        testPan->load(buffer);
-        qobject_cast<StdPanelEditor*>(wnd)->setPanel(testPan.data(), buffer->comment());
-        delete buffer;
 
-        SetupEditorTitle(wnd, Type, name, testPan->title());
+        if (buffer)
+        {
+            QScopedPointer<ResPanel> testPan(new ResPanel());
+            testPan->load(buffer);
+            qobject_cast<StdPanelEditor*>(wnd)->setPanel(testPan.data(), buffer->comment());
+            delete buffer;
+
+            SetupEditorTitle(wnd, Type, name, testPan->title());
+        }
+        else
+        {
+            delete wnd;
+            wnd = nullptr;
+        }
     }
+
     return wnd;
 }
 

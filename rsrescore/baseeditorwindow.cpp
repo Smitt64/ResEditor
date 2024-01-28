@@ -89,6 +89,7 @@ void BaseEditorWindow::initUndoRedo(QToolBar *toolbar)
     connect(m_pUndoStack, &QUndoStack::indexChanged, [=](const int index) -> void
     {
         emit modifyChanged(index != m_UndoIndexUnchanged);
+        //emit modifyChanged(!m_pUndoStack->isClean());
     });
     connect(m_pRedoActionBtn, &QToolButton::clicked, m_pRedoAction, &QAction::trigger);
 }
@@ -102,6 +103,7 @@ bool BaseEditorWindow::save(ResBuffer *res, QString *error)
 {
     Q_UNUSED(res)
     m_UndoIndexUnchanged = m_pUndoStack->index();
+    emit modifyChanged(false);
     return true;
 }
 

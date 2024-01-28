@@ -12,6 +12,8 @@ include(../config.pri)
 #DEFINES += RUSSIAN
 
 SOURCES += \
+    dllimport/lbrdllobject.cpp \
+    dllimport/lbrdllobjectprivate.cpp \
     lbrobject.cpp \
     lbrobjectinterface.cpp \
     lbrobjectinterfaceprivate.cpp \
@@ -31,6 +33,8 @@ HEADERS += \
 #    dlmdef.h \
 #    listobj.h \
     LbrObjectHeaders.h \
+    dllimport/lbrdllobject.h \
+    dllimport/lbrdllobjectprivate.h \
     lbrobject.h \
     lbrobjectinterface.h \
     lbrobjectinterfaceprivate.h \

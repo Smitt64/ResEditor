@@ -4,7 +4,7 @@
 #include <QtPlugin>
 
 class ResLib;
-class LbrObject;
+class LbrObjectInterface;
 class BaseEditorWindow;
 class ResourceEditorInterface
 {
@@ -12,7 +12,7 @@ public:
     virtual ~ResourceEditorInterface() = default;
     virtual QList<qint16> resTypes() const = 0;
 
-    virtual BaseEditorWindow *editor(const qint16 &Type, const QString &name, LbrObject *pLbrObj) = 0;
+    virtual BaseEditorWindow *editor(const qint16 &Type, const QString &name, LbrObjectInterface *pLbrObj) = 0;
 
     virtual QString newItemsMetaList() = 0;
     virtual bool newItemsActionAvalible(const QString &guid) = 0;

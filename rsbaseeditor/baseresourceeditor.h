@@ -14,7 +14,7 @@ public:
     virtual ~BaseResourceEditor();
 
     virtual QList<qint16> resTypes() const Q_DECL_FINAL;
-    virtual BaseEditorWindow *editor(const qint16 &Type, const QString &name, LbrObject *pLbrObj) Q_DECL_OVERRIDE;
+    virtual BaseEditorWindow *editor(const qint16 &Type, const QString &name, LbrObjectInterface *pLbrObj) Q_DECL_OVERRIDE;
 
     virtual QString newItemsMetaList() Q_DECL_FINAL;
     virtual bool newItemsActionAvalible(const QString &guid) Q_DECL_FINAL;

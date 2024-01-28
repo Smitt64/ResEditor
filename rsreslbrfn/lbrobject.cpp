@@ -1,4 +1,5 @@
 #include "lbrobject.h"
+#include "dllimport/lbrdllobject.h"
 #include "lbrobjectprivate.h"
 #include "lbrreslistmodel.h"
 #include "resbuffer.h"
@@ -6,7 +7,8 @@
 
 void CreateLbrObject(LbrObjectInterface **obj, QObject *parent)
 {
-    *obj = new LbrObject(parent);
+    *obj = new LbrDllObject(parent);
+        //new LbrObject(parent);
 }
 
 LbrObject::LbrObject(QObject *parent)

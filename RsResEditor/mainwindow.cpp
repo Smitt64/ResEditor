@@ -41,7 +41,8 @@ MainWindow::MainWindow(QWidget *parent)
     m_Mdi->setViewMode(QMdiArea::TabbedView);
     setCentralWidget(m_Mdi);
 
-    m_pLbrObj = new LbrObject(this);
+    CreateLbrObject(&m_pLbrObj, this);
+    //m_pLbrObj = new LbrObject(this);
 
     QDir dir = qApp->applicationDirPath();
     QString filename = dir.absoluteFilePath("BANK.lbr");
@@ -53,6 +54,7 @@ MainWindow::MainWindow(QWidget *parent)
     CreateWindowsCombo();
 
     connect(m_ResListDock, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
+    connect(m_ResListDock, &ResListDockWidget::deleteRequest, this, &MainWindow::OnDeleteRequest);
     connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
     connect(ui->actionNew, &QAction::triggered, this, &MainWindow::onNew);
 }
@@ -119,23 +121,17 @@ void MainWindow::readySave(BaseEditorWindow *editor)
 
         if (QMessageBox::question(this, tr("Сохранение"), msg, QMessageBox::Yes | QMessageBox::No) == QMessageBox::No)
             return;
-
-        m_pLbrObj->getResource(name, type, &resBuffer);
-
-        resBuffer->open(QIODevice::ReadWrite);
-        oldSize = resBuffer->size();
-
-        int ver = resBuffer->version();
-        if (ver < 2)
-        {
-            if (!m_pLbrObj->deleteResource(name, type))
-                errorMsg = tr("Не удалось перезаписать ресурс");
-        }
+        if (!m_pLbrObj->deleteResource(name, type))
+            errorMsg = tr("Не удалось перезаписать ресурс");
     }
 
-    if (errorMsg.isEmpty() && editor->save(resBuffer, &errorMsg))
+    if (m_pLbrObj->beginSaveRes(name, type, &resBuffer))
     {
-        resBuffer->debugSaveToFile(QString("1_%1").arg(name));
+        if (errorMsg.isEmpty() && editor->save(resBuffer, &errorMsg))
+        {
+            resBuffer->debugSaveToFile(QString("1_%1").arg(name));
+        }
+        m_pLbrObj->endSaveRes(&resBuffer);
     }
 
     if (!errorMsg.isEmpty())
@@ -295,4 +291,18 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
     }
 
     return QObject::eventFilter(watched, event);
+}
+
+void MainWindow::OnDeleteRequest(const QString &name, const int &type)
+{
+    if (!m_pLbrObj)
+        return;
+
+    QString typeName = RsResCore::inst()->typeNameFromResType(type);
+    QMessageBox::StandardButton btn =
+        QMessageBox::question(this, tr("Удаление"), tr("Удалить ресурс %1 [<b>%2</b>]?")
+                          .arg(typeName, name));
+
+    if (btn == QMessageBox::Yes)
+        m_pLbrObj->deleteResource(name, type);
 }

@@ -8,7 +8,7 @@ namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 class ResLib;
-class LbrObject;
+class LbrObjectInterface;
 class QMdiArea;
 class ResListDockWidget;
 class PropertyDockWidget;
@@ -30,6 +30,7 @@ private slots:
     void doubleResClicked(const QString &name, const int &type);
     void subWindowActivated(QMdiSubWindow *window);
     void onNew();
+    void OnDeleteRequest(const QString &name, const int &type);
     void readySave(bool closeAfterSave);
     void readySave(BaseEditorWindow *editor);
     void titleChanged(const QString &title);
@@ -51,6 +52,6 @@ private:
 
     QComboBox *pWindowsComboBox;
 
-    LbrObject *m_pLbrObj;
+    LbrObjectInterface *m_pLbrObj;
 };
 #endif // MAINWINDOW_H

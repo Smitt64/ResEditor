@@ -44,6 +44,11 @@ public:
     virtual bool deleteResource(const QString &name, const int &type) = 0;
     virtual bool isResExists(const QString &name, const int &type) = 0;
 
+    void createResBuffer(const QString &name, const int &type, QByteArray *data, ResBuffer **buffer);
+    void createResBuffer(const QString &name, const int &type, ResBuffer **buffer);
+
+    virtual bool beginSaveRes(const QString &name, const int &type, ResBuffer **buffer) = 0;
+    virtual bool endSaveRes(ResBuffer **buffer) = 0;
 signals:
 
 protected:
