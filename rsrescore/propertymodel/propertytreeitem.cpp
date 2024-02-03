@@ -231,31 +231,6 @@ void PropertyTreeItem::setEnabled(const bool &v)
     m_Enable = v;
 }
 
-template<class T>
-QWidget *CreateNumberEditor(QWidget *parent)
-{
-    QWidget *editor = nullptr;
-    T Min = std::numeric_limits<T>::min();
-    T Max = std::numeric_limits<T>::max();
-
-    if (!std::is_floating_point<T>::value)
-    {
-        QSpinBox *pSpinBox = new QSpinBox(parent);
-        pSpinBox->setMinimum(Min);
-        pSpinBox->setMaximum(Max);
-        editor = pSpinBox;
-    }
-    else
-    {
-        QDoubleSpinBox *pSpinBox = new QDoubleSpinBox(parent);
-        pSpinBox->setMinimum(Min);
-        pSpinBox->setMaximum(Max);
-        editor = pSpinBox;
-    }
-
-    return editor;
-}
-
 QWidget *CreateStringEditor(QWidget *parent)
 {
     QLineEdit *editor = new QLineEdit(parent);
@@ -270,6 +245,90 @@ QWidget *CreateBoolEditor(QWidget *parent)
     return editor;
 }
 
+template<class T>
+QWidget *CreateNumberEditor(QWidget *parent, const PropertyTreeItem::EditorPropMap &prop)
+{
+    QWidget *editor = nullptr;
+    T Min = std::numeric_limits<T>::min();
+    T Max = std::numeric_limits<T>::max();
+
+    if (!std::is_floating_point<T>::value)
+    {
+        QSpinBox *pSpinBox = new QSpinBox(parent);
+
+        if (prop.contains("min"))
+            pSpinBox->setMinimum(prop["min"].toInt());
+        else
+            pSpinBox->setMinimum(Min);
+
+        if (prop.contains("max"))
+            pSpinBox->setMaximum(prop["max"].toInt());
+        else
+            pSpinBox->setMaximum(Max);
+
+        editor = pSpinBox;
+    }
+    else
+    {
+        QDoubleSpinBox *pSpinBox = new QDoubleSpinBox(parent);
+        pSpinBox->setMinimum(Min);
+        pSpinBox->setMaximum(Max);
+        editor = pSpinBox;
+    }
+
+    return editor;
+}
+
+QWidget *PropertyTreeItem::createDefaultEditor(QWidget *parent,
+                                               const QStyleOptionViewItem &option,
+                                               const QModelIndex &index,
+                                               const QMetaType::Type &type) const
+{
+    QWidget *pEditor = nullptr;
+
+    switch(type)
+    {
+    case QMetaType::Bool:
+        pEditor = CreateBoolEditor(parent);
+        break;
+    case QMetaType::Int:
+        pEditor = CreateNumberEditor<int>(parent, m_EditorProp);
+        break;
+    case QMetaType::UInt:
+        pEditor = CreateNumberEditor<unsigned int>(parent, m_EditorProp);
+        break;
+    case QMetaType::Double:
+        pEditor = CreateNumberEditor<double>(parent, m_EditorProp);
+        break;
+    case QMetaType::Long:
+        pEditor = CreateNumberEditor<long>(parent, m_EditorProp);
+        break;
+    case QMetaType::LongLong:
+        pEditor = CreateNumberEditor<long long>(parent, m_EditorProp);
+        break;
+    case QMetaType::Short:
+        pEditor = CreateNumberEditor<short>(parent, m_EditorProp);
+        break;
+    case QMetaType::ULong:
+        pEditor = CreateNumberEditor<unsigned long>(parent, m_EditorProp);
+        break;
+    case QMetaType::ULongLong:
+        pEditor = CreateNumberEditor<unsigned long long>(parent, m_EditorProp);
+        break;
+    case QMetaType::UShort:
+        pEditor = CreateNumberEditor<unsigned short>(parent, m_EditorProp);
+        break;
+    case QMetaType::Float:
+        pEditor = CreateNumberEditor<float>(parent, m_EditorProp);
+        break;
+    case QMetaType::QString:
+        pEditor = CreateStringEditor(parent);
+        break;
+    }
+
+    return pEditor;
+}
+
 QWidget *PropertyTreeItem::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     QWidget *pEditor = nullptr;
@@ -281,45 +340,7 @@ QWidget *PropertyTreeItem::createEditor(QWidget *parent, const QStyleOptionViewI
         QMetaProperty prop = metaobject->property(propid);
 
         int type = prop.type();
-        switch(type)
-        {
-        case QMetaType::Bool:
-            pEditor = CreateBoolEditor(parent);
-            break;
-        case QMetaType::Int:
-            pEditor = CreateNumberEditor<int>(parent);
-            break;
-        case QMetaType::UInt:
-            pEditor = CreateNumberEditor<unsigned int>(parent);
-            break;
-        case QMetaType::Double:
-            pEditor = CreateNumberEditor<double>(parent);
-            break;
-        case QMetaType::Long:
-            pEditor = CreateNumberEditor<long>(parent);
-            break;
-        case QMetaType::LongLong:
-            pEditor = CreateNumberEditor<long long>(parent);
-            break;
-        case QMetaType::Short:
-            pEditor = CreateNumberEditor<short>(parent);
-            break;
-        case QMetaType::ULong:
-            pEditor = CreateNumberEditor<unsigned long>(parent);
-            break;
-        case QMetaType::ULongLong:
-            pEditor = CreateNumberEditor<unsigned long long>(parent);
-            break;
-        case QMetaType::UShort:
-            pEditor = CreateNumberEditor<unsigned short>(parent);
-            break;
-        case QMetaType::Float:
-            pEditor = CreateNumberEditor<float>(parent);
-            break;
-        case QMetaType::QString:
-            pEditor = CreateStringEditor(parent);
-            break;
-        }
+        pEditor = createDefaultEditor(parent, option, index, (QMetaType::Type)type);
     }
 
     return pEditor;
@@ -340,9 +361,81 @@ QSize PropertyTreeItem::sizeHint(const QStyleOptionViewItem &option, const QMode
     return QSize();
 }
 
+template<class T>void ReadEditorNumberProperty(PropertyTreeItem::EditorPropMap &prop, const QJsonObject &obj)
+{
+    T Min = std::numeric_limits<T>::min();
+    T Max = std::numeric_limits<T>::max();
+
+    if (obj.contains("min"))
+    {
+        T minValue = obj["min"].toVariant().value<T>();
+
+        if (minValue < Min)
+            minValue = Min;
+
+        prop["min"] = QVariant::fromValue(minValue);
+    }
+
+    if (obj.contains("max"))
+    {
+        T maxValue = obj["max"].toVariant().value<T>();
+
+        if (maxValue > Max)
+            maxValue = Max;
+
+        prop["max"] = QVariant::fromValue(maxValue);
+    }
+}
+
+void PropertyTreeItem::initFromJsonBaseTypes(const QJsonObject &obj, const QMetaType::Type &type)
+{
+    switch(type)
+    {
+    case QMetaType::Int:
+        ReadEditorNumberProperty<int>(m_EditorProp, obj);
+        break;
+    case QMetaType::UInt:
+        ReadEditorNumberProperty<unsigned int>(m_EditorProp, obj);
+        break;
+    case QMetaType::Double:
+        ReadEditorNumberProperty<double>(m_EditorProp, obj);
+        break;
+    case QMetaType::Long:
+        ReadEditorNumberProperty<long>(m_EditorProp, obj);
+        break;
+    case QMetaType::LongLong:
+        ReadEditorNumberProperty<long long>(m_EditorProp, obj);
+        break;
+    case QMetaType::Short:
+        ReadEditorNumberProperty<short>(m_EditorProp, obj);
+        break;
+    case QMetaType::ULong:
+        ReadEditorNumberProperty<unsigned long>(m_EditorProp, obj);
+        break;
+    case QMetaType::ULongLong:
+        ReadEditorNumberProperty<unsigned long long>(m_EditorProp, obj);
+        break;
+    case QMetaType::UShort:
+        ReadEditorNumberProperty<unsigned short>(m_EditorProp, obj);
+        break;
+    case QMetaType::Float:
+        ReadEditorNumberProperty<float>(m_EditorProp, obj);
+        break;
+    }
+}
+
 void PropertyTreeItem::initFromJson(const QJsonObject &obj)
 {
+    const QMetaObject *metaobject = m_pItem->metaObject();
+    int propid = metaobject->indexOfProperty(m_PropertyName.toLocal8Bit().data());
 
+    if (propid >= 0)
+    {
+        QMetaProperty prop = metaobject->property(propid);
+
+        int type = prop.type();
+        initFromJsonBaseTypes(obj, (QMetaType::Type)type);
+    }
 }
 
 PropertyTreeItem::PropertyTreeItemList::iterator PropertyTreeItem::begin()

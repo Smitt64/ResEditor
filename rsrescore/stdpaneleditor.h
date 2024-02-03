@@ -19,7 +19,7 @@ class StdPanelEditor : public BaseEditorWindow
     Q_OBJECT
     Q_CLASSINFO(CLASSINFO_TOOLBOX_FILE, ":/json/StdPanelEditorToolBox.json")
 public:
-    StdPanelEditor(QWidget *parent = nullptr);
+    StdPanelEditor(const qint16 &Type, QWidget *parent = nullptr);
 
     virtual void setupEditor() Q_DECL_FINAL;
     void setPanel(ResPanel *panel, const QString &comment = QString());

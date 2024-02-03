@@ -232,12 +232,12 @@ void LbrDllObjectPrivate::getResource(const QString &name, const int &type, ResB
 
         _LibCloseStream(&strm1, false);
 
-#ifdef _DEBUG
+/*#ifdef _DEBUG
         QDir d = QDir::current();
         d.mkdir("loaddump");
         d.cd("loaddump");
         (*buffer)->debugSaveToFile(d.absoluteFilePath(QString("%1_%2.bin").arg(type).arg(name)));
-#endif
+#endif*/
     }
 }
 

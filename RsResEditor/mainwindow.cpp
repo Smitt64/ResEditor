@@ -16,10 +16,12 @@
 #include <QMessageBox>
 #include <QWidgetAction>
 #include <QComboBox>
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+    , ui(new Ui::MainWindow),
+    m_pLbrObj(nullptr)
 {
     ui->setupUi(this);
 
@@ -41,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_Mdi->setViewMode(QMdiArea::TabbedView);
     setCentralWidget(m_Mdi);
 
+#ifdef _DEBUG
     CreateLbrObject(&m_pLbrObj, this);
     //m_pLbrObj = new LbrObject(this);
 
@@ -49,6 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_pLbrObj->open(filename);
 
     m_ResListDock->setModel(m_pLbrObj->list());
+#endif
 
     SetupMenus();
     CreateWindowsCombo();
@@ -57,6 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_ResListDock, &ResListDockWidget::deleteRequest, this, &MainWindow::OnDeleteRequest);
     connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
     connect(ui->actionNew, &QAction::triggered, this, &MainWindow::onNew);
+    connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::onOpen);
 }
 
 MainWindow::~MainWindow()
@@ -129,7 +134,7 @@ void MainWindow::readySave(BaseEditorWindow *editor)
     {
         if (errorMsg.isEmpty() && editor->save(resBuffer, &errorMsg))
         {
-            resBuffer->debugSaveToFile(QString("1_%1").arg(name));
+            //resBuffer->debugSaveToFile(QString("1_%1").arg(name));
         }
         m_pLbrObj->endSaveRes(&resBuffer);
     }
@@ -209,6 +214,29 @@ void MainWindow::onNew()
             if (editor)
                 AddEditorWindow(editor);
         }
+    }
+}
+
+void MainWindow::onOpen()
+{
+    QString filename = QFileDialog::getOpenFileName(this,
+                                                    tr("Выбор библиотеки"),
+                                                    QString(),
+                                                    tr("Библиотека ресурсов (*.lbr)"));
+
+    if (!filename.isEmpty())
+    {
+        if (m_pLbrObj)
+        {
+            m_ResListDock->setModel(nullptr);
+            delete m_pLbrObj;
+            m_pLbrObj = nullptr;
+        }
+
+        CreateLbrObject(&m_pLbrObj, this);
+
+        m_pLbrObj->open(filename);
+        m_ResListDock->setModel(m_pLbrObj->list());
     }
 }
 

@@ -464,24 +464,24 @@ void ControlItem::setControlFlags(quint32 val)
         pushUndoPropertyData("controlFlags", val);
 }
 
-const quint16 &ControlItem::point() const
+const quint16 &ControlItem::signs() const
 {
     return m_Point;
 }
 
-void ControlItem::setPoint(const quint16 &val)
+void ControlItem::setSigns(const quint16 &val)
 {
-    checkPropSame("point", val);
+    checkPropSame("signs", val);
 
     if (isSkipUndoStack() || !undoStack())
     {
         m_Point = val;
-        emit pointChanged();
+        emit signsChanged();
         update();
         scene()->update();
     }
     else
-        pushUndoPropertyData("point", val);
+        pushUndoPropertyData("signs", val);
 }
 
 QVariant ControlItem::userAction(const qint32 &action, const QVariant &param)

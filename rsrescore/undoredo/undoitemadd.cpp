@@ -92,7 +92,10 @@ void UndoItemAdd::redo()
 
         if (rectItem)
         {
+            QString uuid = obj["uuid"].toString();
             bool oldSkip = rectItem->setSkipUndoStack(true);
+
+            qDebug() << uuid;
             rectItem->deserialize(obj);
 
             QPoint originalPos = rectItem->getPoint();
@@ -101,7 +104,6 @@ void UndoItemAdd::redo()
             rc.moveTo(pos);
             rectItem->setCoord(pos);
 
-            QString uuid = obj["uuid"].toString();
             if (m_CreatedItemUids.contains(uuid))
                 rectItem->setUuid(m_CreatedItemUids[uuid]);
             else

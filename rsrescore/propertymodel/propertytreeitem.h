@@ -5,6 +5,7 @@
 #include <QVariant>
 #include <QJsonObject>
 #include <QModelIndex>
+#include <QSpinBox>
 
 class CustomRectItem;
 class QStyleOptionViewItem;
@@ -13,6 +14,7 @@ class PropertyTreeItem : public QObject
     Q_OBJECT
 public:
     typedef QVector<PropertyTreeItem*> PropertyTreeItemList;
+    typedef QMap<QString, QVariant> EditorPropMap;
 
     enum TypeItem
     {
@@ -63,6 +65,8 @@ public:
     virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
     virtual void initFromJson(const QJsonObject &obj);
+    void initFromJsonBaseTypes(const QJsonObject &obj, const QMetaType::Type &type);
+
 signals:
     void dataChanged();
 
@@ -73,6 +77,8 @@ public slots:
 
 protected:
     void ConnectNotify();
+    QWidget *createDefaultEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index, const QMetaType::Type &type) const;
+
     QMetaMethod findMethod(const QString &name) const;
     QString m_PropertyName, m_PropertyAlias;
     QObject *m_pItem;
@@ -84,6 +90,8 @@ private:
     int m_ItemGroup;
     QVariant m_isEditable;
     PropertyTreeItem *m_parentItem;
+
+    EditorPropMap m_EditorProp;
 
     bool m_Enable;
 };

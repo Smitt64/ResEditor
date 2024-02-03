@@ -32,6 +32,7 @@ SOURCES += \
     propertymodel/ewtextstylepropertytreeitem.cpp \
     propertymodel/flagpropertytreeitem.cpp \
     propertymodel/labeltextpropertyitem.cpp \
+    propertymodel/pointpropertytreeitem.cpp \
     propertymodel/propertydockwidget.cpp \
     propertymodel/propertygrouptreeitem.cpp \
     propertymodel/propertymodel.cpp \
@@ -44,6 +45,7 @@ SOURCES += \
     reslistdockwidget.cpp \
     respanel.cpp \
     rsrescore.cpp \
+    scrolitem.cpp \
     statusbarelement.cpp \
     stdpaneleditor.cpp \
     styles/extextstyle.cpp \
@@ -84,6 +86,7 @@ HEADERS += \
     propertymodel/ewtextstylepropertytreeitem.h \
     propertymodel/flagpropertytreeitem.h \
     propertymodel/labeltextpropertyitem.h \
+    propertymodel/pointpropertytreeitem.h \
     propertymodel/propertydockwidget.h \
     propertymodel/propertygrouptreeitem.h \
     propertymodel/propertymodel.h \
@@ -98,6 +101,7 @@ HEADERS += \
     rscoreheader.h \
     rsrescore_global.h \
     rsrescore.h \
+    scrolitem.h \
     statusbarelement.h \
     stdpaneleditor.h \
     styles/extextstyle.h \

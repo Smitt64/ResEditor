@@ -66,5 +66,6 @@
         <file>img/prevwin.png</file>
         <file>json/FieldTypeEnum.json</file>
         <file>json/DataTypeEnum.json</file>
+        <file>json/Scrol.json</file>
     </qresource>
 </RCC>

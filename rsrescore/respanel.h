@@ -54,6 +54,11 @@ typedef struct FieldStruct
 {
     FieldStruct();
     FieldStruct(const FieldStruct &other);
+    //FieldStruct(const FieldStruct &&other);
+    virtual ~FieldStruct();
+
+    FieldStruct &operator =(const FieldStruct &other);
+
     struct FieldR *_field;
 
     QString name, name2, formatStr, toolTip;
@@ -68,9 +73,14 @@ typedef struct FieldStruct
     const qint8 &ku() const;
     const qint8 &kd() const;
 
+    bool isActiveFld() const;
+    bool isTabStopFld() const;
+
     void reset();
+
+    static bool compare(const FieldStruct &s1, const FieldStruct &s2);
 }FieldStruct;
-typedef QList<FieldStruct> FieldStructList;
+typedef QVector<FieldStruct> FieldStructList;
 
 class ResBuffer;
 class QDomElement;
@@ -91,11 +101,17 @@ public:
     QPoint pos() const;
     QSize size() const;
 
+    QRect scrol() const;
+    quint16 rowHaight() const;
+    QPoint scrolPos() const;
+
     QString title() const;
     QString status() const;
     QString status2() const;
-    QString name() const;
     quint16 helpPage() const;
+
+    QString name() const;
+    qint16 type() const;
 
     ResStyle::BorderStyle panelBorder() const;
     ResStyle::PanelStyle panelStyle() const;
@@ -110,8 +126,13 @@ public:
     void setComment(const QString &val);
 
     void beginAddField(const QString &name, const QString &name2 = QString());
-    void setFieldDataType(const quint8 &FieldType, const quint8 &DataType, const quint16 &DataLength);
+    void setFieldDataType(const quint8 &FieldType,
+                          const quint8 &DataType,
+                          const quint16 &DataLength,
+                          const bool &fdm);
+    void setFieldFlags(const quint32 &value);
     void setLenHeight(const quint8 &len, const quint8 &height);
+    void setFieldPos(const quint8 &x, const quint8 &y);
     void setFormatTooltip(const QString &formatStr, const QString &toolTip = QString());
     void setFieldStyle(const quint16 &St);
     void setFieldGroup(const quint16 &ControlGroup);
@@ -146,10 +167,13 @@ protected:
     int saveTitleLine(ResBuffer *data);
     int saveTextLabels(ResBuffer *data);
     int saveBorders(ResBuffer *data);
+    int saveFields(ResBuffer *data);
+    void prepFields();
     virtual int readItems(struct PanelR *pp, ResBuffer *data, bool readName2);
     virtual bool readString(ResBuffer *data, char **s, qint16 vfl, qint16 lens);
 
     QString m_Status, m_StatusRD, m_Title, m_Name, m_Comment;
+    qint16 m_Type;
 
     struct PanelR *m_pPanel;
     QList<struct BordR> m_BordR;

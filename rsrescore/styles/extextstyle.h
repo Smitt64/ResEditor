@@ -127,6 +127,7 @@ public:
     virtual ~EwTextStyle();
 
     void fromOther(const EwTextStyle &other);
+    static EwTextStyle fromStyle(const quint32 &St);
 
     const TextAlign &align() const;
     void setAlign(const TextAlign &value);

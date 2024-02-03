@@ -24,7 +24,9 @@ BaseResourceEditor::~BaseResourceEditor()
 
 QList<qint16> BaseResourceEditor::resTypes() const
 {
-    return QList<qint16>() << LbrObject::RES_PANEL;
+    return QList<qint16>()
+           << LbrObject::RES_PANEL
+           << LbrObject::RES_BS;
 }
 
 QString BaseResourceEditor::newItemsMetaList()
@@ -81,7 +83,7 @@ BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const 
         RsResCore::inst()->loadFromXml(&resxml, &testPan);
         if (testPan)
         {
-            pNewEditor = new StdPanelEditor();
+            pNewEditor = new StdPanelEditor(LbrObject::RES_PANEL);
             pNewEditor->setWindowIcon(RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL));
             pNewEditor->setupEditor();
 
@@ -101,9 +103,9 @@ BaseEditorWindow *BaseResourceEditor::editor(const qint16 &Type, const QString &
 {
     BaseEditorWindow *wnd = nullptr;
 
-    if (Type == LbrObject::RES_PANEL)
+    if (Type == LbrObject::RES_PANEL || Type == LbrObject::RES_BS)
     {
-        wnd = new StdPanelEditor();
+        wnd = new StdPanelEditor(Type);
         wnd->setWindowIcon(RsResCore::inst()->iconFromResType(Type));
         wnd->setupEditor();
 

@@ -5,6 +5,10 @@
 #define SetTextColorSt(St, fl) (((fl) << 24) | (St))
 #define SetBackColorSt(St, fl) (((fl) << 28) | (St))
 
+#define GetAlignSt(St) ((St) & 0xFFFF)
+#define GetTextFormatSt(St) (((St) >> 18) & 0x3FF)
+#define GetTextColorSt(St) (((St) >> 24) & 0xFF)
+#define GetBackColorSt(St) (((St) >> 28) & 0xF)
 
 EwTextStyle::EwTextStyle(QObject *parent) :
     QObject(parent)
@@ -21,6 +25,17 @@ EwTextStyle::EwTextStyle(const EwTextStyle &other) :
 EwTextStyle::~EwTextStyle()
 {
 
+}
+
+EwTextStyle EwTextStyle::fromStyle(const quint32 &St)
+{
+    EwTextStyle other;
+    other.m_Align = (TextAlign)GetAlignSt(St);
+    other.m_Format = (TextFormat)GetTextFormatSt(St);
+    other.m_Textcolor = (TextColor)GetTextColorSt(St);
+    other.m_Back = (BackColor)GetBackColorSt(St);
+
+    return other;
 }
 
 void EwTextStyle::fromOther(const EwTextStyle &other)
@@ -120,10 +135,11 @@ void EwTextStyle::setBackColor(const EwTextStyle::BackColor &value)
 
 qint16 EwTextStyle::style() const
 {
-    qint16 St = SetAlignSt(0, m_Align);
-    St = SetTextFormatSt(St, m_Format);
+    qint16 St = 0;
+    St = SetAlignSt(St, m_Align);
+    /*St = SetTextFormatSt(St, m_Format);
     St = SetTextColorSt(St, m_Textcolor);
-    St = SetBackColorSt(St, m_Back);
+    St = SetBackColorSt(St, m_Back);*/
 
     return St;
 }

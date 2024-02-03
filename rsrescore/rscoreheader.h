@@ -224,4 +224,12 @@ typedef struct FieldR
 
 #define offsetof(s,m)(size_t)&reinterpret_cast<const volatile char&>((((s *)0)->m))
 
+/*#define  isActF(t)        (!( (t) & DUMMF))
+#define  isHideF(t)        ((t) & HIDEF)
+#define  isAsTextFld(f)   (((f)->FFlags & RF_ASTEXT))
+
+#define  isTabStopFld(f)  (!((f)->FFlags & RF_NOTABSTOP))
+#define  isAsTextFld(f)   (((f)->FFlags & RF_ASTEXT))*/
+//#define  isActiveFld(f)   (isActF((f)->Ftype) && !isHideF((f)->Ftype) && !isAsTextFld(f))
+
 #endif // RSCOREHEADER_H

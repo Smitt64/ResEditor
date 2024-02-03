@@ -386,6 +386,7 @@ void PanelItem::dragEnterEvent(QGraphicsSceneDragDropEvent *event)
                 QRectF rc = items.first()->boundingRect();
                 for (const QGraphicsItem *item : qAsConst(items))
                     rc = rc.united(item->boundingRect());
+
                 m_DragControl = new QPixmap(rc.toRect().size());
                 m_DragControl->fill(Qt::transparent);
                 m_DragHighlightedRect.setWidth(rc.width());

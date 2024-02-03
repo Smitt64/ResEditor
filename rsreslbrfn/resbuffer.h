@@ -19,16 +19,22 @@ public:
 
     QString decodeString(const char *str) const;
     void encodeString(const QString &str, char *encStr, int len) const;
+
+    bool writeString(const QString &str);
+
     const QString &name() const;
     const QString &comment() const;
     const qint16 &type() const;
 
     void setComment(const QString &comment);
     void setResHeader(void *ptr);
-    void debugSaveToFile(const QString &filename);
+
 
     void setResStream(Qt::HANDLE handle);
     Qt::HANDLE getResStream();
+
+    void debugSaveToFile(const QString &filename);
+    static void debugSaveToFile(const QString &filename, char *mem, int len);
 
 private:
     ResBufferPrivate * const d_ptr;

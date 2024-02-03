@@ -82,6 +82,22 @@ void ResBuffer::encodeString(const QString &str, char *encStr, int len) const
     strcpy_s(encStr, len, tmp.data());
 }
 
+bool ResBuffer::writeString(const QString &str)
+{
+    int len = str.length() + 1;
+    char *strtowrite = (char*)malloc(len);
+    encodeString(str, strtowrite, len);
+
+    if (write(strtowrite, len) != len)
+    {
+        free(strtowrite);
+        return false;
+    }
+
+    free(strtowrite);
+    return true;
+}
+
 const QString &ResBuffer::name() const
 {
     Q_D(const ResBuffer);
@@ -112,6 +128,16 @@ void ResBuffer::debugSaveToFile(const QString &filename)
 
     if (f.open(QIODevice::WriteOnly))
         f.write(data());
+    f.close();
+}
+
+void ResBuffer::debugSaveToFile(const QString &filename, char *mem, int len)
+{
+    QFile f(filename);
+
+    if (f.open(QIODevice::WriteOnly))
+        f.write(mem, len);
+
     f.close();
 }
 

@@ -3,6 +3,7 @@
 #include "panelitem.h"
 #include "respanel.h"
 #include "rsrescore.h"
+#include "scrolitem.h"
 #include "statusbarelement.h"
 #include "basescene.h"
 #include "baseeditorview.h"
@@ -199,12 +200,17 @@ public:
 
 // ----------------------------------------------------
 
-StdPanelEditor::StdPanelEditor(QWidget *parent) :
+StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     BaseEditorWindow(parent),
     m_pPanel(nullptr),
     panelItem(nullptr),
     m_StatusBar(nullptr)
 {
+    if (Type == LbrObject::RES_PANEL)
+        panelItem = new PanelItem();
+    else
+        panelItem = new ScrolItem();
+
     m_StatusBar = new QStatusBar(this);
     m_pStatusContainer = new QWidget(this);
     setWindowTitle(tr("Редактирование панели"));
@@ -254,7 +260,6 @@ void StdPanelEditor::setupEditor()
     m_pView->setupScene();
     setCentralWidget(m_pView);
 
-    panelItem = new PanelItem();
     panelItem->setBrush(QColor(128, 128, 0));
 
     m_pView->scene()->addItem(panelItem);
@@ -607,8 +612,13 @@ bool StdPanelEditor::save(ResBuffer *res, QString *error)
     for (ControlItem *item : qAsConst(controls))
     {
         resPanel.beginAddField(item->controlName(), item->controlName2());
-        resPanel.setFieldDataType(item->fieldType(), item->dataType(), item->dataLength());
+        resPanel.setFieldDataType(item->fieldType(),
+                                  item->dataType(),
+                                  item->dataLength(),
+                                  item->fdm());
+        resPanel.setFieldFlags(item->controlFlags());
         resPanel.setLenHeight(item->length(), item->lines());
+        resPanel.setFieldPos(item->getPoint().x(), item->getPoint().y());
         resPanel.setFormatTooltip(item->valueTemplate(), item->toolTip());
         resPanel.setFieldStyle((quint16)item->controlStyle());
         resPanel.setFieldGroup(item->controlGroup());

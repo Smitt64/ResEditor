@@ -42,6 +42,7 @@ TextItem::~TextItem()
 void TextItem::setTextStruct(TextStruct *value)
 {
     m_Value = value->value;
+    m_TextStyle = EwTextStyle::fromStyle(value->_text->St);
     detectType();
 
     setCoord(QPoint(value->x(), value->y()));

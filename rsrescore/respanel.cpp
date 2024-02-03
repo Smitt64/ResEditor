@@ -1,7 +1,9 @@
 #include "respanel.h"
 #include "resbuffer.h"
 #include "rscoreheader.h"
+#include <stdlib.h>
 #include <QDebug>
+#include <lbrobject.h>
 #include <QDataStream>
 #include <QDomElement>
 
@@ -25,6 +27,9 @@
 #define  RFP_NOSHADOW      0x00008000
 
 #define  RFP_CENTERED      0x00000100   // Вместо RFP_TRANSPARENT
+
+#define RF_ASTEXT       0x01000000
+#define RF_NOTABSTOP    0x20000000
 
 typedef struct
 {
@@ -67,6 +72,16 @@ qint16 TextStruct::len() const
 
 // ----------------------------------------------------------------
 
+bool FieldStruct::compare(const FieldStruct &s1, const FieldStruct &s2)
+{
+    int kv = s1.y() - s2.y();
+
+    if (!kv)
+        return s1.x() - s2.x();
+
+    return kv < 0;
+}
+
 FieldStruct::FieldStruct(const FieldStruct &other)
 {
     _field = new FieldR();
@@ -78,9 +93,47 @@ FieldStruct::FieldStruct(const FieldStruct &other)
     toolTip = other.toolTip;
 }
 
+/*FieldStruct::FieldStruct(const FieldStruct &&other)
+{
+    _field = std::move(other._field);
+
+    name = other.name;
+    name2 = other.name2;
+    formatStr = other.formatStr;
+    toolTip = other.toolTip;
+}*/
+
 FieldStruct::FieldStruct()
 {
     _field = nullptr;
+}
+
+FieldStruct::~FieldStruct()
+{
+    if (_field)
+    {
+        delete _field;
+        _field = nullptr;
+    }
+}
+
+FieldStruct &FieldStruct::operator =(const FieldStruct &other)
+{
+    if (_field)
+    {
+        delete _field;
+        _field = nullptr;
+    }
+
+    _field = new FieldR();
+    memcpy(_field, other._field, sizeof(FieldR));
+
+    name = other.name;
+    name2 = other.name2;
+    formatStr = other.formatStr;
+    toolTip = other.toolTip;
+
+    return *this;
 }
 
 const qint8 &FieldStruct::x() const
@@ -121,6 +174,18 @@ const qint8 &FieldStruct::ku() const
 const qint8 &FieldStruct::kd() const
 {
     return _field->kd;
+}
+
+bool FieldStruct::isActiveFld() const
+{
+    return !(_field->Ftype & DUMMF) &&
+           !(_field->Ftype & HIDEF) &&
+           !(_field->flags & RF_ASTEXT);
+}
+
+bool FieldStruct::isTabStopFld() const
+{
+    return !(_field->flags & RF_NOTABSTOP);
 }
 
 void FieldStruct::reset()
@@ -437,6 +502,7 @@ int ResPanel::load(ResBuffer *data)
     int ver = data->headerVersion();
     bool readName2 = false;
     m_Name = data->name();
+    m_Type = data->type();
 
     if (ver >= 1)
     {
@@ -571,7 +637,6 @@ int ResPanel::readItems(struct PanelR *pp, ResBuffer *data, bool readName2)
             toRead = sizeof(FieldR_1);
         else
             toRead = sizeof(FieldR);
-
         element._field->flags = 0;
         element._field->group = 0;
         element._field->nameLen = element._field->formLen = 0;
@@ -585,6 +650,12 @@ int ResPanel::readItems(struct PanelR *pp, ResBuffer *data, bool readName2)
 
             if(element._field->FVt == FT_NUMERIC)
                element._field->FVp &= 0xFF;
+
+            if (data->type() != LbrObject::RES_PANEL)
+            {
+                element._field->x += pp->x;
+                element._field->y += pp->y;
+            }
 
             char *s = (char*)malloc(sizeof(char)*(element._field->lens + 1));
             memset(s, 0, element._field->lens + 1);
@@ -650,6 +721,22 @@ QSize ResPanel::size() const
     return QSize(m_pPanel->x2 - m_pPanel->x1 + 1, m_pPanel->y2 - m_pPanel->y1 + 1);
 }
 
+QRect ResPanel::scrol() const
+{
+    return QRect(m_pPanel->x, m_pPanel->y,
+                 m_pPanel->l, m_pPanel->Mn);
+}
+
+quint16 ResPanel::rowHaight() const
+{
+    return m_pPanel->h;
+}
+
+QPoint ResPanel::scrolPos() const
+{
+    return QPoint(m_pPanel->x, m_pPanel->y);
+}
+
 QString ResPanel::title() const
 {
     return m_Title;
@@ -668,6 +755,11 @@ QString ResPanel::status2() const
 QString ResPanel::name() const
 {
     return m_Name;
+}
+
+qint16 ResPanel::type() const
+{
+    return m_Type;
 }
 
 quint16 ResPanel::helpPage() const
@@ -784,17 +876,34 @@ void ResPanel::beginAddField(const QString &name, const QString &name2)
     m_NewField.name2 = name2;
 }
 
-void ResPanel::setFieldDataType(const quint8 &FieldType, const quint8 &DataType, const quint16 &DataLength)
+void ResPanel::setFieldDataType(const quint8 &FieldType,
+                                const quint8 &DataType,
+                                const quint16 &DataLength,
+                                const bool &fdm)
 {
     m_NewField._field->Ftype = FieldType;
     m_NewField._field->FVt = DataType;
     m_NewField._field->FVp = DataLength;
+
+    if (fdm)
+        m_NewField._field->Ftype |= DUMMF;
+}
+
+void ResPanel::setFieldFlags(const quint32 &value)
+{
+    m_NewField._field->flags = value;
 }
 
 void ResPanel::setLenHeight(const quint8 &len, const quint8 &height)
 {
     m_NewField._field->l = len;
     m_NewField._field->h = height;
+}
+
+void ResPanel::setFieldPos(const quint8 &x, const quint8 &y)
+{
+    m_NewField._field->x = x;
+    m_NewField._field->y = y;
 }
 
 void ResPanel::setFormatTooltip(const QString &formatStr, const QString &toolTip)
@@ -805,7 +914,8 @@ void ResPanel::setFormatTooltip(const QString &formatStr, const QString &toolTip
 
 void ResPanel::setFieldStyle(const quint16 &St)
 {
-    m_NewField._field->St = St;
+    qint16 st = static_cast<qint16>(St) + 1;
+    m_NewField._field->St = st << 8;
 }
 
 void ResPanel::setFieldGroup(const quint16 &ControlGroup)
@@ -950,6 +1060,279 @@ int ResPanel::save(ResBuffer *data)
     return stat;
 }
 
+void ResPanel::prepFields()
+{
+    if (!m_Fields.empty())
+        qSort(m_Fields.begin(), m_Fields.end(), FieldStruct::compare);
+
+    if(m_pPanel->flags & RFP_NOAUTODIR)
+    {
+        for(int i = 0; i < m_Fields.size(); i++)
+        {
+            if(m_Fields[i].isActiveFld() && m_Fields[i].isTabStopFld())
+            {
+                m_pPanel->Pff = i;
+                break;
+            }
+        }
+    }
+    else
+    {
+        if (m_Fields.empty())
+            return;
+
+        // Построение маршрута обхода полей
+        int corn = -1, left, right, up, down, j = 0;
+        FieldStruct* cf = &m_Fields[0],
+            *nf, *fcorn, *fleft, *fright, *fup, *fdown;
+
+        auto compcorn = [](const FieldStruct *cf, const FieldStruct *fcorn) -> int
+        {
+            if(cf->y() > fcorn->y())
+                return 0;
+
+            if(cf->y() < fcorn->y())
+                return 1;
+
+            if(cf->x() < fcorn->x())
+                return 1;
+
+            return 0;
+        };
+
+        auto compleft = [](const FieldStruct *cf, const FieldStruct *nf, const FieldStruct *f) -> int
+        {
+            int  cfx = cf->x(),
+                cfy = cf->y(),
+                nfx = nf->x() - cfx,
+                nfy = nf->y() - cfy,
+                fx  = f->x()  - cfx,
+                fy  = f->y()  - cfy;
+
+
+            if(fy == 0)
+            {
+                if(fx < 0)
+                    if(nfy == 0 && nfx < 0 && nfx > fx)
+                        return 1;
+                    else
+                        return 0;
+                else if(nfy == 0 && nfx > 0 && nfx < fx)
+                    return 0;
+                else
+                    return 1;
+            }
+            else if(fy < 0)
+            {
+                if(nfy == fy)
+                    if(nfx > fx)
+                        return 1;
+                    else
+                        return 0;
+                else if(nfy > fy)
+                    if(nfy < 0)
+                        return 1;
+                    else if(nfy == 0 && nfx < 0)
+                        return 1;
+                    else
+                        return 0;
+                else
+                    return 0;
+            }
+            else
+            {
+                if(nfy == fy)
+                    if(nfx > fx)
+                        return 1;
+                    else
+                        return 0;
+                else if(nfy < fy)
+                    if(nfy < 0)
+                        return 1;
+                    else if(nfy == 0 && nfx < 0)
+                        return 1;
+                    else
+                        return 0;
+                else
+                    return 1;
+            }
+        };
+
+        auto cmx = [](int fx, int nfx) -> int
+        {
+            if(fx <= 0)
+                if(nfx <= 0 && nfx > fx)
+                    return 1;
+                else
+                    return 0;
+            else if(nfx > 0 && nfx > fx)
+                return 0;
+            else
+                return 1;
+        };
+
+        auto compup = [=](const FieldStruct *cf, const FieldStruct *nf, const FieldStruct *f) -> int
+        {
+            int  cfx = cf->x(),
+                cfy = cf->y(),
+                nfx = nf->x() - cfx,
+                nfy = nf->y() - cfy,
+                fx  = f->x()  - cfx,
+                fy  = f->y()  - cfy;
+
+
+            if(fy == 0)
+            {
+                if(nfy != 0)
+                    return 1;
+                else
+                    return cmx(fx, nfx);
+            }
+            else if(fy < 0)
+            {
+                if(nfy >= 0)
+                    return 0;
+                else if(nfy < fy)
+                    return 0;
+                else if(nfy > fy)
+                    return 1;
+                else
+                    return cmx(fx, nfx);
+            }
+            else
+            {
+                if(nfy == 0)
+                    return 0;
+                else if(nfy < 0)
+                    return 1;
+                else if(nfy > fy)
+                    return 1;
+                else if(nfy < fy)
+                    return 0;
+                else
+                    return cmx(fx, nfx);
+            }
+        };
+
+        auto compdown = [=](const FieldStruct *cf, const FieldStruct *nf, const FieldStruct *f) -> int
+        {
+            int  cfx = cf->x(),
+                cfy = cf->y(),
+                nfx = nf->x() - cfx,
+                nfy = nf->y() - cfy,
+                fx  = f->x()  - cfx,
+                fy  = f->y()  - cfy;
+
+
+            if(fy == 0)
+            {
+                if(nfy != 0)
+                    return 1;
+                else
+                    return cmx(fx, nfx);
+            }
+            else if(fy < 0)
+            {
+                if(nfy > 0)
+                    return 1;
+                else if(nfy == 0)
+                    return 0;
+                else if(nfy > fy)
+                    return 0;
+                else if(nfy < fy)
+                    return 1;
+                else
+                    return cmx(fx, nfx);
+            }
+            else
+            {
+                if(nfy == 0)
+                    return 0;
+                else if(nfy < 0)
+                    return 0;
+                else if(nfy > fy)
+                    return 0;
+                else if(nfy < fy)
+                    return 1;
+                else
+                    return cmx(fx, nfx);
+            }
+        };
+
+        for (int i = 0; i < m_Fields.size(); i++, cf++)
+        {
+            if (cf->isActiveFld())
+            {
+                if (cf->isTabStopFld())
+                {
+                    if (corn < 0)
+                    {
+                        corn = i;
+                        fcorn = cf;
+                    }
+                    else if (compcorn(cf, fcorn))
+                        corn = i;
+                }
+
+                for (j = 0; j < m_Fields.size(); j++)
+                {
+                    if (!m_Fields[j].isActiveFld() || i == j)
+                        continue;
+
+                    left = right = up = down = j;
+                    fleft = fright = fup = fdown = nf = &m_Fields[j];
+
+                    break;
+                }
+
+                if (nf)
+                {
+                    while (++j < m_Fields.size())
+                    {
+                        ++nf;
+
+                        if (nf->isActiveFld() && i != j)
+                        {
+                            if (compleft(cf, nf, fleft))
+                            {
+                                left = j;
+                                fleft = nf;
+                            }
+
+                            if (!compleft(cf, nf, fright))
+                            {
+                                right = j;
+                                fright = nf;
+                            }
+
+                            if (compup(cf, nf, fup))
+                            {
+                                up = j;
+                                fup = nf;
+                            }
+
+                            if (compdown(cf, nf, fdown))
+                            {
+                                down = j;
+                                fdown = nf;
+                            }
+                        }
+                    }
+
+                    cf->_field->kl = left;
+                    cf->_field->kr = right;
+                    cf->_field->ku = up;
+                    cf->_field->kd = down;
+                }
+                else
+                    cf->_field->kl = cf->_field->kr = cf->_field->ku = cf->_field->kd = i;
+            }
+        }
+
+        m_pPanel->Pff = corn;
+    }
+}
+
 int ResPanel::savePanel(ResBuffer *data)
 {
     r_coord lens = 0;
@@ -975,12 +1358,15 @@ int ResPanel::savePanel(ResBuffer *data)
         free(ResComment);
     }
 
+    prepFields();
+
     SizesTuple sizes;
     def_panelsize(sizes, data->version());
 
     m_pPanel->len = std::get<1>(sizes);
     m_pPanel->Nb = m_BordR.size();
     m_pPanel->Pnumt = m_pPanel->Nt = m_Texts.size();
+    m_pPanel->Pnumf = m_Fields.size();
     m_pPanel->flags |= P_NAME2ALLOCED;
 
     if (!m_pPanel->Pff)
@@ -1005,6 +1391,9 @@ int ResPanel::savePanel(ResBuffer *data)
         return 1;
 
     if (saveTextLabels(data))
+        return 1;
+
+    if (saveFields(data))
         return 1;
 
     return 0;
@@ -1083,6 +1472,63 @@ int ResPanel::saveBorders(ResBuffer *data)
     {
         if (data->write((char*)&box, sizeof(BordR)) != sizeof(BordR))
             return 1;
+    }
+
+    return 0;
+}
+
+int ResPanel::saveFields(ResBuffer *data)
+{
+    int ver = data->headerVersion();
+    for (FieldStruct fld : m_Fields)
+    {
+        fld._field->vfl = fld.name2.isEmpty() ? 0 : 1;
+        fld._field->lens = fld.name2.length();
+
+        if (!fld.name2.isEmpty())
+            fld._field->lens ++;
+
+        fld._field->nameLen = fld.name.length();
+        if (!fld.name.isEmpty())
+            fld._field->nameLen ++;
+
+        fld._field->formLen = fld.formatStr.length();
+        if (!fld.formatStr.isEmpty())
+            fld._field->formLen ++;
+
+        fld._field->tooltipLen = fld.toolTip.length();
+        if (!fld.toolTip.isEmpty())
+            fld._field->tooltipLen ++;
+
+        int fldsize = (ver >= 2) ? sizeof(FieldR) : sizeof(FieldR_1);
+        if (data->write((char*)fld._field, fldsize) != fldsize)
+            return 1;
+
+        if(fld._field->lens)
+        {
+            if (!data->writeString(fld.name2))
+                return 1;
+        }
+
+        if(fld._field->nameLen)
+        {
+            if (!data->writeString(fld.name))
+                return 1;
+        }
+
+        if(fld._field->formLen)
+        {
+            if (!data->writeString(fld.formatStr))
+                return 1;
+        }
+
+        if(fld._field->tooltipLen)
+        {
+            if (!data->writeString(fld.toolTip))
+                return 1;
+        }
+
+        //ResBuffer::debugSaveToFile("1_savefld.txt", )
     }
 
     return 0;

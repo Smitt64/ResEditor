@@ -1,0 +1,28 @@
+{
+    "propertylist": [
+        {
+            "name" : "rowNum",
+            "alias" : "Число строк"
+        },
+		{
+            "name" : "scrolPos",
+            "alias" : "Базовые координаты",
+			"x": {
+				"min": 0,
+				"max": 254
+			},
+			"y": {
+				"min": 0,
+				"max": 254
+			}
+        },
+		{
+            "name" : "rowLength",
+            "alias" : "Длина строки"
+        },
+		{
+            "name" : "rowHeight",
+            "alias" : "Высота строки"
+        }
+    ]
+}

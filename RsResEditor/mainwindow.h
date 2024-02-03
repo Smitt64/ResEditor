@@ -30,6 +30,7 @@ private slots:
     void doubleResClicked(const QString &name, const int &type);
     void subWindowActivated(QMdiSubWindow *window);
     void onNew();
+    void onOpen();
     void OnDeleteRequest(const QString &name, const int &type);
     void readySave(bool closeAfterSave);
     void readySave(BaseEditorWindow *editor);

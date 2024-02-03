@@ -6,6 +6,7 @@
 #include "rectpropertytreeitem.h"
 #include "propertygrouptreeitem.h"
 #include "enumpropertytreeitem.h"
+#include "pointpropertytreeitem.h"
 #include <algorithm>
 #include <QGraphicsItem>
 #include <QMetaObject>
@@ -258,13 +259,23 @@ void PropertyModel::addProperty(const QJsonObject &obj, const QMetaObject *meta,
 
                 if (pTreeItem)
                 {
-                    pTreeItem->initFromJson(obj);
                     pTreeItem->setPropertyAlias(alias);
                     pTreeItem->setGroup(group);
                     pTreeItem->setPropertyName(name);
+                    pTreeItem->initFromJson(obj);
                     itemBase = pTreeItem;
                 }
             }
+        }
+        else if (prop.type() == QVariant::Point)
+        {
+            PointPropertyTreeItem *item = new PointPropertyTreeItem(m_pItem, PointPropertyTreeItem::SubTypeRootPoint, this);
+            item->setGroup(group);
+            item->setPropertyName(name);
+            item->setPropertyAlias(alias);
+            item->initFromJson(obj);
+
+            itemBase = item;
         }
         else if (prop.type() == QVariant::Rect)
         {
@@ -272,6 +283,7 @@ void PropertyModel::addProperty(const QJsonObject &obj, const QMetaObject *meta,
             item->setPropertyName(name);
             item->setPropertyAlias(alias);
             item->setGroup(group);
+            item->initFromJson(obj);
 
             itemBase = item;
         }
@@ -283,6 +295,7 @@ void PropertyModel::addProperty(const QJsonObject &obj, const QMetaObject *meta,
                 item->setGroup(group);
                 item->setPropertyName(name);
                 item->setPropertyAlias(alias);
+                item->initFromJson(obj);
 
                 if (obj.contains("enum"))
                     item->loadEnumAlias(obj["enum"].toArray());
@@ -295,6 +308,7 @@ void PropertyModel::addProperty(const QJsonObject &obj, const QMetaObject *meta,
                 item->setPropertyName(name);
                 item->setPropertyAlias(alias);
                 item->setGroup(group);
+                item->initFromJson(obj);
 
                 if (obj.contains("enum"))
                 {
@@ -312,6 +326,7 @@ void PropertyModel::addProperty(const QJsonObject &obj, const QMetaObject *meta,
                 item->setPropertyName(name);
                 item->setPropertyAlias(alias);
                 item->setGroup(group);
+                item->initFromJson(obj);
                 itemBase = item;
             }
         }

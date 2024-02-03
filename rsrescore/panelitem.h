@@ -40,7 +40,7 @@ public:
     Q_INVOKABLE PanelItem(CustomRectItem* parent = nullptr);
     virtual ~PanelItem();
 
-    void setPanel(ResPanel *panel, const QString &comment = QString());
+    virtual void setPanel(ResPanel *panel, const QString &comment = QString());
 
     const ResStyle::PanelStyle &panelStyle() const;
     void setPanelStyle(const ResStyle::PanelStyle &style);
