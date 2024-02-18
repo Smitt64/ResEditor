@@ -31,6 +31,12 @@ public:
 
     virtual void sceneItemPosChanged();
 
+    template<class T> T *findItemObj(const QUuid &uuid) const
+    {
+        CustomRectItem *found = findItem(uuid);
+        return dynamic_cast<T*>(found);
+    }
+
     template<class T> QList<T*> findItems()
     {
         QList<T*> result;

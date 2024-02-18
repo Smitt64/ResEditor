@@ -34,3 +34,5 @@ RsResEditor/ui_mainwindow.h
 rsreslbrfn/rsreslbrfn.pro.SOEGgo
 
 rsreslbrfn/release/
+
+.vscode/

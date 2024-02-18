@@ -1,12 +1,13 @@
 #include "undoitemresize.h"
 #include "basescene.h"
 #include "customrectitem.h"
+#include "scrolitem.h"
 #include <QMetaClassInfo>
 
 UndoItemResize::UndoItemResize(BaseScene *scene, const QUuid &uuid, QUndoCommand *parent) :
     QUndoCommand(parent),
-    m_pScene(scene),
-    m_ItemId(uuid)
+    m_ItemId(uuid),
+    m_pScene(scene)
 {
 
 }
@@ -50,4 +51,58 @@ void UndoItemResize::undo()
 
     if (pItem)
         pItem->setSize(m_OldSize);
+}
+
+BaseScene *UndoItemResize::scene()
+{
+    return m_pScene;
+}
+
+// --------------------------------------------------------------------------
+
+UndoItemResizeScrol::UndoItemResizeScrol(BaseScene *scene, const QUuid &uuid, QUndoCommand *parent) :
+    UndoItemResize(scene, uuid, parent)
+{
+
+}
+
+UndoItemResizeScrol::~UndoItemResizeScrol()
+{
+
+}
+
+void UndoItemResizeScrol::setSizes(const QSizeF &old, const QSizeF &new_)
+{
+    UndoItemResize::setSizes(old, new_);
+
+    QSizeF delta = new_ - old;
+    QSize grid = scene()->getGridSize();
+    ScrolItem *pItem = scene()->findItemObj<ScrolItem>(m_ItemId);
+
+    m_OldSize = QSize(pItem->rowLength(), pItem->rowNum());
+    m_NewSize = QSize(pItem->rowLength() + delta.width() / grid.width(),
+                      pItem->rowNum() + delta.height() / grid.height());
+}
+
+void UndoItemResizeScrol::redo()
+{
+    UndoItemResize::redo();
+    ScrolItem *pItem = scene()->findItemObj<ScrolItem>(m_ItemId);
+
+    bool old_skip = pItem->setSkipUndoStack(true);
+    pItem->setRowLength(m_NewSize.width());
+    pItem->setRowNum(m_NewSize.height());
+    pItem->setSkipUndoStack(old_skip);
+}
+
+void UndoItemResizeScrol::undo()
+{
+    UndoItemResize::undo();
+
+    ScrolItem *pItem = scene()->findItemObj<ScrolItem>(m_ItemId);
+
+    bool old_skip = pItem->setSkipUndoStack(true);
+    pItem->setRowLength(m_OldSize.width());
+    pItem->setRowNum(m_OldSize.height());
+    pItem->setSkipUndoStack(old_skip);
 }

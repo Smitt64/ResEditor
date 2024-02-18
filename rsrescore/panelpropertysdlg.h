@@ -32,6 +32,16 @@ public:
     bool alignTextRight() const;
     bool alignPanelCenter() const;
 
+    qint32 srolFlags() const;
+    QPoint scrolPos() const;
+    quint16 scrolType() const;
+    quint16 rowNum() const;
+    quint16 rowLength() const;
+    quint16 rowHeight() const;
+
+protected:
+    virtual void resizeEvent(QResizeEvent *) override;
+
 private:
     void setWidgetData(QWidget *widget, const QString &propertyName);
     Ui::PanelPropertysDlg *ui;

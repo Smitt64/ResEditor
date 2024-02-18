@@ -104,6 +104,7 @@ void MainWindow::AddEditorWindow(BaseEditorWindow *editor)
     connect(editor, &BaseEditorWindow::titleChanged, this, &MainWindow::titleChanged);
     connect(editor, &BaseEditorWindow::modifyChanged, this, &MainWindow::modifyChanged);
 
+    editor->setLbrObject(m_pLbrObj);
     wnd->installEventFilter(this);
     wnd->showMaximized();
 }
@@ -185,15 +186,22 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
     if (!window)
     {
         m_ToolBoxDock->setModel(nullptr);
+        m_PropertyDock->setPropertyModel(nullptr);
         return;
     }
 
     BaseEditorWindow *wnd = dynamic_cast<BaseEditorWindow*>(window->widget());
 
     if (!wnd)
+    {
         m_ToolBoxDock->setModel(nullptr);
+        m_PropertyDock->setPropertyModel(nullptr);
+    }
     else
+    {
         m_ToolBoxDock->setModel(wnd->toolBox());
+        m_PropertyDock->setPropertyModel(wnd->propertyModel());
+    }
 }
 
 void MainWindow::onNew()

@@ -55,6 +55,7 @@ void CustomRectItem::init()
     m_pUndoStack = nullptr;
     m_pPropertyModel = nullptr;
     m_SkipUndoStack = false;
+    m_CanIntersects = true;
     m_Size = QSize(1, 1);
     m_Coord = QPoint(0, 0);
 
@@ -128,9 +129,11 @@ QVariant CustomRectItem::itemChange(GraphicsItemChange change, const QVariant &v
 {
     if (change == QGraphicsItem::ItemPositionChange && scene())
     {
-        QPointF newPos = value.toPointF();
+        QPointF newPos = value.toPointF();// - m_MousePressedPos;
+
         if(QApplication::mouseButtons() == Qt::LeftButton && qobject_cast<BaseScene*> (scene()))
         {
+            //qDebug() << newPos;
             BaseScene* customScene = qobject_cast<BaseScene*> (scene());
             QSize gridSize = customScene->getGridSize();
             qreal xV = round(newPos.x() / gridSize.width()) * gridSize.width();
@@ -140,7 +143,9 @@ QVariant CustomRectItem::itemChange(GraphicsItemChange change, const QVariant &v
             CustomRectItem *parentCustomItem = dynamic_cast<CustomRectItem*>(parentItem());
             if (parentCustomItem)
             {
-                if (parentCustomItem->childCanMove(nPos, this))
+                bool fCanMove = parentCustomItem->childCanMove(nPos, this);
+
+                if (fCanMove)
                     return nPos;
                 else
                     return pos();
@@ -268,6 +273,7 @@ void CustomRectItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
     if (event->button() == Qt::LeftButton)
     {
+        m_MousePressedPos = mapFromScene(event->scenePos());
         m_MousePressed = true;
 
         m_IsResizing = mousePosOnHandles(event->scenePos()); //to check event on corners or not
@@ -299,11 +305,10 @@ void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     if (m_IsResizing)
     {
         QPointF newPos = mapFromScene(event->scenePos());
-        //qDebug() << "newPos: " << newPos << this->scene()->sceneRect();
+
         qreal xV = round(newPos.x() / gridSize.width()) * gridSize.width();
         qreal yV = round(newPos.y() / gridSize.height()) * gridSize.height();
 
-        //QPointF ptMouseMoveInItemsCoord = mapFromScene(event->scenePos());
         QRectF tmpBoundingRect = m_BoundingRect;
         QPointF ptMouseMoveInItemsCoord = QPointF(xV, yV);
         switch (m_ResizeCorner)
@@ -420,7 +425,7 @@ void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         }
 
         prepareGeometryChange();
-        updateSizePos();
+        updateSizePos("mouseMoveEvent is resizing");
         update();
         scene()->update();
     }
@@ -455,10 +460,34 @@ void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
                 setSelected(false);
             }
         }
-        prepareGeometryChange();
-        updateSizePos();
-        update();
-        scene()->update();
+        /*else if (m_MousePressed)
+        {
+            QPointF newPos = mapFromScene(event->scenePos()) - m_MousePressedPos;
+            qreal xV = round(newPos.x() / gridSize.width()) * gridSize.width();
+            qreal yV = round(newPos.y() / gridSize.height()) * gridSize.height();
+            QPointF ptMouseMoveInItemsCoord = QPointF(xV, yV);
+
+            CustomRectItem *parentCustomItem = dynamic_cast<CustomRectItem*>(parentItem());
+            if (parentCustomItem)
+            {
+                QPointF realPos = pos() + ptMouseMoveInItemsCoord;
+                bool fCanMove = parentCustomItem->childCanMove(realPos, this);
+
+                if (fCanMove)
+                {
+                    setPos(realPos);
+
+                    prepareGeometryChange();
+                    updateSizePos("mouseMoveEvent not resizing");
+                }
+
+                update();
+                scene()->update();
+            }
+            m_MousePressedPos = mapFromScene(event->scenePos());
+
+        }*/
+
         QGraphicsItem::mouseMoveEvent(event);
     }
 }
@@ -486,7 +515,6 @@ void CustomRectItem::insertUndoRedoMove()
             UndoItemMove *undocmd = new UndoItemMove(customScene, uuid());
             undocmd->setPositions(mousePos, pos());
 
-            qDebug() << this;
             undoStack()->beginMacro(undocmd->text());
             undoStack()->push(undocmd);
             onInsertUndoRedoMove(MousePressPoint);
@@ -550,7 +578,8 @@ void CustomRectItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     if (m_IsResizing)
     {
         BaseScene* customScene = qobject_cast<BaseScene*> (scene());
-        UndoItemResize *undocmd = new UndoItemResize(customScene, uuid());
+        QUndoCommand *undocmd = nullptr;
+        //UndoItemResize *undocmd = new UndoItemResize(customScene, uuid());
 
         QPointF dPos = m_BoundingRect.topLeft() - m_ActualRect.topLeft();
         moveBy(dPos.rx(), dPos.ry());
@@ -558,8 +587,16 @@ void CustomRectItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         m_BoundingRect.setTopLeft(QPointF(0, 0));
         m_BoundingRect.setSize(vsize);
 
-        undocmd->setSizes(m_ActualRect.size(), m_BoundingRect.size());
-        undoStack()->push(undocmd);
+        createItemResizeUndoObj(customScene, m_ActualRect.size(), m_BoundingRect.size(), &undocmd);
+        //undocmd->setSizes(m_ActualRect.size(), m_BoundingRect.size());
+
+        if (undoStack())
+            undoStack()->push(undocmd);
+        else
+        {
+            undocmd->redo();
+            delete undocmd;
+        }
     }
     else
     {
@@ -583,7 +620,7 @@ void CustomRectItem::afterReleaseMouse(QGraphicsSceneMouseEvent *event)
     m_IsResizing = false;
     m_IsSelection = false;
     prepareGeometryChange();
-    updateSizePos();
+    updateSizePos("CustomRectItem::afterReleaseMouse");
     update();
     scene()->update();
 
@@ -668,7 +705,9 @@ bool CustomRectItem::childCanMove(const QPointF &newPos, CustomRectItem *item)
 {
     Q_UNUSED(item)
     if (newPos.x() < 0 || newPos.y() < 0)
+    {
         return false;
+    }
 
     return true;
 }
@@ -704,7 +743,6 @@ bool CustomRectItem::canResize(const QRectF &newRect, const ResizeCorners &corne
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
     QSize gridSize = customScene->getGridSize();
 
-    //qDebug() << newRect;
     if (newRect.width() < gridSize.width() || newRect.height() < gridSize.height())
         return false;
 
@@ -728,7 +766,11 @@ bool CustomRectItem::isIntersects(const QRectF &thisBound, QGraphicsItem *item, 
     Q_UNUSED(thisBound)
     Q_UNUSED(item)
     Q_UNUSED(itemBound)
-    return true;
+
+    if (m_CanIntersects)
+        return true;
+
+    return false;
 }
 
 void CustomRectItem::drawIntersects(QPainter *painter)
@@ -739,7 +781,12 @@ void CustomRectItem::drawIntersects(QPainter *painter)
     QBrush saveBrush = painter->brush();
     for (QGraphicsItem *item : qAsConst(itemList))
     {
-        if (item != this && item->parentItem() == parentItem())
+        bool skipCheck = false;
+        CustomRectItem *rectitem = dynamic_cast<CustomRectItem*>(item);
+        if (rectitem)
+            skipCheck = !rectitem->isCanIntersects();
+
+        if (item != this && item->parentItem() == parentItem() && !skipCheck)
         {
             QRectF mBoundingRect = mapRectToScene(boundingRect());
             QRectF mItemRect = item->mapRectToScene(item->boundingRect());
@@ -776,7 +823,7 @@ void CustomRectItem::setCoord(const QPoint &coord)
     emit geometryChanged();
 }
 
-void CustomRectItem::updateSizePos()
+void CustomRectItem::updateSizePos(const QString &from)
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
 
@@ -793,7 +840,10 @@ void CustomRectItem::updateSizePos()
     m_Size = QSize(xV, yV);
     m_Coord = QPoint(xP, yP);
 
-    emit geometryChanged();
+    if (!isResizing())
+    {
+        emit geometryChanged();
+    }
 }
 
 void CustomRectItem::setSize(const QSize &size)
@@ -865,7 +915,7 @@ void CustomRectItem::setGeometry(const QRect &_geometry)
     {
         setPos(newPos);
         setSize(newSize);
-        updateSizePos();
+        updateSizePos("setGeometry");
     }
 }
 
@@ -884,7 +934,7 @@ void CustomRectItem::setSize(const QSizeF &size)
     m_BoundingRect.setWidth(size.width());
     m_BoundingRect.setHeight(size.height());
 
-    updateSizePos();
+    updateSizePos("setSize");
     update();
     scene()->update();
 }
@@ -1322,4 +1372,30 @@ void CustomRectItem::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Return)
         userAction(ActionKeyEnter);
+}
+
+const bool &CustomRectItem::isCanIntersects() const
+{
+    return m_CanIntersects;
+}
+
+const bool &CustomRectItem::isMousePressed() const
+{
+    return m_MousePressed;
+}
+
+void CustomRectItem::setCanIntersects(const bool &flag)
+{
+    m_CanIntersects = flag;
+}
+
+void CustomRectItem::createItemResizeUndoObj(BaseScene* customScene,
+                             const QSizeF &Actual,
+                             const QSizeF &New,
+                             QUndoCommand **cmd)
+{
+    UndoItemResize *undocmd = new UndoItemResize(customScene, uuid());
+    undocmd->setSizes(Actual, New);
+
+    *cmd = undocmd;
 }

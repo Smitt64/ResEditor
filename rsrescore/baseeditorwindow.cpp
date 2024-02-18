@@ -42,7 +42,8 @@ private:
 };
 
 BaseEditorWindow::BaseEditorWindow(QWidget *parent)
-    : QMainWindow{parent}
+    : QMainWindow{parent},
+    m_pLbr(nullptr)
 {
     m_pUndoStack = new QUndoStack(this);
     m_ToolBoxModel = new ToolBoxModel(this);
@@ -115,6 +116,11 @@ QUndoStack *BaseEditorWindow::undoStack()
 ToolBoxModel *BaseEditorWindow::toolBox()
 {
     return m_ToolBoxModel;
+}
+
+QAbstractItemModel *BaseEditorWindow::propertyModel()
+{
+    return nullptr;
 }
 
 QAction *BaseEditorWindow::undoAction()
@@ -201,4 +207,14 @@ void BaseEditorWindow::loadToolBox()
     QJsonArray templates = root["templates"].toArray();
     for (const QJsonValue &templ : qAsConst(templates))
         loadToolBarElement(GroupsMap, templ.toObject());
+}
+
+void BaseEditorWindow::setLbrObject(LbrObjectInterface *obj)
+{
+    m_pLbr = obj;
+}
+
+LbrObjectInterface *BaseEditorWindow::lbr()
+{
+    return m_pLbr;
 }

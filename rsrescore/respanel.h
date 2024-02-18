@@ -95,6 +95,7 @@ public:
     //int load(const QString &name, ResLib *res);
     virtual int load(ResBuffer *data);
     virtual int save(ResBuffer *data);
+    virtual QString saveXml(const QString &encode = QString("UTF-8"));
     virtual int loadXmlNode(const QDomElement &reslib);
     //virtual int loadProc(ResLib *res) Q_DECL_FINAL;
 
@@ -102,7 +103,10 @@ public:
     QSize size() const;
 
     QRect scrol() const;
+    void setScrol(const QRect &scrl);
+
     quint16 rowHaight() const;
+    void setRowHeight(const quint16 &val);
     QPoint scrolPos() const;
 
     QString title() const;
@@ -124,6 +128,7 @@ public:
 
     void setName(const QString &val);
     void setComment(const QString &val);
+    void setType(const quint16 &type);
 
     void beginAddField(const QString &name, const QString &name2 = QString());
     void setFieldDataType(const quint8 &FieldType,
@@ -151,13 +156,19 @@ public:
     bool isExcludeAutoNum() const;
     bool isExcludeShadowNum() const;
 
+    qint32 scrolFlags() const;
+
     void setPanelRect(const QRect &geometry);
     void setPanelHelp(const quint16 &help);
     void setPanelExcludeFlags(const quint32 &val);
+    void setScrolFlags(const quint32 &val);
     void setPanelCentered(const bool &val);
     void setPanelRightText(const bool &val);
     void setPanelStyle(const ResStyle::BorderStyle &border, const ResStyle::PanelStyle &style);
     void setPanelStrings(const QString &Title, const QString &Status, const QString &StatusRD);
+
+    int checkResource();
+    static QString GetCheckError(int stat);
 
 protected:
     typedef std::tuple<long,long> SizesTuple;
@@ -172,8 +183,12 @@ protected:
     virtual int readItems(struct PanelR *pp, ResBuffer *data, bool readName2);
     virtual bool readString(ResBuffer *data, char **s, qint16 vfl, qint16 lens);
 
+    int checkPanel();
+
     QString m_Status, m_StatusRD, m_Title, m_Name, m_Comment;
     qint16 m_Type;
+
+    QDateTime m_ResTime;
 
     struct PanelR *m_pPanel;
     QList<struct BordR> m_BordR;

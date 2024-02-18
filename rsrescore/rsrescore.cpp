@@ -8,6 +8,7 @@
 #include "controlitem.h"
 #include "textitem.h"
 #include "panelitem.h"
+#include "scrolitem.h"
 #include "respanel.h"
 #include "propertymodel/ewtextstylepropertytreeitem.h"
 #include "styles/extextstyle.h"
@@ -34,6 +35,7 @@ void RsResCore::init()
     qRegisterMetaType<TextItem*>();
     qRegisterMetaType<ContainerItem*>();
     qRegisterMetaType<PanelItem*>();
+    qRegisterMetaType<ScrolItem*>();
     qRegisterMetaType<BorderItem*>();
     qRegisterMetaType<ContainerItem*>();
     qRegisterMetaType<EwTextStyle>();
@@ -78,6 +80,30 @@ QIcon RsResCore::iconFromResType(const qint16 &Type)
     }
 
     return val;
+}
+
+QList<qint16> RsResCore::types()
+{
+    const static QList<qint16> _types(
+        {
+            LbrObject::RES_PANEL,
+            LbrObject::RES_MENU,
+            LbrObject::RES_STAT,
+            LbrObject::RES_DIALOG,
+            LbrObject::RES_HIST,
+            LbrObject::RES_REPORT,
+            LbrObject::RES_BFSTRUCT,
+            LbrObject::RES_DBLINK,
+            LbrObject::RES_SCROL,
+            LbrObject::RES_REP,
+            LbrObject::RES_BS,
+            LbrObject::RES_LS,
+            LbrObject::RES_ACCEL,
+            LbrObject::RES_STRTABLE,
+            LbrObject::RES_MENU2
+        });
+
+    return _types;
 }
 
 QString RsResCore::typeNameFromResType(const qint16 &Type)
@@ -195,6 +221,12 @@ QStringList RsResCore::newItemsMetaList() const
 
 void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel)
 {
+    static const QStringList RootTags =
+    {
+        "panel",
+        "bscrol"
+    };
+
     QDomDocument doc;
     doc.setContent(device);
 
@@ -205,7 +237,7 @@ void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel)
         QDomNode reslibnode = root.firstChild();
         QDomElement reslib = reslibnode.toElement();
 
-        if (reslib.tagName() == "panel")
+        if (RootTags.contains(reslib.tagName()))
         {
             *panel = new ResPanel();
             ResPanel *ptr = *panel;

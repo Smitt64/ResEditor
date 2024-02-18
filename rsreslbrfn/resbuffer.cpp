@@ -152,3 +152,10 @@ Qt::HANDLE ResBuffer::getResStream()
     Q_D(ResBuffer);
     return d->m_ResStream;
 }
+
+QDateTime ResBuffer::getResDateTime() const
+{
+    Q_D(const ResBuffer);
+    return QDateTime(QDate(d->m_ResHeader.ftime.ft_year + 1980, d->m_ResHeader.ftime.ft_month, d->m_ResHeader.ftime.ft_day),
+                     QTime(d->m_ResHeader.ftime.ft_hour, d->m_ResHeader.ftime.ft_min, d->m_ResHeader.ftime.ft_tsec * 2));
+}

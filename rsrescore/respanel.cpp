@@ -6,6 +6,8 @@
 #include <lbrobject.h>
 #include <QDataStream>
 #include <QDomElement>
+#include <QDomDocument>
+#include <QFile>
 
 #define  RFP_REJREQ        0x00000004
 #define  RFP_UPDREQ        0x00000008
@@ -30,6 +32,15 @@
 
 #define RF_ASTEXT       0x01000000
 #define RF_NOTABSTOP    0x20000000
+
+#define RFP_AUTOFILL      0x00010000   // расширять панель и обл. скролинга до экрана
+#define RFP_AUTOFIELDS    0x00020000   // автоматически устанавливать кординать полей в скролинге
+#define RFP_AUTOHEAD      0x00040000   // генерировать заголовки колонок в скролинге
+#define RFP_REVERSORDER   0x00080000   // обратный порядок записей
+#define RFP_DENYSORT      0x01000000   // запретить сортировку скролинга
+
+
+#define  dGET_BORDER(p)     ((p)->St >> 8 ? 1 : 0)
 
 typedef struct
 {
@@ -503,6 +514,7 @@ int ResPanel::load(ResBuffer *data)
     bool readName2 = false;
     m_Name = data->name();
     m_Type = data->type();
+    m_ResTime = data->getResDateTime();
 
     if (ver >= 1)
     {
@@ -727,9 +739,23 @@ QRect ResPanel::scrol() const
                  m_pPanel->l, m_pPanel->Mn);
 }
 
+void ResPanel::setScrol(const QRect &scrl)
+{
+    m_pPanel->x = scrl.x();
+    m_pPanel->y = scrl.y();
+
+    m_pPanel->l = scrl.width();
+    m_pPanel->Mn = scrl.height();
+}
+
 quint16 ResPanel::rowHaight() const
 {
     return m_pPanel->h;
+}
+
+void ResPanel::setRowHeight(const quint16 &val)
+{
+    m_pPanel->h = val;
 }
 
 QPoint ResPanel::scrolPos() const
@@ -812,6 +838,16 @@ int ResPanel::loadXmlNode(const QDomElement &reslib)
     m_pPanel->Pff = reslib.attribute("Pff", "0").toInt();
     m_pPanel->flags = reslib.attribute("flags", "0").toInt();
 
+    if (reslib.tagName() != "panel")
+    {
+        m_pPanel->x = reslib.attribute("x", "0").toInt();
+        m_pPanel->y = reslib.attribute("y", "0").toInt();
+
+        m_pPanel->l = reslib.attribute("l", "0").toInt();
+        m_pPanel->h = reslib.attribute("h", "0").toInt();
+        m_pPanel->Mn = reslib.attribute("Mn", "0").toInt();
+    }
+
     QDomNode n = reslib.firstChild();
     while(!n.isNull())
     {
@@ -867,6 +903,11 @@ void ResPanel::setName(const QString &val)
 void ResPanel::setComment(const QString &val)
 {
     m_Comment = val;
+}
+
+void ResPanel::setType(const quint16 &type)
+{
+    m_Type = type;
 }
 
 void ResPanel::beginAddField(const QString &name, const QString &name2)
@@ -975,6 +1016,20 @@ bool ResPanel::isExcludeShadowNum() const
     return m_pPanel->flags & RFP_NOSHADOW;
 }
 
+#define CHECK_AND_SET_FLAGS(fl) if (m_pPanel->flags & fl) flags |= fl
+qint32 ResPanel::scrolFlags() const
+{
+    qint32 flags = 0;
+
+    CHECK_AND_SET_FLAGS(RFP_AUTOFILL);
+    CHECK_AND_SET_FLAGS(RFP_AUTOFIELDS);
+    CHECK_AND_SET_FLAGS(RFP_AUTOHEAD);
+    CHECK_AND_SET_FLAGS(RFP_REVERSORDER);
+    CHECK_AND_SET_FLAGS(RFP_DENYSORT);
+
+    return flags;
+}
+
 void ResPanel::setPanelRect(const QRect &geometry)
 {
     m_pPanel->x1 = geometry.x();
@@ -1001,6 +1056,11 @@ void ResPanel::setPanelHelp(const quint16 &help)
 }
 
 void ResPanel::setPanelExcludeFlags(const quint32 &val)
+{
+    m_pPanel->flags |= val;
+}
+
+void ResPanel::setScrolFlags(const quint32 &val)
 {
     m_pPanel->flags |= val;
 }
@@ -1613,4 +1673,306 @@ void ResPanel::def_panelsize(ResPanel::SizesTuple &sizes, int ver)
     }
 
     sizes = std::make_tuple(size, adsize);
+}
+
+int ResPanel::checkResource()
+{
+    int  stat = 0;
+
+    switch(type())
+    {
+    case LbrObject::RES_PANEL:
+        stat = checkPanel();
+        break;
+
+    case LbrObject::RES_SCROL:
+    case LbrObject::RES_LS:
+    case LbrObject::RES_BS:
+        //stat = __CheckScrol(pnl);
+        break;
+    }
+
+    return stat;
+}
+
+int ResPanel::checkPanel()
+{
+    int stat = 0;
+    int border = dGET_BORDER(m_pPanel);
+
+    int i;
+    int x, y, h, l;
+
+    // Проверка на выход элемента за пределы области
+    auto __CheckElement = [](int x, int y, int h, int l, int x1, int y1, int x2, int y2, int border) -> bool
+    {
+        bool  ret = true;
+
+        x += x1;
+        y += y1;
+
+        if(x < (x1 + border))
+            ret = false;
+
+        if(y < (y1 + border))
+            ret = false;
+
+        if(x + l - 1 > (x2 - border))
+            ret = false;
+
+        if(y + h - 1 > (y2 - border))
+            ret = false;
+
+        return ret;
+    };
+
+    // Проверка пересечения двух прямоугольников
+    auto __CheckCrossRect = [](int r1_x, int r1_y, int r1_h, int r1_l, int r2_x, int r2_y, int r2_h, int r2_l) -> bool
+    {
+        int   r1_left = r1_x, r1_top = r1_y, r1_right = r1_x + r1_l - 1, r1_bottom = r1_y + r1_h - 1,
+            r2_left = r2_x, r2_top = r2_y, r2_right = r2_x + r2_l - 1, r2_bottom = r2_y + r2_h - 1;
+        bool  ret     = ((r1_left > r2_right) || (r2_left > r1_right) || (r1_top > r2_bottom) || (r2_top > r1_bottom));
+
+        return ret;
+    };
+
+    // Проверка полного вхождения прямоугольника r1 в r2
+    auto __CheckEntryRect = [](int r1_x, int r1_y, int r1_h, int r1_l, int r2_x, int r2_y, int r2_h, int r2_l) -> bool
+    {
+        int r1_left = r1_x, r1_top = r1_y, r1_right = r1_x + r1_l - 1, r1_bottom = r1_y + r1_h - 1,
+            r2_left = r2_x, r2_top = r2_y, r2_right = r2_x + r2_l - 1, r2_bottom = r2_y + r2_h - 1;
+        bool  ret = ((r1_left >= r2_left) && (r1_top >= r2_top) && (r1_right <= r2_right) && (r1_bottom <= r2_bottom));
+
+        return ret;
+    };
+
+    // Проверка взаимного пересечения двух полей
+    auto __CheckCrossField = [&__CheckCrossRect](FieldR *f1, FieldR *f2) -> bool
+    {
+        return __CheckCrossRect(f1->x, f1->y, f1->h, f1->l, f2->x, f2->y, f2->h, f2->l);
+    };
+
+    // Проверка текущего поля на пересечение с остальными
+    auto __CheckCrossFields = [this, &__CheckCrossField](int curr) -> bool
+    {
+        bool ret = true;
+        for(int i = 0; i < m_Fields.size(); i++)
+        {
+            if(i != curr)
+            {
+                FieldR *fld = m_Fields[i]._field;
+                ret = __CheckCrossField(fld, m_Fields[curr]._field);
+
+                if(!ret)
+                    break;
+            }
+        }
+
+        return ret;
+    };
+
+    bool ret = true;
+    for (i = 0; i < m_Fields.size(); i++)
+    {
+        x = m_Fields[i]._field->x;
+        y = m_Fields[i]._field->y;
+        h = m_Fields[i]._field->h;
+        l = m_Fields[i]._field->l;
+
+        // Проверка на выход элемента за пределы области
+        ret = __CheckElement(x, y, h, l, m_pPanel->x1, m_pPanel->y1, m_pPanel->x2, m_pPanel->y2, border);
+
+        if (ret)
+        {
+            ret = __CheckCrossFields(i);
+
+            if(!ret)
+            {
+                stat = 2;
+                break;
+            }
+        }
+    }
+
+    // Проверяем текстовые метки и рамки
+    for(i = 0; i < m_Texts.size(); i++)
+    {
+        x = m_Texts[i]._text->x;
+        y = m_Texts[i]._text->y;
+        h = 1;
+        l = m_Texts[i].value.size();
+
+        ret = __CheckElement(x, y, h, l + 1, m_pPanel->x1, m_pPanel->y1, m_pPanel->x2, m_pPanel->y2, border);
+        if(!ret)
+        {
+            stat = 4;
+            break;
+        }
+    }
+
+    for(i = 0; i < m_BordR.size(); i++)
+    {
+        x = m_BordR[i].x;
+        y = m_BordR[i].y;
+        h = m_BordR[i].h;
+        l = m_BordR[i].l;
+
+        ret = __CheckElement(x, y, h, l, m_pPanel->x1, m_pPanel->y1, m_pPanel->x2, m_pPanel->y2, border);
+        if(!ret)
+        {
+            stat = 5;
+            break;
+        }
+    }
+
+    return stat;
+}
+
+QString ResPanel::saveXml(const QString &encode)
+{
+    QDomDocument doc;
+
+    QString resType;
+    switch(type())
+    {
+    case LbrObject::RES_PANEL:
+        resType = "panel";
+        break;
+    case LbrObject::RES_SCROL:
+        resType = "scrol";
+        break;
+    case LbrObject::RES_LS:
+        resType = "lscrol";
+        break;
+    case LbrObject::RES_BS:
+        resType = "bscrol";
+        break;
+    }
+
+    QString result;
+    QTextStream stream(&result);
+    stream.setCodec(encode.toLocal8Bit().data());
+    stream << QString("<?xml version=\"1.0\" encoding=\"%1\"?>").arg(encode) << Qt::endl;
+    stream << "<reslib xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" << Qt::endl;
+    stream << "    xsi:schemaLocation=\"http://www.softlab.ru reslib.xsd\"" << Qt::endl;
+    stream << "    xmlns=\"http://www.softlab.ru\">" << Qt::endl;
+
+
+    stream << QString(" <%1 name=\"%2\" dt=\"%3\" St=\"%4\" x1=\"%5\" y1=\"%6\" x2=\"%7\" y2=\"%8\" "
+                      "PHelp=\"%9\" Pff=\"%10\" flags=\"%11\"")
+                  .arg(resType)
+                  .arg(name())
+                  .arg(m_ResTime.toString("yyyy-MM-ddTHH:mm:ss"))
+                  .arg(m_pPanel->St)
+                  .arg(m_pPanel->x1)
+                  .arg(m_pPanel->y1)
+                  .arg(m_pPanel->x2)
+                  .arg(m_pPanel->y2)
+                  .arg(m_pPanel->PHelp)
+                  .arg(m_pPanel->Pff)
+                  .arg(m_pPanel->flags);
+
+    if(type() != LbrObject::RES_PANEL)
+        stream << QString(" Mn=\"%1\" x=\"%2\" y=\"%3\" l=\"%44\" h=\"%5\">")
+                      .arg(m_pPanel->Mn)
+                      .arg(m_pPanel->x)
+                      .arg(m_pPanel->y)
+                      .arg(m_pPanel->l)
+                      .arg(m_pPanel->h) << Qt::endl;
+    else
+        stream << ">" << Qt::endl;
+
+    if (!m_Comment.isEmpty())
+        stream << QString("  <comment>%1</comment>").arg(m_Comment) << Qt::endl;
+
+    if (!m_Status.isEmpty())
+        stream << QString("  <stline>%1</stline>").arg(m_Status) << Qt::endl;
+
+    if (!m_StatusRD.isEmpty())
+        stream << QString("  <stlineRd>%1</stlineRd>").arg(m_StatusRD) << Qt::endl;
+
+    if (!m_Title.isEmpty())
+        stream << QString("  <headLine>%1</headLine>").arg(m_Title) << Qt::endl;
+
+    for(int i = 0; i < m_pPanel->Nb; ++i)
+    {
+        stream << QString("  <bord  St=\"%d\" x=\"%d\" y=\"%d\" l=\"%d\" h=\"%d\" fl=\"%d\"/>")
+                      .arg(m_BordR[i].St)
+               .arg(m_BordR[i].x)
+               .arg(m_BordR[i].y)
+               .arg(m_BordR[i].l)
+               .arg(m_BordR[i].h)
+               .arg(m_BordR[i].fl)
+               << Qt::endl;
+    }
+
+    for(int i = 0; i < m_pPanel->Nt; ++i)
+    {
+        stream << QString("  <text  St=\"%1\" x=\"%2\" y=\"%3\">%4</text>")
+                      .arg(m_Texts[i]._text->St)
+                      .arg(m_Texts[i]._text->x)
+                      .arg(m_Texts[i]._text->y)
+                      .arg(m_Texts[i].value)
+               << Qt::endl;
+    }
+
+    for(int i = 0; i < m_pPanel->Pnumf; ++i)
+    {
+        stream << QString("  <field  Ftype=\"%1\" St=\"%2\" FVt=\"%3\" FVp=\"%4\" x=\"%5\" y=\"%6\" l=\"%7\" h=\"%8\" ")
+                      .arg(m_Fields[i]._field->Ftype)
+                      .arg(m_Fields[i]._field->St)
+                      .arg(m_Fields[i]._field->FVt)
+                      .arg(m_Fields[i]._field->FVp)
+                      .arg(m_Fields[i]._field->x)
+                      .arg(m_Fields[i]._field->y)
+                      .arg(m_Fields[i]._field->l)
+                      .arg(m_Fields[i]._field->h);
+
+        stream << QString("kl=\"%1\" kr=\"%2\" ku=\"%3\" kd=\"%4\" FHelp=\"%5\" vfl=\"%6\" flags=\"%7\" group=\"%8\">")
+                      .arg(m_Fields[i]._field->kl)
+                      .arg(m_Fields[i]._field->kr)
+                      .arg(m_Fields[i]._field->ku)
+                      .arg(m_Fields[i]._field->kd)
+                      .arg(m_Fields[i]._field->FHelp)
+                      .arg(m_Fields[i]._field->vfl)
+                      .arg(m_Fields[i]._field->flags)
+                      .arg(m_Fields[i]._field->group) << Qt::endl;
+
+        if (!m_Fields[i].name2.isEmpty())
+            stream << QString("   <label>%1</label>").arg(m_Fields[i].name2) << Qt::endl;
+
+        if (!m_Fields[i].name.isEmpty())
+            stream << QString("   <name>%1</name>").arg(m_Fields[i].name) << Qt::endl;
+
+        if (!m_Fields[i].formatStr.isEmpty())
+            stream << QString("   <fmtname>%1</fmtname>").arg(m_Fields[i].formatStr) << Qt::endl;
+
+        if (!m_Fields[i].toolTip.isEmpty())
+            stream << QString("   <tooltip>%1</tooltip>").arg(m_Fields[i].toolTip) << Qt::endl;
+
+        stream << QString("  </field>") << Qt::endl;
+    }
+
+    stream << QString(" </%1>").arg(resType) << Qt::endl;
+    stream << QString("</reslib>");
+
+    return result;
+}
+
+QString ResPanel::GetCheckError(int stat)
+{
+    QStringList mes = {
+        tr("Проверка выполнена успешно"),
+        tr("Выход поля за границы панели"),
+        tr("Перекрытие полей"),
+        tr("Поле вне области скроллинга"),
+        tr("Выход метки за границы панели"),
+        tr("Выход рамки за границы панели"),
+        tr("Некорректное определение области скроллинга"),
+        tr("Область скроллинга не определена"),
+        tr("Выход области скроллинга за границы панели"),
+        tr("Отсутствуют поля")
+    };
+
+    return mes[stat];
 }

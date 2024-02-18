@@ -32,7 +32,13 @@
 #include <QTextLayout>
 #include <QTimer>
 #include <QMimeData>
+#include <QFileDialog>
+#include <QComboBox>
+#include <QSpacerItem>
 #include <QGraphicsSceneMouseEvent>
+#include <QPlainTextEdit>
+#include <QMessageBox>
+#include "propertymodel/propertymodel.h"
 
 #define SHADOW_CODE 9617
 
@@ -206,10 +212,18 @@ StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     panelItem(nullptr),
     m_StatusBar(nullptr)
 {
+    m_Type = Type;
     if (Type == LbrObject::RES_PANEL)
         panelItem = new PanelItem();
     else
+    {
         panelItem = new ScrolItem();
+        connect((ScrolItem*)panelItem, &ScrolItem::scrolTypeChanged, [=]() -> void
+        {
+            m_Type = ((ScrolItem*)panelItem)->scrolType();
+            setWindowIcon(RsResCore::inst()->iconFromResType(m_Type));
+        });
+    }
 
     m_StatusBar = new QStatusBar(this);
     m_pStatusContainer = new QWidget(this);
@@ -239,13 +253,23 @@ StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
 
 void StdPanelEditor::setupMenus()
 {
-    m_pEditMenu = m_pMenuBar->addMenu(tr("Правка"));
     m_pEditMenu->addAction(undoAction());
     m_pEditMenu->addAction(redoAction());
     m_pEditMenu->addSeparator();
     m_pEditMenu->addAction(m_pCutAction);
     m_pEditMenu->addAction(m_pCopyAction);
     m_pEditMenu->addAction(m_pPasteAction);
+    m_pEditMenu->addSeparator();
+    m_pEditMenu->addAction(m_pDelete);
+
+    m_pResMenu->addAction(m_pSave);
+    m_SaveToXml = addAction(m_pResMenu, QIcon(":/img/XMLFileHS.png"), tr("Сохранить в XML"), QKeySequence("Ctrl+ALT+S"));
+    m_pCheckAction = addAction(m_pResMenu, QIcon(":/img/CheckRes.png"), tr("Проверить"), QKeySequence("Ctrl+H"));
+    m_EwViewAction = addAction(m_pResMenu, QIcon(":/img/Panel2.png"), tr("Просмотр в EW"), QKeySequence("Ctrl+F3"));
+    m_Statistic = addAction(m_pResMenu, QIcon(":/img/Statistic.png"), tr("Информация"));
+
+    connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
+    connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
 }
 
 void StdPanelEditor::setupEditor()
@@ -258,7 +282,12 @@ void StdPanelEditor::setupEditor()
 
     m_pView = new StdEditorView(this);
     m_pView->setupScene();
-    setCentralWidget(m_pView);
+
+    m_TabContainer = new QTabWidget(this);
+    m_TabContainer->addTab(m_pView, tr("Редактор"));
+    m_TabContainer->setTabPosition(QTabWidget::South);
+    m_TabContainer->setTabShape(QTabWidget::Triangular);
+    setCentralWidget(m_TabContainer);
 
     panelItem->setBrush(QColor(128, 128, 0));
 
@@ -279,7 +308,11 @@ void StdPanelEditor::setupEditor()
 
     m_pDelete = addAction(QIcon(":/img/Delete.png"), tr("Удалить"), QKeySequence::Delete);
 
+    m_pEditMenu = m_pMenuBar->addMenu(tr("&Правка"));
+    m_pViewMenu = m_pMenuBar->addMenu(tr("&Вид"));
+    m_pResMenu = m_pMenuBar->addMenu(tr("&Ресурс"));
     setupContrastAction();
+    setupScrolAreaAction();
     setupPropertyAction();
 
     BaseScene *baseScene = dynamic_cast<BaseScene*>(m_pView->scene());
@@ -290,7 +323,7 @@ void StdPanelEditor::setupEditor()
     loadToolBox();
 
     connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
-    connect(m_pSave, &QAction::triggered, this, &StdPanelEditor::readySave);
+    connect(m_pSave, &QAction::triggered, this, &StdPanelEditor::onSave);
     connect(panelItem, &PanelItem::titleChanged, [=]()
     {
         emit titleChanged(panelItem->title());
@@ -301,7 +334,7 @@ void StdPanelEditor::setupContrastAction()
 {
     m_pToolBar->addSeparator();
 
-    m_pContrst = addAction(QIcon(":/img/EditBrightContrastHS.png"), tr("Контраст"));
+    m_pContrst = addAction(QIcon(":/img/EditBrightContrastHS.png"), tr("Контраст"), QKeySequence("Alt+F9"));
     m_pContrst->setCheckable(true);
 
     connect(m_pContrst, &QAction::toggled, [&](bool toogled)
@@ -310,6 +343,23 @@ void StdPanelEditor::setupContrastAction()
     });
 
     m_pContrst->setChecked(true);
+    m_pViewMenu->addAction(m_pContrst);
+}
+
+void StdPanelEditor::setupScrolAreaAction()
+{
+    m_pContrst = addAction(QIcon(":/img/EditTableHS.png"), tr("Скролинг"), QKeySequence("Ctrl+F5"));
+    m_pContrst->setCheckable(true);
+
+    connect(m_pContrst, &QAction::toggled, [&](bool toogled)
+    {
+        panelItem->setProperty(SCROLAREA_PROPERTY, toogled);
+        QMetaObject::invokeMethod(panelItem, "showScrolArea", Q_ARG(bool, toogled));
+        //panelItem->metaObject()->invokeMethod()
+    });
+
+    m_pContrst->setChecked(false);
+    m_pViewMenu->addAction(m_pContrst);
 }
 
 void StdPanelEditor::setupPropertyAction()
@@ -366,9 +416,24 @@ QAction *StdPanelEditor::addAction(const QIcon &icon, const QString &text, const
     return action;
 }
 
+QAction *StdPanelEditor::addAction(QMenu *menu, const QIcon &icon, const QString &text, const QKeySequence &key)
+{
+    QAction *action = menu->addAction(icon, text);
+    action->setToolTip(text);
+
+    if (!key.isEmpty())
+    {
+        action->setShortcut(key);
+        AddShortcutToToolTip(action);
+    }
+
+    return action;
+}
+
 void StdPanelEditor::setPanel(ResPanel *panel, const QString &comment)
 {
     m_pPanel = panel;
+    m_Type = panel->type();
     panelItem->setUndoStack(undoStack());
     panelItem->setPanel(m_pPanel, comment);
 
@@ -392,7 +457,7 @@ QString StdPanelEditor::title() const
 
 qint16 StdPanelEditor::type() const
 {
-    return LbrObject::RES_PANEL;
+    return m_Type;
 }
 
 bool StdPanelEditor::eventFilter(QObject *obj, QEvent *event)
@@ -598,12 +663,10 @@ void StdPanelEditor::clipboardChanged()
         m_pPasteAction->setEnabled(false);
 }
 
-bool StdPanelEditor::save(ResBuffer *res, QString *error)
+void StdPanelEditor::fillResPanel(ResPanel *resPanel)
 {
     BaseScene *pScene = dynamic_cast<BaseScene*>(m_pView->scene());
-    //*error = "еще не реализовано";
 
-    ResPanel resPanel;
     QList<ControlItem*> controls = pScene->findItems<ControlItem>();
     QList<BorderItem*> borders = pScene->findItems<BorderItem>();
     QList<TextItem*> texts = pScene->findItems<TextItem>();
@@ -611,44 +674,174 @@ bool StdPanelEditor::save(ResBuffer *res, QString *error)
 
     for (ControlItem *item : qAsConst(controls))
     {
-        resPanel.beginAddField(item->controlName(), item->controlName2());
-        resPanel.setFieldDataType(item->fieldType(),
+        resPanel->beginAddField(item->controlName(), item->controlName2());
+        resPanel->setFieldDataType(item->fieldType(),
                                   item->dataType(),
                                   item->dataLength(),
                                   item->fdm());
-        resPanel.setFieldFlags(item->controlFlags());
-        resPanel.setLenHeight(item->length(), item->lines());
-        resPanel.setFieldPos(item->getPoint().x(), item->getPoint().y());
-        resPanel.setFormatTooltip(item->valueTemplate(), item->toolTip());
-        resPanel.setFieldStyle((quint16)item->controlStyle());
-        resPanel.setFieldGroup(item->controlGroup());
-        resPanel.setFieldHelp(item->helpPage());
-        resPanel.endAddField();
+        resPanel->setFieldFlags(item->controlFlags());
+        resPanel->setLenHeight(item->length(), item->lines());
+        resPanel->setFieldPos(item->getPoint().x(), item->getPoint().y());
+        resPanel->setFormatTooltip(item->valueTemplate(), item->toolTip());
+        resPanel->setFieldStyle((quint16)item->controlStyle());
+        resPanel->setFieldGroup(item->controlGroup());
+        resPanel->setFieldHelp(item->helpPage());
+        resPanel->endAddField();
     }
 
     for (BorderItem *item : qAsConst(borders))
-        resPanel.addBorder(item->geometry(), item->borderStyle());
+        resPanel->addBorder(item->geometry(), item->borderStyle());
 
     for (TextItem *item : qAsConst(texts))
     {
         QRect rc = item->geometry();
-        resPanel.addText(item->text(), rc.x(), rc.y(), item->textStyle().style());
+        resPanel->addText(item->text(), rc.x(), rc.y(), item->textStyle().style());
     }
 
-    resPanel.setComment(pPanel->comment());
-    resPanel.setPanelStrings(pPanel->title(), pPanel->status(), pPanel->status2());
-    resPanel.setPanelStyle(pPanel->borderStyle(), pPanel->panelStyle());
-    resPanel.setPanelHelp(pPanel->helpPage());
-    resPanel.setPanelExcludeFlags(pPanel->panelExclude());
-    resPanel.setPanelCentered(pPanel->isCentered());
-    resPanel.setPanelCentered(pPanel->isCentered());
-    resPanel.setPanelRightText(pPanel->isRightText());
-    resPanel.setPanelRect(pPanel->geometry());
+    resPanel->setType(m_Type);
+    resPanel->setName(m_pNameLineEdit->text());
+    resPanel->setComment(pPanel->comment());
+    resPanel->setPanelStrings(pPanel->title(), pPanel->status(), pPanel->status2());
+    resPanel->setPanelStyle(pPanel->borderStyle(), pPanel->panelStyle());
+    resPanel->setPanelHelp(pPanel->helpPage());
+    resPanel->setPanelExcludeFlags(pPanel->panelExclude());
+    resPanel->setPanelCentered(pPanel->isCentered());
+    resPanel->setPanelCentered(pPanel->isCentered());
+    resPanel->setPanelRightText(pPanel->isRightText());
+    resPanel->setPanelRect(pPanel->geometry());
+
+    if (m_Type != LbrObject::RES_PANEL)
+    {
+        resPanel->setScrolFlags(pPanel->property("scrolFlags").toInt());
+
+        quint16 rowNum = pPanel->property("scrolFlags").value<quint16>();
+        quint16 rowLength = pPanel->property("rowLength").value<quint16>();
+        QRect scrol(QPoint(pPanel->property("scrolPos").toPoint()),
+                    QSize(rowLength, rowNum));
+
+        resPanel->setScrol(scrol);
+        resPanel->setRowHeight(pPanel->property("rowHeight").value<quint16>());
+    }
+}
+
+bool StdPanelEditor::save(ResBuffer *res, QString *error)
+{
+    ResPanel resPanel;
+    fillResPanel(&resPanel);
 
     bool hr = !resPanel.save(res);
-
     if (hr)
         hr = BaseEditorWindow::save(res, error);
 
     return hr;
+}
+
+void StdPanelEditor::addCodeWindow(const QString &title, const QString &text)
+{
+    QPlainTextEdit *pEdit = new QPlainTextEdit(this);
+    pEdit->setReadOnly(true);
+    pEdit->setPlainText(text);
+
+    m_TabContainer->addTab(pEdit, title);
+}
+
+void StdPanelEditor::saveToXml()
+{
+    QFileDialog fileDlg(this);
+    fileDlg.setOption(QFileDialog::DontUseNativeDialog);
+    fileDlg.setWindowTitle(tr("Сохранение в xml"));
+    fileDlg.setAcceptMode(QFileDialog::AcceptOpen);
+    fileDlg.setDirectory("/home/jana");
+    fileDlg.setFileMode(QFileDialog::DirectoryOnly);
+    fileDlg.setViewMode(QFileDialog::List);
+    //fileDlg.setNameFilter(tr("Image Files (*.png *.jpg *.bmp)"));
+
+    QScopedPointer<QHBoxLayout> hbl(new QHBoxLayout(0));
+    QScopedPointer<QComboBox> encode(new QComboBox());
+    QGridLayout* mainLayout = dynamic_cast <QGridLayout*>(fileDlg.layout());
+    hbl->addWidget(encode.data());
+    mainLayout->addLayout(hbl.data(), mainLayout->rowCount(), 1, 1, -1);
+
+    encode->addItems({"CP866", "WINDOWS-1251", "UTF-8", "UTF-16LE", "UTF-16BE"});
+    encode->setCurrentText("UTF-8");
+
+    if (fileDlg.exec() != QDialog::Accepted)
+        return;
+
+    QString filename = fileDlg.selectedFiles().first();
+
+    if (filename.isEmpty())
+        return;
+
+    QDir dir(filename);
+
+    ResPanel resPanel;
+    ResBuffer *buffer = nullptr;
+    lbr()->getResource(name(), type(), &buffer);
+    resPanel.load(buffer);
+    //fillResPanel(&resPanel);
+
+    QFile f(dir.absoluteFilePath("text.xml"));
+    if (f.open(QIODevice::WriteOnly))
+    {
+        QTextStream stream(&f);
+        stream.setCodec(encode->currentText().toLocal8Bit().data());
+
+        QString result = resPanel.saveXml(encode->currentText());
+        stream << result;
+
+        addCodeWindow(tr("XML"), result);
+        f.close();
+    }
+}
+
+void StdPanelEditor::showCheckError(int stat)
+{
+    if (stat)
+    {
+        QMessageBox::critical(this, tr("Ошибка проверки ресурса"),
+                              ResPanel::GetCheckError(stat));
+    }
+    else
+    {
+        QMessageBox::information(this, tr("Результат проверки ресурса"),
+                                 ResPanel::GetCheckError(stat));
+    }
+}
+
+void StdPanelEditor::onCheckRes()
+{
+    ResPanel panel;
+    fillResPanel(&panel);
+
+    int stat = panel.checkResource();
+    showCheckError(stat);
+}
+
+void StdPanelEditor::onSave()
+{
+    ResPanel panel;
+    fillResPanel(&panel);
+
+    int stat = panel.checkResource();
+
+    if (!stat)
+        emit readySave();
+    else
+        showCheckError(stat);
+}
+
+QAbstractItemModel *StdPanelEditor::propertyModel()
+{
+    QList<QGraphicsItem*> items = m_pView->scene()->selectedItems();
+
+    if (items.isEmpty())
+        return nullptr;
+
+    CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(items.first());
+
+    if (!rectItem)
+        return nullptr;
+
+    return rectItem->propertyModel();
 }

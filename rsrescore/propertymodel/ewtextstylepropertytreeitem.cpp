@@ -57,27 +57,8 @@ EwTextStylePropertyTreeItem::~EwTextStylePropertyTreeItem()
         delete m_pStyle;
 }
 
-void EwTextStylePropertyTreeItem::initFromJson(const QJsonObject &obj)
+void EwTextStylePropertyTreeItem::initModels()
 {
-    QJsonArray alignenum = obj["alignenum"].toArray();
-    QJsonArray formatenum = obj["formatenum"].toArray();
-
-    m_pAlignEnumModel = new EnumListModel(this);
-    m_pAlignEnumModel->loadFromJsonArray(alignenum);
-
-    m_pTextColorEnumModel = new TextStyleColorModel(this);
-    m_pTextBackEnumModel = new TextStyleBackModel(this);
-
-    m_pFormat->loadEnumAlias(formatenum);
-}
-
-void EwTextStylePropertyTreeItem::setPropertyName(const QString &name)
-{
-    PropertyTreeItem::setPropertyName(name);
-
-    if (m_SubType != SubTypeRoot)
-        return;
-
     const QMetaObject *metaobject = m_pItem->metaObject();
     int propIndex = metaobject->indexOfProperty(m_PropertyName.toLocal8Bit().data());
 
@@ -134,6 +115,31 @@ void EwTextStylePropertyTreeItem::setPropertyName(const QString &name)
         item->setObject(m_pStyle);
         item->setGroup(group());
     }
+}
+
+void EwTextStylePropertyTreeItem::initFromJson(const QJsonObject &obj)
+{
+    QJsonArray alignenum = obj["alignenum"].toArray();
+    QJsonArray formatenum = obj["formatenum"].toArray();
+
+    m_pAlignEnumModel = new EnumListModel(this);
+    m_pAlignEnumModel->loadFromJsonArray(alignenum);
+
+    m_pTextColorEnumModel = new TextStyleColorModel(this);
+    m_pTextBackEnumModel = new TextStyleBackModel(this);
+
+    m_pFormat->loadEnumAlias(formatenum);
+    initModels();
+}
+
+void EwTextStylePropertyTreeItem::setPropertyName(const QString &name)
+{
+    PropertyTreeItem::setPropertyName(name);
+
+    if (m_SubType != SubTypeRoot)
+        return;
+
+
 }
 
 void EwTextStylePropertyTreeItem::setData(const QVariant &value)

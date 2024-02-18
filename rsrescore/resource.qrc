@@ -67,5 +67,11 @@
         <file>json/FieldTypeEnum.json</file>
         <file>json/DataTypeEnum.json</file>
         <file>json/Scrol.json</file>
+        <file>img/EditTableHS.png</file>
+        <file>img/CheckRes.png</file>
+        <file>img/Panel2.png</file>
+        <file>img/Statistic.png</file>
+        <file>img/XMLFileHS.png</file>
+        <file>templates/EMPTY_BSCROL_DOUBLE.xml</file>
     </qresource>
 </RCC>

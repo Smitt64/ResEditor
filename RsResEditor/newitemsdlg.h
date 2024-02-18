@@ -33,6 +33,7 @@ private slots:
     void itemUpdated(QListWidgetItem *item);
     void pathButton();
     void updateAcceptButton();
+    void itemDoubleClicked();
 
 private:
     void updateListSize(QListWidget *list);

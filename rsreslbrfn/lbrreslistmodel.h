@@ -32,6 +32,10 @@ public:
     void clear();
     void removeElement(const QString &name, const int &type);
 
+    /*virtual QModelIndexList match(const QModelIndex &start, int role,
+                                  const QVariant &value, int hits = 1,
+                                  Qt::MatchFlags flags = Qt::MatchFlags(Qt::MatchStartsWith|Qt::MatchWrap)) const Q_DECL_OVERRIDE;
+*/
 private:
     LbrResListModelPrivate * const d_ptr;
     Q_DECLARE_PRIVATE(LbrResListModel); 

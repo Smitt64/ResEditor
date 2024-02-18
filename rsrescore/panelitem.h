@@ -34,7 +34,6 @@ public:
         ExcludeShadow = 0x0004
     };
     Q_ENUM(PanelExcludeFlag)
-
     Q_DECLARE_FLAGS(PanelExcludeFlags, PanelExcludeFlag)
 
     Q_INVOKABLE PanelItem(CustomRectItem* parent = nullptr);

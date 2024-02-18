@@ -16,6 +16,7 @@ public:
 
     static QIcon iconFromResType(const qint16 &Type);
     static QString typeNameFromResType(const qint16 &Type);
+    static QList<qint16> types();
 
     ResourceEditorInterface *pluginForType(const qint16 &Type);
     ResourceEditorInterface *pluginForNewAction(const QString &guid);

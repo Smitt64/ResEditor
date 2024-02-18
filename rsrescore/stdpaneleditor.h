@@ -14,6 +14,7 @@ class CustomRectItem;
 class QGraphicsItem;
 class ToolBoxModel;
 class QClipboard;
+class QTabWidget;
 class StdPanelEditor : public BaseEditorWindow
 {
     Q_OBJECT
@@ -29,16 +30,22 @@ public:
     virtual QString title() const Q_DECL_OVERRIDE;
     virtual qint16 type() const Q_DECL_OVERRIDE;
 
+    virtual QAbstractItemModel *propertyModel() Q_DECL_OVERRIDE;
+
 private slots:
     void sceneSelectionChanged();
     void sceneDeleteItems();
     void sceneCopyItems();
     void scenePasteItems();
     void sceneCutItems();
+    void saveToXml();
+    void onSave();
+    void onCheckRes();
     void clipboardChanged();
 
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
+    void addCodeWindow(const QString &title, const QString &text);
 
 private:
     enum FillItemsChildMode
@@ -48,20 +55,26 @@ private:
     };
 
     QAction *addAction(const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());
+    QAction *addAction(QMenu *menu, const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());
     void updateSizeStatus();
     void setupNameLine();
     void setupContrastAction();
+    void setupScrolAreaAction();
     void setupPropertyAction();
     void setupCopyPaste();
     void setupMenus();
+    void showCheckError(int stat);
 
+    void fillResPanel(ResPanel *resPanel);
     void fillItems(const QList<QGraphicsItem*> &selectedItems, QSet<CustomRectItem*> &result,
                    const FillItemsChildMode &mode);
 
     BaseEditorView *m_pView;
+    QTabWidget *m_TabContainer;
 
     ResPanel *m_pPanel;
     PanelItem* panelItem;
+    qint16 m_Type;
 
     QStatusBar *m_StatusBar;
     StatusBarElement *m_SizeText, *m_CursorText;
@@ -70,11 +83,13 @@ private:
     QLineEdit *m_pNameLineEdit;
 
     QAction *m_pSave;
-    QAction *m_pContrst, *m_pDelete, *m_pProperty;
+    QAction *m_pContrst, *m_pDelete, *m_pProperty, *m_pScrolAreaAction;
     QAction *m_pCutAction, *m_pCopyAction, *m_pPasteAction;
+    QAction *m_pCheckAction, *m_EwViewAction, *m_Statistic;
+    QAction *m_SaveToXml;
 
     QMenuBar *m_pMenuBar;
-    QMenu *m_pEditMenu;
+    QMenu *m_pEditMenu, *m_pViewMenu, *m_pResMenu;
 
     QToolBar *m_pToolBar;
     QClipboard *m_pClipboard;

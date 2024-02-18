@@ -17,6 +17,8 @@ class QRubberBand;
 class QUndoStack;
 class ResStyle;
 class PropertyModel;
+class BaseScene;
+class QUndoCommand;
 class CustomRectItem : public QGraphicsObject
 {
     Q_OBJECT
@@ -100,6 +102,13 @@ public:
 
     virtual QVariant userAction(const qint32 &action, const QVariant &param = QVariant());
 
+    const bool &isCanIntersects() const;
+    const bool &isMousePressed() const;
+    void setCanIntersects(const bool &flag);
+
+    bool setSkipUndoStack(const bool &value);
+    const bool &isSkipUndoStack() const;
+
 signals:
     void geometryChanged();
 
@@ -118,15 +127,17 @@ protected:
     virtual bool checkPropSameValue(const QString &propertyName, const QVariant &value);
 
     virtual bool isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const;
+    virtual void createItemResizeUndoObj(BaseScene* customScene,
+                                         const QSizeF &Actual,
+                                         const QSizeF &New,
+                                         QUndoCommand **cmd);
+
     const QBrush &getBrush() const;
     const bool &isResizing() const;
     const QRectF &actualRect() const;
     void setBoundingRect(const QRectF &bound);
 
     void drawIntersects(QPainter *painter);
-
-    bool setSkipUndoStack(const bool &value);
-    const bool &isSkipUndoStack() const;
 
     QSize gridSize() const;
     QString getClassInfo(const QMetaObject *obj, const char *name) const;
@@ -144,7 +155,7 @@ private:
     void deserializeProperty(QJsonObject &obj);
     QRubberBand *rubberBand();
     bool mousePosOnHandles(QPointF pos);
-    void updateSizePos();
+    void updateSizePos(const QString &from);
 
     QVector<QRectF> m_ResizeHandles;
     QRubberBand *pRubberBand;
@@ -153,12 +164,13 @@ private:
     //QPointF m_MousePressPoint;
     QMap<QGraphicsItem*, QPointF> m_MousePressPoint;
 
-    bool m_HasRubberBand;
+    bool m_HasRubberBand, m_CanIntersects;
     QBrush m_brush;
     QRectF m_BoundingRect, m_OldBoundingRect;
     QRectF m_ActualRect;
     bool m_IsResizing, m_IsSelection;
     bool m_MousePressed;
+    QPointF m_MousePressedPos;
     ResizeCorners m_ResizeCorner;
     QFlags<ResizeCorners> m_AvailableCorners;
 

@@ -42,6 +42,7 @@ private slots:
     void openTextStyleDialog();
 
 private:
+    void initModels();
     NodeSubType m_SubType;
     QList<PropertyTreeItem*> m_EwChilds;
     EwTextStyle *m_pStyle;

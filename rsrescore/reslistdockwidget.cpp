@@ -9,6 +9,9 @@
 #include <QSortFilterProxyModel>
 #include <QDebug>
 #include <QMenu>
+#include <QWidgetAction>
+#include <QListView>
+#include <QStandardItemModel>
 
 ResFilterModel::ResFilterModel(QObject *parent) :
     QSortFilterProxyModel(parent)
@@ -24,6 +27,13 @@ ResFilterModel::~ResFilterModel()
 bool ResFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
     QString name = sourceModel()->data(sourceModel()->index(source_row, 0)).toString();
+    qint16 type = sourceModel()->data(sourceModel()->index(source_row, fldType)).toInt();
+
+    if (!m_Types.isEmpty())
+    {
+        if (!m_Types.contains(type))
+            return false;
+    }
 
     if (name.contains(m_FilterName, Qt::CaseInsensitive))
         return true;
@@ -36,6 +46,12 @@ bool ResFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_
 void ResFilterModel::setFilterName(const QString &name)
 {
     m_FilterName = name;
+    invalidate();
+}
+
+void ResFilterModel::setFilterTypes(const QList<qint16> &Types)
+{
+    m_Types = Types;
     invalidate();
 }
 
@@ -89,9 +105,10 @@ QVariant ResFilterModel::data(const QModelIndex &index, int role) const
         QVariant val;
         if (index.column() == fldName)
         {
-            QVariant type = sourceModel()->data(sourceModel()->index(index.row(), ColumnType));
-            val = RsResCore::iconFromResType(type.toInt());
-            return val;
+            QModelIndex source = mapToSource(this->index(index.row(), fldType));
+            QVariant val = sourceModel()->data(source, Qt::EditRole);
+
+            return RsResCore::iconFromResType(val.toInt());
         }
     }
     return QSortFilterProxyModel::data(index, role);
@@ -113,11 +130,23 @@ ResListDockWidget::ResListDockWidget(QWidget *parent) :
     m_pToolBar = new QToolBar();
     m_pNameFilter = new QLineEdit();
     m_FilterBtn = new QToolButton();
+    m_FilterMenu = new QMenu(m_FilterBtn);
+    m_FilterBtn->setMenu(m_FilterMenu);
+    m_FilterBtn->setPopupMode(QToolButton::MenuButtonPopup);
 
     m_pNameFilter->setPlaceholderText(tr("Введите текст для поиска..."));
     m_pNameFilter->setClearButtonEnabled(true);
     m_FilterBtn->setIcon(QIcon(":/img/Filter.png"));
     m_FilterBtn->setIconSize(QSize(16,16));
+
+    m_pTypesModel = new QStandardItemModel(this);
+    m_FilterView = new QListView(this);
+    m_FilterViewAction = new QWidgetAction(this);
+    m_FilterViewAction->setDefaultWidget(m_FilterView);
+    m_FilterMenu->addAction(m_FilterViewAction);
+    m_FilterView->setModel(m_pTypesModel);
+
+    m_FilterView->setMaximumWidth(150);
 
     m_pToolBar->setMovable(false);
     m_pToolBar->addWidget(m_pNameFilter);
@@ -133,6 +162,7 @@ ResListDockWidget::ResListDockWidget(QWidget *parent) :
     connect(m_List, &QTreeView::customContextMenuRequested, this, &ResListDockWidget::onCustomContextMenuRequested);
     connect(m_List, &QTreeView::doubleClicked, this, &ResListDockWidget::onDoubleClicked);
     connect(m_pNameFilter, &QLineEdit::textChanged, m_pFiler, &ResFilterModel::setFilterName);
+    connect(m_pTypesModel, &QStandardItemModel::itemChanged, this, &ResListDockWidget::typeItemChanged);
 }
 
 ResListDockWidget::~ResListDockWidget()
@@ -141,11 +171,42 @@ ResListDockWidget::~ResListDockWidget()
         delete m_List;
 }
 
+void ResListDockWidget::setupTypesFilter(QAbstractItemModel *model)
+{
+    if (!model)
+        return;
+
+    m_pTypesModel->clear();
+    const QList<qint16> types = RsResCore::types();
+
+    for (int i = 0; i < types.size(); i++)
+    {
+        for (int j = 0; j < model->rowCount(); j++)
+        {
+            QVariant val = model->data(model->index(j, ResFilterModel::fldType));
+
+            if (val.toInt() == types[i])
+            {
+                QStandardItem *item = new QStandardItem();
+                item->setText(RsResCore::typeNameFromResType(types[i]));
+                item->setCheckable(true);
+                item->setCheckState(Qt::Checked);
+                item->setIcon(RsResCore::iconFromResType(types[i]));
+                item->setData(types[i]);
+
+                m_pTypesModel->appendRow(item);
+                break;
+            }
+        }
+    }
+}
+
 void ResListDockWidget::setModel(QAbstractItemModel *model)
 {
     if (!model)
         return;
 
+    setupTypesFilter(model);
     m_pFiler->setSourceModel(model);
     m_List->header()->resizeSection(1, 50);
     model->sort(0);
@@ -187,4 +248,18 @@ void ResListDockWidget::onCustomContextMenuRequested(const QPoint &pos)
         else if (action == edit)
             emit doubleClicked(name, type);
     }
+}
+
+void ResListDockWidget::typeItemChanged(QStandardItem *item)
+{
+    QList<qint16> Types;
+    for (int i = 0; i < m_pTypesModel->rowCount(); i++)
+    {
+        QStandardItem *elem = m_pTypesModel->item(i, 0);
+
+        if (elem->checkState() == Qt::Checked)
+            Types.append(elem->data().toInt());
+    }
+
+    m_pFiler->setFilterTypes(Types);
 }

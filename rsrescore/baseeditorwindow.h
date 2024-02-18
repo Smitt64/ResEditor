@@ -16,6 +16,7 @@ class BaseScene;
 class ToolBoxModel;
 class ResBuffer;
 class QAbstractItemModel;
+class LbrObjectInterface;
 class RSRESCORE_EXPORT BaseEditorWindow : public QMainWindow
 {
     Q_OBJECT
@@ -27,6 +28,7 @@ public:
 
     QUndoStack *undoStack();
     ToolBoxModel *toolBox();
+    virtual QAbstractItemModel *propertyModel();
 
     QAction *undoAction();
     QAction *redoAction();
@@ -36,6 +38,9 @@ public:
     virtual qint16 type() const;
 
     bool isChanged() const;
+
+    void setLbrObject(LbrObjectInterface *obj);
+    LbrObjectInterface *lbr();
 
 signals:
     void propertyModelChanged(QAbstractItemModel *model);
@@ -60,6 +65,7 @@ private:
     QMenu *m_pUndoMenu;
     int m_UndoIndexUnchanged;
     UndoActionWidget *m_pUndoViewMenuAction;
+    LbrObjectInterface *m_pLbr;
 };
 
 #endif // BASEEDITORWINDOW_H

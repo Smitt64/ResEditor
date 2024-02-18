@@ -1,6 +1,28 @@
 {
     "propertylist": [
         {
+            "name" : "scrolType",
+            "alias" : "Тип",
+
+            "enum" : [
+                { "key" : "TypeSCROL", "alias" : "SCROL" },
+                { "key" : "TypeBSCROL", "alias" : "BSCROL" },
+                { "key" : "TypeLSCROL", "alias" : "LSCROL" }
+            ]
+        },
+		{
+            "name" : "scrolFlags",
+            "alias" : "Параметры",
+
+            "enum" : [
+                { "key" : "ScrolAutoFill", "alias" : "Авто-размер панели" },
+                { "key" : "ScrolAutoFields", "alias" : "Авто. размещать поля" },
+                { "key" : "ScrolAutoHeader", "alias" : "Формировать заголовок" },
+                { "key" : "ScrolReversOrder", "alias" : "Обратный порядок записей" },
+                { "key" : "ScrolDenySort", "alias" : "Запретить сортировку" }
+            ]
+        },
+        {
             "name" : "rowNum",
             "alias" : "Число строк"
         },

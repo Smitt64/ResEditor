@@ -23,6 +23,8 @@ public:
 private:
     void SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
                           const QString &name, const QString &title);
+
+    BaseEditorWindow *LoadResFromXmlTemplate(const QString &filename, const QString &name, const quint16 &type);
 };
 
 #endif // BASERESOURCEEDITOR_H

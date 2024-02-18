@@ -54,21 +54,21 @@ public:
     QHBoxLayout *horizontalLayout_3;
     QFormLayout *formLayout_4;
     QLabel *label_7;
-    QSpinBox *spinBox;
+    QSpinBox *scrolRows;
     QLabel *label_8;
     QHBoxLayout *horizontalLayout_2;
-    QSpinBox *spinBox_2;
-    QSpinBox *spinBox_3;
+    QSpinBox *scrolX;
+    QSpinBox *scrolY;
     QLabel *label_9;
-    QSpinBox *spinBox_4;
+    QSpinBox *scrolWidth;
     QLabel *label_10;
-    QSpinBox *spinBox_5;
+    QSpinBox *scrolRowH;
     QSpacerItem *horizontalSpacer_3;
     QGroupBox *groupBox_2;
     QVBoxLayout *verticalLayout;
-    QCheckBox *checkBox;
-    QCheckBox *checkBox_2;
-    QCheckBox *checkBox_3;
+    QCheckBox *checkAutoSize;
+    QCheckBox *checkAutoFld;
+    QCheckBox *checkAutoHeader;
     QHBoxLayout *horizontalLayout_7;
     QGroupBox *groupBox_3;
     QVBoxLayout *verticalLayout_2;
@@ -96,7 +96,12 @@ public:
     {
         if (PanelPropertysDlg->objectName().isEmpty())
             PanelPropertysDlg->setObjectName(QString::fromUtf8("PanelPropertysDlg"));
-        PanelPropertysDlg->resize(600, 508);
+        PanelPropertysDlg->resize(600, 509);
+        QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+        sizePolicy.setHorizontalStretch(0);
+        sizePolicy.setVerticalStretch(0);
+        sizePolicy.setHeightForWidth(PanelPropertysDlg->sizePolicy().hasHeightForWidth());
+        PanelPropertysDlg->setSizePolicy(sizePolicy);
         PanelPropertysDlg->setMinimumSize(QSize(600, 0));
         PanelPropertysDlg->setMaximumSize(QSize(600, 16777215));
         verticalLayout_4 = new QVBoxLayout(PanelPropertysDlg);
@@ -112,7 +117,7 @@ public:
 
         typeBox = new QComboBox(PanelPropertysDlg);
         typeBox->setObjectName(QString::fromUtf8("typeBox"));
-        typeBox->setEnabled(false);
+        typeBox->setEnabled(true);
         typeBox->setMinimumSize(QSize(200, 0));
         typeBox->setMaximumSize(QSize(200, 16777215));
 
@@ -215,10 +220,10 @@ public:
 
         formLayout_4->setWidget(0, QFormLayout::LabelRole, label_7);
 
-        spinBox = new QSpinBox(groupBoxScrol);
-        spinBox->setObjectName(QString::fromUtf8("spinBox"));
+        scrolRows = new QSpinBox(groupBoxScrol);
+        scrolRows->setObjectName(QString::fromUtf8("scrolRows"));
 
-        formLayout_4->setWidget(0, QFormLayout::FieldRole, spinBox);
+        formLayout_4->setWidget(0, QFormLayout::FieldRole, scrolRows);
 
         label_8 = new QLabel(groupBoxScrol);
         label_8->setObjectName(QString::fromUtf8("label_8"));
@@ -227,15 +232,15 @@ public:
 
         horizontalLayout_2 = new QHBoxLayout();
         horizontalLayout_2->setObjectName(QString::fromUtf8("horizontalLayout_2"));
-        spinBox_2 = new QSpinBox(groupBoxScrol);
-        spinBox_2->setObjectName(QString::fromUtf8("spinBox_2"));
+        scrolX = new QSpinBox(groupBoxScrol);
+        scrolX->setObjectName(QString::fromUtf8("scrolX"));
 
-        horizontalLayout_2->addWidget(spinBox_2);
+        horizontalLayout_2->addWidget(scrolX);
 
-        spinBox_3 = new QSpinBox(groupBoxScrol);
-        spinBox_3->setObjectName(QString::fromUtf8("spinBox_3"));
+        scrolY = new QSpinBox(groupBoxScrol);
+        scrolY->setObjectName(QString::fromUtf8("scrolY"));
 
-        horizontalLayout_2->addWidget(spinBox_3);
+        horizontalLayout_2->addWidget(scrolY);
 
 
         formLayout_4->setLayout(1, QFormLayout::FieldRole, horizontalLayout_2);
@@ -245,20 +250,20 @@ public:
 
         formLayout_4->setWidget(2, QFormLayout::LabelRole, label_9);
 
-        spinBox_4 = new QSpinBox(groupBoxScrol);
-        spinBox_4->setObjectName(QString::fromUtf8("spinBox_4"));
+        scrolWidth = new QSpinBox(groupBoxScrol);
+        scrolWidth->setObjectName(QString::fromUtf8("scrolWidth"));
 
-        formLayout_4->setWidget(2, QFormLayout::FieldRole, spinBox_4);
+        formLayout_4->setWidget(2, QFormLayout::FieldRole, scrolWidth);
 
         label_10 = new QLabel(groupBoxScrol);
         label_10->setObjectName(QString::fromUtf8("label_10"));
 
         formLayout_4->setWidget(3, QFormLayout::LabelRole, label_10);
 
-        spinBox_5 = new QSpinBox(groupBoxScrol);
-        spinBox_5->setObjectName(QString::fromUtf8("spinBox_5"));
+        scrolRowH = new QSpinBox(groupBoxScrol);
+        scrolRowH->setObjectName(QString::fromUtf8("scrolRowH"));
 
-        formLayout_4->setWidget(3, QFormLayout::FieldRole, spinBox_5);
+        formLayout_4->setWidget(3, QFormLayout::FieldRole, scrolRowH);
 
 
         horizontalLayout_3->addLayout(formLayout_4);
@@ -271,20 +276,20 @@ public:
         groupBox_2->setObjectName(QString::fromUtf8("groupBox_2"));
         verticalLayout = new QVBoxLayout(groupBox_2);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
-        checkBox = new QCheckBox(groupBox_2);
-        checkBox->setObjectName(QString::fromUtf8("checkBox"));
+        checkAutoSize = new QCheckBox(groupBox_2);
+        checkAutoSize->setObjectName(QString::fromUtf8("checkAutoSize"));
 
-        verticalLayout->addWidget(checkBox);
+        verticalLayout->addWidget(checkAutoSize);
 
-        checkBox_2 = new QCheckBox(groupBox_2);
-        checkBox_2->setObjectName(QString::fromUtf8("checkBox_2"));
+        checkAutoFld = new QCheckBox(groupBox_2);
+        checkAutoFld->setObjectName(QString::fromUtf8("checkAutoFld"));
 
-        verticalLayout->addWidget(checkBox_2);
+        verticalLayout->addWidget(checkAutoFld);
 
-        checkBox_3 = new QCheckBox(groupBox_2);
-        checkBox_3->setObjectName(QString::fromUtf8("checkBox_3"));
+        checkAutoHeader = new QCheckBox(groupBox_2);
+        checkAutoHeader->setObjectName(QString::fromUtf8("checkAutoHeader"));
 
-        verticalLayout->addWidget(checkBox_3);
+        verticalLayout->addWidget(checkAutoHeader);
 
 
         horizontalLayout_3->addWidget(groupBox_2);
@@ -300,6 +305,7 @@ public:
         groupBox_3->setObjectName(QString::fromUtf8("groupBox_3"));
         verticalLayout_2 = new QVBoxLayout(groupBox_3);
         verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
+        verticalLayout_2->setSizeConstraint(QLayout::SetMinimumSize);
         excludeAutoTab = new QCheckBox(groupBox_3);
         excludeAutoTab->setObjectName(QString::fromUtf8("excludeAutoTab"));
 
@@ -315,7 +321,7 @@ public:
 
         verticalLayout_2->addWidget(excludeShadow);
 
-        verticalSpacer_2 = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
+        verticalSpacer_2 = new QSpacerItem(20, 1, QSizePolicy::Minimum, QSizePolicy::Minimum);
 
         verticalLayout_2->addItem(verticalSpacer_2);
 
@@ -371,7 +377,7 @@ public:
 
         verticalLayout_3->addLayout(horizontalLayout_4);
 
-        verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
+        verticalSpacer = new QSpacerItem(20, 10, QSizePolicy::Minimum, QSizePolicy::Expanding);
 
         verticalLayout_3->addItem(verticalSpacer);
 
@@ -427,9 +433,9 @@ public:
         label_9->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\224\320\273\320\270\320\275\320\260 \321\201\321\202\321\200\320\276\320\272\320\270:", nullptr));
         label_10->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\222\321\213\321\201\320\276\321\202\320\260 \321\201\321\202\321\200\320\276\320\272\320\270:", nullptr));
         groupBox_2->setTitle(QCoreApplication::translate("PanelPropertysDlg", "\320\220\320\262\321\202\320\276\320\274\320\260\321\202\320\270\321\207\320\265\321\201\320\272\320\270", nullptr));
-        checkBox->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\240\320\260\320\267\320\274\320\265\321\200 \320\277\320\260\320\275\320\265\320\273\320\270", nullptr));
-        checkBox_2->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\240\320\260\320\267\320\274\320\265\321\211\320\260\321\202\321\214 \320\277\320\276\320\273\321\217", nullptr));
-        checkBox_3->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\244\320\276\321\200\320\274\320\270\321\200\320\276\320\262\320\260\321\202\321\214 \320\267\320\260\320\263\320\276\320\273\320\276\320\262\320\276\320\272", nullptr));
+        checkAutoSize->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\240\320\260\320\267\320\274\320\265\321\200 \320\277\320\260\320\275\320\265\320\273\320\270", nullptr));
+        checkAutoFld->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\240\320\260\320\267\320\274\320\265\321\211\320\260\321\202\321\214 \320\277\320\276\320\273\321\217", nullptr));
+        checkAutoHeader->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\244\320\276\321\200\320\274\320\270\321\200\320\276\320\262\320\260\321\202\321\214 \320\267\320\260\320\263\320\276\320\273\320\276\320\262\320\276\320\272", nullptr));
         groupBox_3->setTitle(QCoreApplication::translate("PanelPropertysDlg", "\320\230\321\201\320\272\320\273\321\216\321\207\320\270\321\202\321\214", nullptr));
         excludeAutoTab->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\220\320\262\321\202\320\276\320\274\320\260\321\202\320\270\321\207\320\265\321\201\320\272\320\270\320\271 \320\276\320\261\321\205\320\276\320\264", nullptr));
         excludeAutoNum->setText(QCoreApplication::translate("PanelPropertysDlg", "\320\220\320\262\321\202\320\276\320\274\320\260\321\202\320\270\321\207\320\265\321\201\320\272\321\203\321\216 \320\275\321\203\320\274\320\265\321\200\320\260\321\206\320\270\321\216 \320\277\320\276\320\273\320\265\320\271", nullptr));

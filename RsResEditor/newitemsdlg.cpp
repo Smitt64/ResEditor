@@ -8,7 +8,6 @@
 #include <QJsonArray>
 #include <QJsonValue>
 #include <QJsonParseError>
-#include <limits>
 
 enum
 {
@@ -90,6 +89,7 @@ QListWidget *NewItemsDlg::CreateSubList()
     list->updateGeometry();
 
     connect(list, &QListWidget::itemClicked, this, &NewItemsDlg::itemUpdated);
+    connect(list, &QListWidget::itemDoubleClicked, this, &NewItemsDlg::itemDoubleClicked);
 
     return list;
 }
@@ -230,4 +230,12 @@ QString NewItemsDlg::name() const
 QString NewItemsDlg::path() const
 {
     return ui->pathEdit->text();
+}
+
+void NewItemsDlg::itemDoubleClicked()
+{
+    updateAcceptButton();
+
+    if (ui->buttonBox->button(QDialogButtonBox::Ok)->isEnabled())
+        emit ui->buttonBox->accepted();
 }

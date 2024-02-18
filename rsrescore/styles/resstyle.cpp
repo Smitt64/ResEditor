@@ -457,6 +457,26 @@ void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleO
         drawText(painter, rc, option->text, option->alignment | Qt::AlignVCenter, color(Color_ButtonText, option));
         painter->restore();
     }
+    else if (type == Control_ScrolArea)
+    {
+        painter->save();
+        QRectF rc = option->rect;
+        QString mask(rc.width() / option->gridSize.width(), QChar('~'));
+
+        painter->fillRect(option->rect, Qt::black);
+        qreal offset = option->gridSize.height() * option->rowHeight;
+        int count = (rc.height() - offset) / option->gridSize.height();
+
+        for (int i = 0; i < count; i++)
+        {
+            QRectF row = rc;
+            row.setX(0);
+            row.setY(offset + option->gridSize.height() * i);
+            row.setHeight(option->gridSize.height());
+            drawText(painter, row, mask, option->alignment, color(Color_Text, option));
+        }
+        painter->restore();
+    }
     else
     {
         painter->save();

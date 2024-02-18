@@ -1,4 +1,5 @@
 #include "lbrreslistmodel.h"
+#include "qdebug.h"
 #include "res_lbr.h"
 #include "lbrobject.h"
 #include <QTextCodec>
@@ -99,7 +100,10 @@ QVariant LbrResListModel::data(const QModelIndex &index, int role) const
         if (index.column() == ColumnName)
             return d->m_Elements[index.row()]->name;
         else if(index.column() == ColumnType)
-            return d->m_Elements[index.row()]->type;
+        {
+            //qDebug() << d->m_Elements.size() << index;
+            return (qint16)d->m_Elements[index.row()]->type;
+        }
         else if(index.column() == ColumnComment)
             return d->m_Elements[index.row()]->comment;
         else if (index.column() == ColumnTime)
@@ -150,3 +154,27 @@ void LbrResListModel::sort(int column, Qt::SortOrder order)
         return false;
     });
 }
+
+/*QModelIndexList LbrResListModel::match(const QModelIndex &start, int role,
+                      const QVariant &value, int hits,
+                      Qt::MatchFlags flags) const
+{
+    Q_D(const LbrResListModel);
+    QModelIndexList result;
+
+    if (hits <= 0)
+        hits = std::numeric_limits<int>::max();
+
+    for (int i = 0; i < d->m_Elements.size() && result.size() != hits; i++)
+    {
+        QModelIndex idx = index(i, start.column());
+        QVariant dt = data(idx, role);
+
+        if (dt == value)
+        {
+            result.push_back(idx);
+        }
+    }
+
+    return result;
+}*/

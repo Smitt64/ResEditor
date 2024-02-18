@@ -28,7 +28,7 @@ public:
 
     void setComment(const QString &comment);
     void setResHeader(void *ptr);
-
+    QDateTime getResDateTime() const;
 
     void setResStream(Qt::HANDLE handle);
     Qt::HANDLE getResStream();

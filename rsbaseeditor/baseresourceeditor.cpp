@@ -26,7 +26,9 @@ QList<qint16> BaseResourceEditor::resTypes() const
 {
     return QList<qint16>()
            << LbrObject::RES_PANEL
-           << LbrObject::RES_BS;
+           << LbrObject::RES_BS
+           << LbrObject::RES_SCROL
+           << LbrObject::RES_LS;
 }
 
 QString BaseResourceEditor::newItemsMetaList()
@@ -45,7 +47,8 @@ bool BaseResourceEditor::newItemsActionAvalible(const QString &guid)
     {
         "{c7e4dbe9-cd8e-4eaf-bcd3-975f9fb6ba1e}",
         "{57f88805-7474-42fb-bc00-24a90cd5e85d}",
-        "{c01bd070-a483-482c-9a30-2946a4317b71}"
+        "{c01bd070-a483-482c-9a30-2946a4317b71}",
+        "{80384143-d159-4264-95c8-19e8a2cf7b70}"
     };
 
     return actions.contains(guid);
@@ -75,26 +78,20 @@ BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const 
     else if (guid == "{57f88805-7474-42fb-bc00-24a90cd5e85d}")
     {
         // Панель (двойная рамка)
-        ResPanel *testPan = nullptr;
-        QFile resxml(":/templates/EMPTY_PANEL_DOUBLE.xml");
-        if (!resxml.open(QIODevice::ReadOnly))
-            return nullptr;
-
-        RsResCore::inst()->loadFromXml(&resxml, &testPan);
-        if (testPan)
-        {
-            pNewEditor = new StdPanelEditor(LbrObject::RES_PANEL);
-            pNewEditor->setWindowIcon(RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL));
-            pNewEditor->setupEditor();
-
-            testPan->setName(name);
-            qobject_cast<StdPanelEditor*>(pNewEditor)->setPanel(testPan);
-            SetupEditorTitle(pNewEditor, LbrObject::RES_PANEL, name, testPan->title());
-        }
+        pNewEditor = LoadResFromXmlTemplate(":/templates/EMPTY_PANEL_DOUBLE.xml",
+                                            name,
+                                            LbrObject::RES_PANEL);
     }
     else if (guid == "{c01bd070-a483-482c-9a30-2946a4317b71}")
     {
         // Панель из текста
+    }
+    else if (guid == "{80384143-d159-4264-95c8-19e8a2cf7b70}")
+    {
+        // Скролинг BSCROL (двойная рамка)
+        pNewEditor = LoadResFromXmlTemplate(":/templates/EMPTY_BSCROL_DOUBLE.xml",
+                                            name,
+                                            LbrObject::RES_BS);
     }
     return pNewEditor;
 }
@@ -103,7 +100,15 @@ BaseEditorWindow *BaseResourceEditor::editor(const qint16 &Type, const QString &
 {
     BaseEditorWindow *wnd = nullptr;
 
-    if (Type == LbrObject::RES_PANEL || Type == LbrObject::RES_BS)
+    static const QList<quint16> Types =
+    {
+        LbrObject::RES_PANEL,
+        LbrObject::RES_BS,
+        LbrObject::RES_SCROL,
+        LbrObject::RES_LS
+    };
+
+    if (Types.contains(Type))
     {
         wnd = new StdPanelEditor(Type);
         wnd->setWindowIcon(RsResCore::inst()->iconFromResType(Type));
@@ -137,4 +142,30 @@ void BaseResourceEditor::SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &T
                         .arg(RsResCore::inst()->typeNameFromResType(Type))
                         .arg(name)
                         .arg(title));
+}
+
+BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(const QString &filename,
+                                                             const QString &name,
+                                                             const quint16 &type)
+{
+    BaseEditorWindow *pNewEditor = nullptr;
+
+    ResPanel *testPan = nullptr;
+    QFile resxml(filename);
+    if (!resxml.open(QIODevice::ReadOnly))
+        return nullptr;
+
+    RsResCore::inst()->loadFromXml(&resxml, &testPan);
+    if (testPan)
+    {
+        pNewEditor = new StdPanelEditor(type);
+        pNewEditor->setWindowIcon(RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL));
+        pNewEditor->setupEditor();
+
+        testPan->setName(name);
+        qobject_cast<StdPanelEditor*>(pNewEditor)->setPanel(testPan);
+        SetupEditorTitle(pNewEditor, type, name, testPan->title());
+    }
+
+    return pNewEditor;
 }

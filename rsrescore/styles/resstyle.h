@@ -10,6 +10,7 @@
 
 #define COLORSCHEME "COLORSCHEME"
 #define CONTRAST_PROPERTY "contrast"
+#define SCROLAREA_PROPERTY "scrolarea"
 
 class CustomRectItem;
 class QGraphicsItem;
@@ -64,6 +65,7 @@ public:
         Control_Money,
         Control_Double,
         Control_Button,
+        Control_ScrolArea
     };
 
     enum PanelStyle
@@ -142,6 +144,7 @@ public:
     ResStyle::ControlType ftype;
     ResStyle::PanelStyle panelStyle;
     bool contrast;
+    quint16 rowHeight;
 
     Qt::Alignment alignment;
 
