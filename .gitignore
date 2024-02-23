@@ -36,3 +36,5 @@ rsreslbrfn/rsreslbrfn.pro.SOEGgo
 rsreslbrfn/release/
 
 .vscode/
+
+*.autosave

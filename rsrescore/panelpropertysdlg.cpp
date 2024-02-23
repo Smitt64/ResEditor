@@ -1,5 +1,5 @@
 #include "panelpropertysdlg.h"
-#include "propertymodel/enumlistmodel.h"
+#include "enumlistmodel.h"
 #include "ui_panelpropertysdlg.h"
 #include "customrectitem.h"
 #include "panelitem.h"

@@ -1,6 +1,6 @@
 #include "controlpropertysdlg.h"
 #include "controlitem.h"
-#include "propertymodel/enumlistmodel.h"
+#include "enumlistmodel.h"
 #include "ui_controlpropertysdlg.h"
 #include <limits.h>
 

@@ -1,0 +1,3 @@
+[submodule "PropertyEditor"]
+	path = PropertyEditor
+	url = https://github.com/Smitt64/PropertyEditor

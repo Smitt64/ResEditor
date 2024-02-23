@@ -1,7 +1,7 @@
 #ifndef TEXTSTYLEDLG_H
 #define TEXTSTYLEDLG_H
 
-#include "propertymodel/enumlistmodel.h"
+#include "enumlistmodel.h"
 #include <QDialog>
 
 namespace Ui {

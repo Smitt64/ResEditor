@@ -1,7 +1,7 @@
 #include "basescene.h"
 #include "styles/resstyle.h"
 #include "customrectitem.h"
-#include "propertymodel/propertymodel.h"
+#include "propertymodel.h"
 #include <QPainter>
 #include <QMapIterator>
 #include <QGraphicsSceneMouseEvent>

@@ -1,9 +1,9 @@
 #include "ewtextstylepropertytreeitem.h"
 #include "customrectitem.h"
 #include "styles/extextstyle.h"
-#include "propertymodel/flagpropertytreeitem.h"
+#include "flagpropertytreeitem.h"
 #include "enumlistmodel.h"
-#include "textstyledlg.h"
+//#include "textstyledlg.h"
 #include <QMetaObject>
 #include <QMetaProperty>
 #include <QMetaEnum>
@@ -125,8 +125,8 @@ void EwTextStylePropertyTreeItem::initFromJson(const QJsonObject &obj)
     m_pAlignEnumModel = new EnumListModel(this);
     m_pAlignEnumModel->loadFromJsonArray(alignenum);
 
-    m_pTextColorEnumModel = new TextStyleColorModel(this);
-    m_pTextBackEnumModel = new TextStyleBackModel(this);
+    /*m_pTextColorEnumModel = new TextStyleColorModel(this);
+    m_pTextBackEnumModel = new TextStyleBackModel(this);*/
 
     m_pFormat->loadEnumAlias(formatenum);
     initModels();
@@ -304,6 +304,6 @@ void EwTextStylePropertyTreeItem::openTextStyleDialog()
 {
     QWidget *pParent = qobject_cast<QWidget*>(sender());
 
-    TextStyleDlg dlg(pParent);
-    dlg.exec();
+    /*TextStyleDlg dlg(pParent);
+    dlg.exec();*/
 }

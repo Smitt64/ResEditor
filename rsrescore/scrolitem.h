@@ -118,6 +118,7 @@ protected:
                                          QUndoCommand **cmd) Q_DECL_OVERRIDE;
 
     virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
+    virtual void dragEnterEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
 
 signals:
     void rowNumChanged();

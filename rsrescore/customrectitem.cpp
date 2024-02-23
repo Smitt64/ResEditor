@@ -5,7 +5,7 @@
 #include "undoredo/undopropertychange.h"
 #include "undoredo/undoitemadd.h"
 #include "styles/resstyle.h"
-#include "propertymodel/propertymodel.h"
+#include "propertymodel.h"
 #include <QApplication>
 #include <QPainter>
 #include <QGraphicsView>

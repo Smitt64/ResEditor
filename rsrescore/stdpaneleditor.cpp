@@ -38,7 +38,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QPlainTextEdit>
 #include <QMessageBox>
-#include "propertymodel/propertymodel.h"
+#include "propertymodel.h"
 
 #define SHADOW_CODE 9617
 

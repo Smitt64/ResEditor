@@ -27,19 +27,9 @@ SOURCES += \
     panelitem.cpp \
     panelpropertysdlg.cpp \
     propertymodel/ctrltabordertreeitem.cpp \
-    propertymodel/enumlistmodel.cpp \
-    propertymodel/enumpropertytreeitem.cpp \
     propertymodel/ewtextstylepropertytreeitem.cpp \
-    propertymodel/flagpropertytreeitem.cpp \
     propertymodel/labeltextpropertyitem.cpp \
-    propertymodel/pointpropertytreeitem.cpp \
     propertymodel/propertydockwidget.cpp \
-    propertymodel/propertygrouptreeitem.cpp \
-    propertymodel/propertymodel.cpp \
-    propertymodel/propertytreedelegate.cpp \
-    propertymodel/propertytreeitem.cpp \
-    propertymodel/propertytreeview.cpp \
-    propertymodel/rectpropertytreeitem.cpp \
     propertymodel/textstyledlg.cpp \
     reslibdirmodel.cpp \
     reslistdockwidget.cpp \
@@ -81,19 +71,9 @@ HEADERS += \
     panelitem.h \
     panelpropertysdlg.h \
     propertymodel/ctrltabordertreeitem.h \
-    propertymodel/enumlistmodel.h \
-    propertymodel/enumpropertytreeitem.h \
     propertymodel/ewtextstylepropertytreeitem.h \
-    propertymodel/flagpropertytreeitem.h \
     propertymodel/labeltextpropertyitem.h \
-    propertymodel/pointpropertytreeitem.h \
     propertymodel/propertydockwidget.h \
-    propertymodel/propertygrouptreeitem.h \
-    propertymodel/propertymodel.h \
-    propertymodel/propertytreedelegate.h \
-    propertymodel/propertytreeitem.h \
-    propertymodel/propertytreeview.h \
-    propertymodel/rectpropertytreeitem.h \
     propertymodel/textstyledlg.h \
     reslibdirmodel.h \
     reslistdockwidget.h \
@@ -157,3 +137,16 @@ else:unix:!macx: LIBS += -L$$OUT_PWD/../rsreslbrfn/ -lrsreslbrfn
 
 INCLUDEPATH += $$PWD/../rsreslbrfn
 DEPENDPATH += $$PWD/../rsreslbrfn
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../PropertyEditor/release/ -lPropertyEditor
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../PropertyEditor/debug/ -lPropertyEditor
+else:unix: LIBS += -L$$OUT_PWD/../PropertyEditor/ -lPropertyEditor
+
+INCLUDEPATH += $$PWD/../PropertyEditor
+DEPENDPATH += $$PWD/../PropertyEditor
+
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../PropertyEditor/release/libPropertyEditor.a
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../PropertyEditor/debug/libPropertyEditor.a
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../PropertyEditor/release/PropertyEditor.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../PropertyEditor/debug/PropertyEditor.lib
+else:unix: PRE_TARGETDEPS += $$OUT_PWD/../PropertyEditor/libPropertyEditor.a
