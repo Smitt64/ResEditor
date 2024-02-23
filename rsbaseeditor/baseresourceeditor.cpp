@@ -163,6 +163,7 @@ BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(const QString &file
         pNewEditor->setupEditor();
 
         testPan->setName(name);
+        testPan->setType(type);
         qobject_cast<StdPanelEditor*>(pNewEditor)->setPanel(testPan);
         SetupEditorTitle(pNewEditor, type, name, testPan->title());
     }

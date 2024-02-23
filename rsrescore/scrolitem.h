@@ -132,6 +132,7 @@ private:
     ScrolType m_Type;
     quint16 m_RowNum, m_RowLength, m_RowHeight;
     QPoint m_ScrolPos;
+    bool m_IsScrolAreaVisible;
 
     ScrolFlags m_ScrolFlags;
     ScrolAreaRectItem *m_ScrolArea;
