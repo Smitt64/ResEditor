@@ -89,6 +89,25 @@ public:
         return result;
     }
 
+    template<class T>T *firstSelected()
+    {
+        T *result = nullptr;
+        QList<QGraphicsItem*> tmplst = items();
+
+        for (QGraphicsItem *item : tmplst)
+        {
+            T *converted = dynamic_cast<T*>(item);
+
+            if (converted && item->isSelected())
+            {
+                result = converted;
+                break;
+            }
+        }
+
+        return result;
+    }
+
 signals:
     void propertyModelChanged(QAbstractItemModel *model);
 

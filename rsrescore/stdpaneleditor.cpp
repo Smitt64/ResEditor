@@ -714,7 +714,7 @@ void StdPanelEditor::fillResPanel(ResPanel *resPanel)
     {
         resPanel->setScrolFlags(pPanel->property("scrolFlags").toInt());
 
-        quint16 rowNum = pPanel->property("scrolFlags").value<quint16>();
+        quint16 rowNum = pPanel->property("rowNum").value<quint16>();
         quint16 rowLength = pPanel->property("rowLength").value<quint16>();
         QRect scrol(QPoint(pPanel->property("scrolPos").toPoint()),
                     QSize(rowLength, rowNum));
@@ -743,6 +743,21 @@ void StdPanelEditor::addCodeWindow(const QString &title, const QString &text)
     pEdit->setPlainText(text);
 
     m_TabContainer->addTab(pEdit, title);
+}
+
+const char *StdPanelEditor::resTypeStr(int tp)
+{
+    switch(tp)
+    {
+    case LbrObject::RES_PANEL:   return "P";
+    case LbrObject::RES_SCROL:   return "S";
+    case LbrObject::RES_LS:      return "L";
+    case LbrObject::RES_BS:      return "B";
+    case LbrObject::RES_REP:     return "R";
+    case LbrObject::RES_MENU2:   return "M";
+    }
+
+    return "N";
 }
 
 void StdPanelEditor::saveToXml()
@@ -781,7 +796,8 @@ void StdPanelEditor::saveToXml()
     resPanel.load(buffer);
     //fillResPanel(&resPanel);
 
-    QFile f(dir.absoluteFilePath("text.xml"));
+    const char *preffix = resTypeStr(type());
+    QFile f(dir.absoluteFilePath(QString("%1_%2.xml").arg(name()).arg(preffix)));
     if (f.open(QIODevice::WriteOnly))
     {
         QTextStream stream(&f);
@@ -833,12 +849,12 @@ void StdPanelEditor::onSave()
 
 QAbstractItemModel *StdPanelEditor::propertyModel()
 {
-    QList<QGraphicsItem*> items = m_pView->scene()->selectedItems();
+    BaseScene *pScene = qobject_cast<BaseScene*>(m_pView->scene());
 
-    if (items.isEmpty())
+    if (!pScene)
         return nullptr;
 
-    CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(items.first());
+    CustomRectItem *rectItem = pScene->firstSelected<CustomRectItem>();
 
     if (!rectItem)
         return nullptr;

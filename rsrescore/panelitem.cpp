@@ -396,8 +396,11 @@ void PanelItem::dragEnterEvent(QGraphicsSceneDragDropEvent *event)
                 {
                     CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
 
-                    QPointF coord = ewCoordToReal(rectItem->getPoint());
-                    rectItem->renderToPixmap(&m_DragControl, coord);
+                    if (rectItem->isVisible())
+                    {
+                        QPointF coord = ewCoordToReal(rectItem->getPoint());
+                        rectItem->renderToPixmap(&m_DragControl, coord);
+                    }
                 }
 
                 update();

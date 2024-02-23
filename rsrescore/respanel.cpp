@@ -972,6 +972,7 @@ void ResPanel::setFieldHelp(const quint16 &HelpPage)
 void ResPanel::endAddField()
 {
     m_Fields.append(m_NewField);
+    m_pPanel->Pnumf = m_Fields.size();
 }
 
 int ResPanel::borderCount() const
@@ -1420,10 +1421,6 @@ int ResPanel::savePanel(ResBuffer *data)
 
     prepFields();
 
-    SizesTuple sizes;
-    def_panelsize(sizes, data->version());
-
-    m_pPanel->len = std::get<1>(sizes);
     m_pPanel->Nb = m_BordR.size();
     m_pPanel->Pnumt = m_pPanel->Nt = m_Texts.size();
     m_pPanel->Pnumf = m_Fields.size();
@@ -1437,6 +1434,10 @@ int ResPanel::savePanel(ResBuffer *data)
         PanelSize = sizeof(PanelR);
     else
         PanelSize = sizeof(PanelR_1);
+
+    SizesTuple sizes;
+    def_panelsize(sizes, data->version());
+    m_pPanel->len = std::get<1>(sizes);
 
     if (data->write((char*)m_pPanel, PanelSize) != PanelSize)
         return 1;
@@ -1544,6 +1545,9 @@ int ResPanel::saveFields(ResBuffer *data)
     {
         fld._field->vfl = fld.name2.isEmpty() ? 0 : 1;
         fld._field->lens = fld.name2.length();
+
+        fld._field->x -= m_pPanel->x;
+        fld._field->y -= m_pPanel->y;
 
         if (!fld.name2.isEmpty())
             fld._field->lens ++;
@@ -1675,6 +1679,74 @@ void ResPanel::def_panelsize(ResPanel::SizesTuple &sizes, int ver)
     sizes = std::make_tuple(size, adsize);
 }
 
+// Проверка на выход элемента за пределы области
+bool ResPanel::__CheckElement(int x, int y, int h, int l, int x1, int y1, int x2, int y2, int border)
+{
+    bool  ret = true;
+
+    x += x1;
+    y += y1;
+
+    if(x < (x1 + border))
+        ret = false;
+
+    if(y < (y1 + border))
+        ret = false;
+
+    if(x + l - 1 > (x2 - border))
+        ret = false;
+
+    if(y + h - 1 > (y2 - border))
+        ret = false;
+
+    return ret;
+}
+
+// Проверка пересечения двух прямоугольников
+bool ResPanel::__CheckCrossRect(int r1_x, int r1_y, int r1_h, int r1_l, int r2_x, int r2_y, int r2_h, int r2_l)
+{
+    int   r1_left = r1_x, r1_top = r1_y, r1_right = r1_x + r1_l - 1, r1_bottom = r1_y + r1_h - 1,
+        r2_left = r2_x, r2_top = r2_y, r2_right = r2_x + r2_l - 1, r2_bottom = r2_y + r2_h - 1;
+    bool  ret     = ((r1_left > r2_right) || (r2_left > r1_right) || (r1_top > r2_bottom) || (r2_top > r1_bottom));
+
+    return ret;
+}
+
+// Проверка полного вхождения прямоугольника r1 в r2
+bool ResPanel::__CheckEntryRect(int r1_x, int r1_y, int r1_h, int r1_l, int r2_x, int r2_y, int r2_h, int r2_l)
+{
+    int r1_left = r1_x, r1_top = r1_y, r1_right = r1_x + r1_l - 1, r1_bottom = r1_y + r1_h - 1,
+        r2_left = r2_x, r2_top = r2_y, r2_right = r2_x + r2_l - 1, r2_bottom = r2_y + r2_h - 1;
+    bool  ret = ((r1_left >= r2_left) && (r1_top >= r2_top) && (r1_right <= r2_right) && (r1_bottom <= r2_bottom));
+
+    return ret;
+}
+
+// Проверка взаимного пересечения двух полей
+bool ResPanel::__CheckCrossField(FieldR *f1, FieldR *f2)
+{
+    return __CheckCrossRect(f1->x, f1->y, f1->h, f1->l, f2->x, f2->y, f2->h, f2->l);
+}
+
+// Проверка текущего поля на пересечение с остальными
+bool ResPanel::__CheckCrossFields(int curr)
+{
+    bool ret = true;
+    for(int i = 0; i < m_Fields.size(); i++)
+    {
+        if(i != curr)
+        {
+            FieldR *fld = m_Fields[i]._field;
+            ret = __CheckCrossField(fld, m_Fields[curr]._field);
+
+            if(!ret)
+                break;
+        }
+    }
+
+    return ret;
+}
+
 int ResPanel::checkResource()
 {
     int  stat = 0;
@@ -1688,7 +1760,7 @@ int ResPanel::checkResource()
     case LbrObject::RES_SCROL:
     case LbrObject::RES_LS:
     case LbrObject::RES_BS:
-        //stat = __CheckScrol(pnl);
+        stat = checkScrol();
         break;
     }
 
@@ -1702,74 +1774,6 @@ int ResPanel::checkPanel()
 
     int i;
     int x, y, h, l;
-
-    // Проверка на выход элемента за пределы области
-    auto __CheckElement = [](int x, int y, int h, int l, int x1, int y1, int x2, int y2, int border) -> bool
-    {
-        bool  ret = true;
-
-        x += x1;
-        y += y1;
-
-        if(x < (x1 + border))
-            ret = false;
-
-        if(y < (y1 + border))
-            ret = false;
-
-        if(x + l - 1 > (x2 - border))
-            ret = false;
-
-        if(y + h - 1 > (y2 - border))
-            ret = false;
-
-        return ret;
-    };
-
-    // Проверка пересечения двух прямоугольников
-    auto __CheckCrossRect = [](int r1_x, int r1_y, int r1_h, int r1_l, int r2_x, int r2_y, int r2_h, int r2_l) -> bool
-    {
-        int   r1_left = r1_x, r1_top = r1_y, r1_right = r1_x + r1_l - 1, r1_bottom = r1_y + r1_h - 1,
-            r2_left = r2_x, r2_top = r2_y, r2_right = r2_x + r2_l - 1, r2_bottom = r2_y + r2_h - 1;
-        bool  ret     = ((r1_left > r2_right) || (r2_left > r1_right) || (r1_top > r2_bottom) || (r2_top > r1_bottom));
-
-        return ret;
-    };
-
-    // Проверка полного вхождения прямоугольника r1 в r2
-    auto __CheckEntryRect = [](int r1_x, int r1_y, int r1_h, int r1_l, int r2_x, int r2_y, int r2_h, int r2_l) -> bool
-    {
-        int r1_left = r1_x, r1_top = r1_y, r1_right = r1_x + r1_l - 1, r1_bottom = r1_y + r1_h - 1,
-            r2_left = r2_x, r2_top = r2_y, r2_right = r2_x + r2_l - 1, r2_bottom = r2_y + r2_h - 1;
-        bool  ret = ((r1_left >= r2_left) && (r1_top >= r2_top) && (r1_right <= r2_right) && (r1_bottom <= r2_bottom));
-
-        return ret;
-    };
-
-    // Проверка взаимного пересечения двух полей
-    auto __CheckCrossField = [&__CheckCrossRect](FieldR *f1, FieldR *f2) -> bool
-    {
-        return __CheckCrossRect(f1->x, f1->y, f1->h, f1->l, f2->x, f2->y, f2->h, f2->l);
-    };
-
-    // Проверка текущего поля на пересечение с остальными
-    auto __CheckCrossFields = [this, &__CheckCrossField](int curr) -> bool
-    {
-        bool ret = true;
-        for(int i = 0; i < m_Fields.size(); i++)
-        {
-            if(i != curr)
-            {
-                FieldR *fld = m_Fields[i]._field;
-                ret = __CheckCrossField(fld, m_Fields[curr]._field);
-
-                if(!ret)
-                    break;
-            }
-        }
-
-        return ret;
-    };
 
     bool ret = true;
     for (i = 0; i < m_Fields.size(); i++)
@@ -1800,7 +1804,7 @@ int ResPanel::checkPanel()
         x = m_Texts[i]._text->x;
         y = m_Texts[i]._text->y;
         h = 1;
-        l = m_Texts[i].value.size();
+        l = m_Texts[i].value.size() - 1;
 
         ret = __CheckElement(x, y, h, l + 1, m_pPanel->x1, m_pPanel->y1, m_pPanel->x2, m_pPanel->y2, border);
         if(!ret)
@@ -1823,6 +1827,75 @@ int ResPanel::checkPanel()
             stat = 5;
             break;
         }
+    }
+
+    return stat;
+}
+
+int ResPanel::checkScrol()
+{
+    int stat = checkPanel();
+
+    if (!stat)
+        stat = checkScrolRect(m_pPanel->x, m_pPanel->y, m_pPanel->h * m_pPanel->Mn, m_pPanel->l);
+
+    return stat;
+}
+
+int ResPanel::checkScrolRect(int sx, int sy, int sh, int sl)
+{
+    int  stat = 0;
+
+    // Проверка задания области скроллинга
+    if((sh <= 0) || (sl <= 0))
+        stat = 7;
+
+    // Проверка корректности определения области скроллинга
+    if(!stat)
+    {
+        int  border = dGET_BORDER(m_pPanel);
+
+        // Область скроллинга не должна выходить за границы панели
+        if(!__CheckElement(sx, sy, sh, sl, m_pPanel->x1, m_pPanel->y1, m_pPanel->x2, m_pPanel->y2, border))
+            stat = 8;
+
+        // Если скроллинг с автоформированием заголовка, то область скроллинга
+        // должна начинаться с 4-й строки
+        if(!stat && (m_pPanel->flags & RFP_AUTOHEAD))
+        {
+            if(sy < (border + 3))
+                stat = 6;
+        }
+    }
+
+    if(!stat)
+    {
+        if(m_Fields.size() > 0)//m_pPanel->Pnumf > 0)
+        {
+            // Эту проверку выполняем только в том случае, если не установлен флаг
+            // "Автоматическое размещение полей"
+            if(!(m_pPanel->flags & RFP_AUTOFIELDS))
+            {
+                int  x, y, h, l;
+
+
+                for(int  i = 0; i < m_Fields.size(); i++)
+                {
+                    x = m_Fields[i]._field->x;
+                    y = m_Fields[i]._field->y;
+                    h = m_Fields[i]._field->h;
+                    l = m_Fields[i]._field->l;
+
+                    if(!__CheckEntryRect(x, y, h, l, sx, sy, sh, sl))
+                    {
+                        stat = 3;
+                        break;
+                    }
+                }
+            }
+        }
+        else
+            stat = 9;
     }
 
     return stat;

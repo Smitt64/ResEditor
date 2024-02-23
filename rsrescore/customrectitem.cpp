@@ -1330,15 +1330,18 @@ void CustomRectItem::renderToPixmap(QPixmap **pix, const QPointF &offset)
     {
         CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
 
-        painter->save();
-        QPointF coord = rectItem->ewCoordToReal(rectItem->getPoint());
-        painter->translate(coord);
-        item->paint(painter, nullptr, nullptr);
-        painter->restore();
+        if (rectItem->isVisible())
+        {
+            painter->save();
+            QPointF coord = rectItem->ewCoordToReal(rectItem->getPoint());
+            painter->translate(coord);
+            item->paint(painter, nullptr, nullptr);
+            painter->restore();
 
-        QList<QGraphicsItem*> childs = item->childItems();
-        for (QGraphicsItem *child : qAsConst(childs))
-            renderChild(painter, child);
+            QList<QGraphicsItem*> childs = item->childItems();
+            for (QGraphicsItem *child : qAsConst(childs))
+                renderChild(painter, child);
+        }
     };
 
     QList<QGraphicsItem*> childs = childItems();

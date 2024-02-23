@@ -322,6 +322,19 @@ void ScrolItem::createItemResizeUndoObj(BaseScene* customScene,
     *cmd = undocmd;
 }
 
+void ScrolItem::dragEnterEvent(QGraphicsSceneDragDropEvent *event)
+{
+
+}
+
+void ScrolItem::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
+{
+    bool isScrolAreaVisible = m_ScrolArea->isVisible();
+    PanelItem::dragLeaveEvent(event);
+
+    m_ScrolArea->setVisible(isScrolAreaVisible);
+}
+
 void ScrolItem::showScrolArea(bool visible)
 {
     m_ScrolArea->setVisible(visible);

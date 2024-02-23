@@ -69,6 +69,8 @@ private:
     void fillItems(const QList<QGraphicsItem*> &selectedItems, QSet<CustomRectItem*> &result,
                    const FillItemsChildMode &mode);
 
+    const char *resTypeStr(int tp);
+
     BaseEditorView *m_pView;
     QTabWidget *m_TabContainer;
 

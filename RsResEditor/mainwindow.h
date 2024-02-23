@@ -52,6 +52,7 @@ private:
     QMdiArea *m_Mdi;
 
     QComboBox *pWindowsComboBox;
+    QMdiSubWindow *m_LastActiveWindow;
 
     LbrObjectInterface *m_pLbrObj;
 };

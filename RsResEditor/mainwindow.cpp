@@ -21,6 +21,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow),
+    m_LastActiveWindow(nullptr),
     m_pLbrObj(nullptr)
 {
     ui->setupUi(this);
@@ -114,7 +115,6 @@ void MainWindow::readySave(BaseEditorWindow *editor)
     if (!editor)
         return;
 
-    quint64 oldSize = 0;
     QString errorMsg;
     ResBuffer *resBuffer = nullptr;
     QString name = editor->name();
@@ -190,6 +190,9 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
         return;
     }
 
+    if (m_LastActiveWindow == window)
+        return;
+
     BaseEditorWindow *wnd = dynamic_cast<BaseEditorWindow*>(window->widget());
 
     if (!wnd)
@@ -202,6 +205,8 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
         m_ToolBoxDock->setModel(wnd->toolBox());
         m_PropertyDock->setPropertyModel(wnd->propertyModel());
     }
+
+    m_LastActiveWindow = window;
 }
 
 void MainWindow::onNew()

@@ -184,6 +184,15 @@ protected:
     virtual bool readString(ResBuffer *data, char **s, qint16 vfl, qint16 lens);
 
     int checkPanel();
+    int checkScrol();
+
+private:
+    bool __CheckElement(int x, int y, int h, int l, int x1, int y1, int x2, int y2, int border);
+    bool __CheckCrossRect(int r1_x, int r1_y, int r1_h, int r1_l, int r2_x, int r2_y, int r2_h, int r2_l);
+    bool __CheckEntryRect(int r1_x, int r1_y, int r1_h, int r1_l, int r2_x, int r2_y, int r2_h, int r2_l);
+    bool __CheckCrossField(FieldR *f1, FieldR *f2);
+    bool __CheckCrossFields(int curr);
+    int checkScrolRect(int sx, int sy, int sh, int sl);
 
     QString m_Status, m_StatusRD, m_Title, m_Name, m_Comment;
     qint16 m_Type;
