@@ -21,9 +21,13 @@
             "title": "Контейнеры"
         },
         {
-            "id": 6,
+            "id": 10,
             "title": "Псевдографика"
         }
+    ],
+
+    "includes": [
+        ":/json/StdPanelEditorToolBoxFilter.json"
     ],
     
     "templates": [
@@ -62,7 +66,7 @@
             "icon": ":/img/Label_horline24x.png",
             "tooltip": "Используются для вывода текста, который недоступен для изменения",
             "mimetype": "application/toolboxitem",
-            "groups": [6],
+            "groups": [10],
             "mimedata": {
                 "items": [
                     {
@@ -758,7 +762,7 @@
             "icon": ":/img/Label_verline24x.png",
             "tooltip": "Используются для вывода текста, который недоступен для изменения",
             "mimetype": "application/toolboxitem",
-            "groups": [6],
+            "groups": [10],
             "mimedata": {
                 "items": [
                     {
@@ -788,7 +792,7 @@
             "icon": ":/img/Label_vertright24x.png",
             "tooltip": "Используются для вывода текста, который недоступен для изменения",
             "mimetype": "application/toolboxitem",
-            "groups": [6],
+            "groups": [10],
             "mimedata": {
                 "items": [
                     {
@@ -818,7 +822,7 @@
             "icon": ":/img/Label_upright24x.png",
             "tooltip": "Используются для вывода текста, который недоступен для изменения",
             "mimetype": "application/toolboxitem",
-            "groups": [6],
+            "groups": [10],
             "mimedata": {
                 "items": [
                     {

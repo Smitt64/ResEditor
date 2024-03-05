@@ -90,6 +90,7 @@ public:
 
         nameEdit = new QLineEdit(NewItemsDlg);
         nameEdit->setObjectName(QString::fromUtf8("nameEdit"));
+        nameEdit->setEnabled(false);
 
         gridLayout->addWidget(nameEdit, 0, 1, 1, 1);
 
@@ -108,12 +109,14 @@ public:
 
         pathEdit = new QLineEdit(NewItemsDlg);
         pathEdit->setObjectName(QString::fromUtf8("pathEdit"));
+        pathEdit->setEnabled(false);
         pathEdit->setReadOnly(true);
 
         gridLayout->addWidget(pathEdit, 2, 1, 1, 1);
 
         pathButton = new QPushButton(NewItemsDlg);
         pathButton->setObjectName(QString::fromUtf8("pathButton"));
+        pathButton->setEnabled(false);
 
         gridLayout->addWidget(pathButton, 2, 2, 1, 1);
 

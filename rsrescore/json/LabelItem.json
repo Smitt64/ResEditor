@@ -8,25 +8,6 @@
         {
             "name" : "textType",
             "alias" : "Тип текста"
-        },
-        {
-            "name" : "textStyle",
-            "alias" : "Стиль текста",
-            "viewclass" : "EwTextStylePropertyTreeItem",
-
-            "alignenum" : [
-                { "key" : "dTEXT_ALIGN_LEFT", "alias" : "По левому краю" },
-                { "key" : "dTEXT_ALIGN_RIGHT", "alias" : "По правому краю" },
-                { "key" : "dTEXT_ALIGN_CENTER", "alias" : "По центру" }
-            ],
-
-            "formatenum" : [
-                { "key" : "dTEXT_FORMAT_NORMAL", "alias" : "Обычный" },
-                { "key" : "dTEXT_FORMAT_BOLD", "alias" : "Полужирный" },
-                { "key" : "dTEXT_FORMAT_ITALIC", "alias" : "Курсив" },
-                { "key" : "dTEXT_FORMAT_UNDERLINE", "alias" : "Подчеркнутый" },
-                { "key" : "dTEXT_FORMAT_STRIKEOUT", "alias" : "Зачеркнутый" }
-            ]
         }
     ]
 }

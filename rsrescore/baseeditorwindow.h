@@ -52,6 +52,7 @@ protected:
     void initUndoRedo(QToolBar *toolbar);
     void initpropertyModelSignals(BaseScene *scene);
     virtual void loadToolBox();
+    void loadToolBoxFile(const QString &fname);
 
 private:
     typedef QMap<quint16, QString> GroupsMapType;

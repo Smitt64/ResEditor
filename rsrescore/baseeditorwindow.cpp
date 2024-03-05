@@ -186,6 +186,11 @@ void BaseEditorWindow::loadToolBox()
     if (fname.isEmpty())
         return;
 
+    loadToolBoxFile(fname);
+}
+
+void BaseEditorWindow::loadToolBoxFile(const QString &fname)
+{
     QFile file(fname);
     if (!file.open(QIODevice::ReadOnly))
         return;
@@ -207,6 +212,10 @@ void BaseEditorWindow::loadToolBox()
     QJsonArray templates = root["templates"].toArray();
     for (const QJsonValue &templ : qAsConst(templates))
         loadToolBarElement(GroupsMap, templ.toObject());
+
+    QJsonArray includes = root["includes"].toArray();
+    for (const QJsonValue &templ : qAsConst(includes))
+        loadToolBoxFile(templ.toString());
 }
 
 void BaseEditorWindow::setLbrObject(LbrObjectInterface *obj)

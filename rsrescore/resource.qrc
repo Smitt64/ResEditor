@@ -73,5 +73,11 @@
         <file>img/Statistic.png</file>
         <file>img/XMLFileHS.png</file>
         <file>templates/EMPTY_BSCROL_DOUBLE.xml</file>
+        <file>img/appicon.svg</file>
+        <file>img/lbrlogo.png</file>
+        <file>json/StdPanelEditorToolBoxFilter.json</file>
+        <file>img/FilterDateRange.png</file>
+        <file>img/ComboBox_24x.png</file>
+        <file>tools/viewresi.exe</file>
     </qresource>
 </RCC>

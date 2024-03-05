@@ -149,6 +149,7 @@ public:
 
         length = new QSpinBox(ControlPropertysDlg);
         length->setObjectName(QString::fromUtf8("length"));
+        length->setEnabled(false);
 
         formLayout_2->setWidget(2, QFormLayout::FieldRole, length);
 
@@ -182,6 +183,7 @@ public:
 
         lines = new QSpinBox(ControlPropertysDlg);
         lines->setObjectName(QString::fromUtf8("lines"));
+        lines->setEnabled(false);
 
         formLayout->setWidget(1, QFormLayout::FieldRole, lines);
 

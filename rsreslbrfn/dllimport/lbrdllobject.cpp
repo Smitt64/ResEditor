@@ -1,7 +1,7 @@
 #include "lbrdllobject.h"
 #include "lbrdllobjectprivate.h"
-#include "lbrreslistmodel.h"
 #include <QDebug>
+#include <lbrreslistmodel.h>
 
 LbrDllObject::LbrDllObject(QObject *parent)
     : LbrObjectInterface(new LbrDllObjectPrivate(this), parent)
@@ -22,7 +22,8 @@ bool LbrDllObject::open(const QString &filename)
     if (hr)
         hr = d->open(filename);
 
-    qDebug() << filename;
+    if (hr)
+        d->m_FileName = filename;
 
     return hr;
 }
@@ -66,4 +67,10 @@ bool LbrDllObject::endSaveRes(ResBuffer **buffer)
 {
     Q_D(LbrDllObject);
     return d->endSaveRes(buffer);
+}
+
+QString LbrDllObject::fileName() const
+{
+    Q_D(const LbrDllObject);
+    return d->m_FileName;
 }

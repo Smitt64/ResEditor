@@ -356,6 +356,16 @@ void TextItem::onInsertUndoRedoMove(const QMap<CustomRectItem *, QPointF> &Mouse
 
 QString TextItem::text() const
 {
+    /*QUuid control = attachedControl();
+
+    if (IsIn(m_Type, 2, TypeCheck, TypeRadio) && !control.isNull())
+    {
+        QString onlytext = m_Value;
+        onlytext = onlytext.remove("[ ]").remove("( )");
+
+        return onlytext.trimmed();
+    }*/
+
     return m_Value;
 }
 
@@ -368,9 +378,25 @@ void TextItem::setText(const QString &txt)
 
     if (isSkipUndoStack() || !undoStack())
     {
+        QUuid control = attachedControl();
+        int offset = attachedControlOffset();
+
         m_Value = txt.trimmed();
+
         detectType();
         setGeometry(sz);
+
+        if (IsIn(m_Type, 2, TypeCheck, TypeRadio) && !control.isNull())
+        {
+            BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+
+            int newOffset = attachedControlOffset();
+            int offsetDiff = newOffset - offset;
+            CustomRectItem *attachedItem = customScene->findItem(control);
+
+            QPoint pt = attachedItem->getPoint();
+            attachedItem->setCoord(QPoint(pt.x() + offsetDiff, pt.y()));
+        }
 
         emit textChanged();
         emit geometryChanged();
@@ -464,7 +490,7 @@ QVariant TextItem::userAction(const qint32 &action, const QVariant &param)
     if (action == ActionKeyEnter)
     {
         LabelTextEditDlg dlg(customScene->views().first());
-        dlg.editor()->setText(m_Value);
+        dlg.editor()->setText(text());
 
         if (dlg.exec() == QDialog::Accepted)
             setText(dlg.editor()->text());

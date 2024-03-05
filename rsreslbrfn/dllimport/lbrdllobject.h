@@ -21,6 +21,8 @@ public:
 
     bool beginSaveRes(const QString &name, const int &type, ResBuffer **buffer) Q_DECL_OVERRIDE;
     bool endSaveRes(ResBuffer **buffer) Q_DECL_OVERRIDE;
+
+    QString fileName() const Q_DECL_OVERRIDE;
 private:
     Q_DECLARE_PRIVATE(LbrDllObject);
 };

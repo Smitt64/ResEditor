@@ -56,6 +56,7 @@ void CustomRectItem::init()
     m_pPropertyModel = nullptr;
     m_SkipUndoStack = false;
     m_CanIntersects = true;
+    m_SkipRenderIntersects = false;
     m_Size = QSize(1, 1);
     m_Coord = QPoint(0, 0);
 
@@ -773,8 +774,19 @@ bool CustomRectItem::isIntersects(const QRectF &thisBound, QGraphicsItem *item, 
     return false;
 }
 
+bool CustomRectItem::setSkipRenderIntersects(bool value)
+{
+    bool old = m_SkipRenderIntersects;
+    m_SkipRenderIntersects = value;
+
+    return old;
+}
+
 void CustomRectItem::drawIntersects(QPainter *painter)
 {
+    if (m_SkipRenderIntersects)
+        return;
+
     QGraphicsScene *pScene = scene();
     QList<QGraphicsItem*> itemList = pScene->items();
 
@@ -1317,6 +1329,8 @@ void CustomRectItem::renderToPixmap(QPixmap **pix, const QPointF &offset)
         (*pix)->fill(Qt::transparent);
     }
 
+    bool skipIntersects = setSkipRenderIntersects(true);
+
     QPainter painter(*pix);
     painter.save();
 
@@ -1332,11 +1346,14 @@ void CustomRectItem::renderToPixmap(QPixmap **pix, const QPointF &offset)
 
         if (rectItem->isVisible())
         {
+            bool skipIntersectsChild = rectItem->setSkipRenderIntersects(true);
+
             painter->save();
             QPointF coord = rectItem->ewCoordToReal(rectItem->getPoint());
             painter->translate(coord);
             item->paint(painter, nullptr, nullptr);
             painter->restore();
+            rectItem->setSkipRenderIntersects(skipIntersectsChild);
 
             QList<QGraphicsItem*> childs = item->childItems();
             for (QGraphicsItem *child : qAsConst(childs))
@@ -1347,6 +1364,8 @@ void CustomRectItem::renderToPixmap(QPixmap **pix, const QPointF &offset)
     QList<QGraphicsItem*> childs = childItems();
     for (QGraphicsItem *child : qAsConst(childs))
         renderChild(&painter, child);
+
+    setSkipRenderIntersects(skipIntersects);
 }
 
 void CustomRectItem::createFromJson(CustomRectItem *parent, const QByteArray &data, QList<QGraphicsItem*> &items)

@@ -42,6 +42,7 @@ private slots:
     void onSave();
     void onCheckRes();
     void clipboardChanged();
+    void onViewEasyWin();
 
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;

@@ -38,6 +38,12 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QPlainTextEdit>
 #include <QMessageBox>
+#include <QSettings>
+#include <QVersionNumber>
+#include <QTemporaryDir>
+#include <QFile>
+#include <QProcess>
+#include <QInputDialog>
 #include "propertymodel.h"
 
 #define SHADOW_CODE 9617
@@ -270,6 +276,7 @@ void StdPanelEditor::setupMenus()
 
     connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
     connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
+    connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
 }
 
 void StdPanelEditor::setupEditor()
@@ -591,8 +598,14 @@ void StdPanelEditor::sceneCopyItems()
     QJsonDocument doc;
     doc.setObject(rootObj);
 
+    QByteArray json = doc.toJson();
     QMimeData *pMimeData = new QMimeData();
     pMimeData->setData(MIMETYPE_TOOLBOX, doc.toJson());
+
+#ifdef _DEBUG
+    pMimeData->setText(json);
+#endif
+
     pClipboard->setMimeData(pMimeData);
 }
 
@@ -606,7 +619,7 @@ void StdPanelEditor::scenePasteItems()
     if (!pScene || pScene->cursorPos().isNull())
         return;
 
-    if (mimeData->hasText())
+    if (mimeData->hasText() && !mimeData->hasFormat(MIMETYPE_TOOLBOX))
     {
         QTextStream stream(mimeData->text().toLocal8Bit());
 
@@ -860,4 +873,88 @@ QAbstractItemModel *StdPanelEditor::propertyModel()
         return nullptr;
 
     return rectItem->propertyModel();
+}
+
+void StdPanelEditor::onViewEasyWin()
+{
+    QStringList DisplayNames, BankPaths;
+    QString basePath = "HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+    QSettings keys(basePath, QSettings::NativeFormat);
+
+    QStringList keysGroup = keys.childGroups();
+    for (const QString &key : qAsConst(keysGroup))
+    {
+        keys.beginGroup(key);
+
+        QString DisplayName = keys.value("DisplayName").toString();
+        QString Publisher = keys.value("Publisher").toString();
+        QString DisplayVersion = keys.value("DisplayVersion").toString();
+
+        DisplayVersion = DisplayVersion.mid(DisplayVersion.indexOf("31"));
+        if (Publisher.contains("R-Style Softlab") && (DisplayName.contains("RS-Bank") || DisplayName.contains("RS-FinMarkets")))
+        {
+            QDir d(keys.value("InstallLocation").toString());
+
+            if (d.cd("obj"))
+            {
+                DisplayNames.append(DisplayName);
+                BankPaths.append(d.absolutePath());
+            }
+        }
+        keys.endGroup();
+    }
+
+    QInputDialog dlg(this);
+    dlg.setWindowTitle(tr("Просмотр в EW"));
+    dlg.setLabelText(tr("Выбор дистрибутива: "));
+    dlg.setOption(QInputDialog::UseListViewForComboBoxItems);
+    dlg.setComboBoxItems(DisplayNames);
+    dlg.setMinimumSize(350, 150);
+
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        QString BankPath = BankPaths[DisplayNames.indexOf(dlg.textValue())];
+        QTemporaryDir tmpdir;
+
+        QDir dir(tmpdir.path());
+        QString fileName = dir.absoluteFilePath("viewresi.exe");
+        QFile viewresi(fileName);
+        QFile source(":/tools/viewresi.exe");
+
+        if (viewresi.open(QIODevice::WriteOnly) && source.open(QIODevice::ReadOnly))
+            viewresi.write(source.readAll());
+
+        viewresi.close();
+        source.close();
+
+        QDir BankDir(BankPath);
+        BankDir.cd("obj");
+
+        QString typeparam;
+        switch(type())
+        {
+        case LbrObject::RES_PANEL:
+            typeparam = "panel";
+            break;
+
+        case LbrObject::RES_SCROL:
+            typeparam = "scrol";
+            break;
+
+        case LbrObject::RES_BS:
+            typeparam = "bscrol";
+            break;
+
+        case LbrObject::RES_LS:
+            typeparam = "lscrol";
+            break;
+        }
+
+        QProcess proc;
+        proc.setWorkingDirectory(BankDir.path());
+
+        QStringList params = {"/w", lbr()->fileName(), name(), typeparam};
+        proc.start(fileName, params);
+        // /w d:\Build\Complect.19\Build\utils\redit\BANK.lbr ACCRNZAP panel
+    }
 }

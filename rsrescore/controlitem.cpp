@@ -484,6 +484,35 @@ void ControlItem::setSigns(const quint16 &val)
         pushUndoPropertyData("signs", val);
 }
 
+#define RESET_DLG_FLAG(flag) thisFlags.setFlag(flag, dlgFlags.testFlag(flag))
+void ControlItem::FillItemControl(ControlPropertysDlg &dlg)
+{
+    setDataLength(dlg.dataLength());
+    setSigns(dlg.point());
+    setHelpPage(dlg.helpPage());
+    setControlGroup(dlg.controlGroup());
+    setControlName(dlg.controlName());
+    setControlName2(dlg.nameText());
+    setValueTemplate(dlg.valueTemplate());
+    setToolTip(dlg.toolTip());
+    setFdm(dlg.fdm());
+
+    setFieldType((ControlItem::FieldType)dlg.fieldType());
+    setDataType((ControlItem::DataType)dlg.dataType());
+    setControlStyle((ResStyle::PanelStyle)dlg.style());
+
+    ControlFlags thisFlags = (ControlFlags)controlFlags();
+    ControlFlags dlgFlags = (ControlFlags)dlg.controlFlags();
+
+    RESET_DLG_FLAG(RF_ASTEXT);
+    RESET_DLG_FLAG(RF_GROUP);
+    RESET_DLG_FLAG(RF_GROUPING);
+    RESET_DLG_FLAG(RF_NOTABSTOP);
+    RESET_DLG_FLAG(RF_DOWNBTN);
+
+    setControlFlags(thisFlags);
+}
+
 QVariant ControlItem::userAction(const qint32 &action, const QVariant &param)
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
@@ -494,7 +523,11 @@ QVariant ControlItem::userAction(const qint32 &action, const QVariant &param)
         dlg.setControlItem(this);
 
         if (dlg.exec() == QDialog::Accepted)
-            ;
+        {
+            undoStack()->beginMacro(tr("Изменение параметров элемента"));
+            FillItemControl(dlg);
+            undoStack()->endMacro();
+        }
     }
 
     return QVariant();

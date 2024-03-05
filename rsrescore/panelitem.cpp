@@ -377,18 +377,28 @@ void PanelItem::dragEnterEvent(QGraphicsSceneDragDropEvent *event)
     {
         if (!m_DragHighlightedRect.isValid())
         {
+            BaseScene* customScene = qobject_cast<BaseScene*> (scene());
             QList<QGraphicsItem*> items;
             renderToPixmap(&m_DragPixmap);
             createFromJson(this, event->mimeData()->data(MIMETYPE_TOOLBOX), items);
 
             if (!items.empty())
             {
-                QRectF rc = items.first()->boundingRect();
-                for (const QGraphicsItem *item : qAsConst(items))
-                    rc = rc.united(item->boundingRect());
+                QSizeF grid = customScene->getGridSize();
+                QRectF rc = QRectF(QPoint(0, 0), grid);
+                for (QGraphicsItem *item : qAsConst(items))
+                {
+                    CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
+                    qint32 x = (rectItem->getPoint().x() + rectItem->getSize().width()) * grid.width();
+                    qint32 y = (rectItem->getPoint().y() + rectItem->getSize().height()) * grid.height();
+
+                    rc.setWidth(qMax<int>(rc.width(), x));
+                    rc.setHeight(qMax<int>(rc.height(), y));
+                }
 
                 m_DragControl = new QPixmap(rc.toRect().size());
                 m_DragControl->fill(Qt::transparent);
+
                 m_DragHighlightedRect.setWidth(rc.width());
                 m_DragHighlightedRect.setHeight(rc.height());
 

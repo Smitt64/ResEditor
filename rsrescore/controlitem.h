@@ -6,6 +6,7 @@
 #include "styles/resstyle.h"
 #include <QObject>
 
+class ControlPropertysDlg;
 class ControlItem : public CustomRectItem
 {
     Q_OBJECT
@@ -192,6 +193,7 @@ protected:
 private:
     struct FieldStruct *m_pFieldStruct;
     void updateCorners();
+    void FillItemControl(ControlPropertysDlg &dlg);
 
     FieldType m_FieldType;
     DataType m_DataType;

@@ -32,6 +32,11 @@ void LbrObjectInterface::createResBuffer(const QString &name, const int &type, R
     *buffer = new ResBuffer(this, &data, name, type);
 }
 
+QString LbrObjectInterface::fileName() const
+{
+    return QString();
+}
+
 QString LbrObjectInterface::getResTypeName(const int &type)
 {
     QString val;

@@ -1,14 +1,14 @@
 #include "mainwindow.h"
 #include "lbrobject.h"
+#include "newitemsdlg.h"
 #include "ui_mainwindow.h"
 #include "reslistdockwidget.h"
-#include "rsrescore.h"
 #include "resbuffer.h"
 #include "ResourceEditorInterface.h"
 #include "baseeditorwindow.h"
 #include "propertymodel/propertydockwidget.h"
 #include "toolbox/toolboxdockwidget.h"
-#include "newitemsdlg.h"
+#include "rsrescore.h"
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QDebug>
@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_pLbrObj(nullptr)
 {
     ui->setupUi(this);
+    setWindowIcon(QIcon(":/img/lbrlogo.png"));
 
     m_ResListDock = new ResListDockWidget(this);
     m_PropertyDock = new PropertyDockWidget(this);
@@ -108,6 +109,7 @@ void MainWindow::AddEditorWindow(BaseEditorWindow *editor)
     editor->setLbrObject(m_pLbrObj);
     wnd->installEventFilter(this);
     wnd->showMaximized();
+    wnd->setWindowIcon(editor->windowIcon());
 }
 
 void MainWindow::readySave(BaseEditorWindow *editor)
@@ -264,6 +266,7 @@ void MainWindow::SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
         titlestr += " 🖊";
 
     wnd->setWindowTitle(titlestr);
+    wnd->setWindowIcon(RsResCore::inst()->iconFromResType(Type));
 }
 
 void MainWindow::titleChanged(const QString &title)

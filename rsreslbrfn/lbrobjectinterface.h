@@ -37,6 +37,8 @@ public:
     Q_INVOKABLE virtual bool open(const QString &filename) = 0;
     Q_INVOKABLE virtual bool create(const QString &filename) = 0;
 
+    virtual QString fileName() const;
+
     static QString getResTypeName(const int &type);
     virtual QAbstractItemModel *list() = 0;
 

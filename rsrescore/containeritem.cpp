@@ -34,6 +34,8 @@ const ResStyle::BorderStyle &ContainerItem::borderStyle() const
 
 void ContainerItem::setBorderStyle(const ResStyle::BorderStyle &style)
 {
+    checkPropSame("borderStyle", style);
+
     if (isSkipUndoStack())
     {
         m_BorderStyle = style;

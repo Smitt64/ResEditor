@@ -95,7 +95,7 @@ public:
     virtual void deserialize(const QByteArray &data);
     virtual void deserialize(const QJsonObject &data);
 
-    void renderToPixmap(QPixmap **pix, const QPointF &offset = QPointF());
+    virtual void renderToPixmap(QPixmap **pix, const QPointF &offset = QPointF());
 
     QPoint realCoordToEw(const QPointF &point);
     QPointF ewCoordToReal(const QPoint &point);
@@ -138,6 +138,7 @@ protected:
     void setBoundingRect(const QRectF &bound);
 
     void drawIntersects(QPainter *painter);
+    bool setSkipRenderIntersects(bool value);
 
     QSize gridSize() const;
     QString getClassInfo(const QMetaObject *obj, const char *name) const;
@@ -164,7 +165,7 @@ private:
     //QPointF m_MousePressPoint;
     QMap<QGraphicsItem*, QPointF> m_MousePressPoint;
 
-    bool m_HasRubberBand, m_CanIntersects;
+    bool m_HasRubberBand, m_CanIntersects, m_SkipRenderIntersects;;
     QBrush m_brush;
     QRectF m_BoundingRect, m_OldBoundingRect;
     QRectF m_ActualRect;

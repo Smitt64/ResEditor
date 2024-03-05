@@ -95,6 +95,7 @@ public:
 
     void *m_ResFile, *m_LibDir;
     QTextCodec *m_OemCodec;
+    QString m_FileName;
     QScopedPointer<LbrResListModel> m_pDirModel;
 };
 
