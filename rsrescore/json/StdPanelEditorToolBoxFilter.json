@@ -1,0 +1,315 @@
+{
+    "groups": [
+        {
+            "id": 6,
+            "title": "Шаблоны панели фильтра"
+        }
+    ],
+    
+    "templates": [
+        {
+            "alias": "Диапазон дат",
+            "icon": ":/img/FilterDateRange.png",
+            "tooltip": "Элемент фильтра с флагом и датами \"c\" и \"по\"",
+            "mimetype": "application/toolboxitem",
+            "groups": [6],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "TextItem",
+                        "parent": "{23226c9d-8d6c-4920-8a86-6c9241523ba3}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [
+                                    2,
+                                    0
+                                ]
+                            },
+                            {
+                                "property": "size",
+                                "value": [
+                                    25,
+                                    1
+                                ]
+                            },
+                            {
+                                "property": "text",
+                                "value": "Дата:                 [ ]"
+                            }
+                        ],
+                        "uuid": "{dfc9726a-ddd4-4d31-bcae-c0be47477d1e}"
+                    },
+                    {
+                        "class": "TextItem",
+                        "parent": "{23226c9d-8d6c-4920-8a86-6c9241523ba3}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [
+                                    42,
+                                    0
+                                ]
+                            },
+                            {
+                                "property": "size",
+                                "value": [
+                                    2,
+                                    1
+                                ]
+                            },
+                            {
+                                "property": "text",
+                                "value": "по"
+                            }
+                        ],
+                        "uuid": "{550e02f4-8c4a-4a95-bf56-7b646e4676ba}"
+                    },
+                    {
+                        "class": "ControlItem",
+                        "parent": "{23226c9d-8d6c-4920-8a86-6c9241523ba3}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [
+                                    45,
+                                    0
+                                ]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "size",
+                                "value": [
+                                    10,
+                                    1
+                                ]
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 9
+                            }
+                        ],
+                        "uuid": "{ce946f2c-c060-4992-8a9b-17ca9807e638}"
+                    },
+                    {
+                        "class": "ControlItem",
+                        "parent": "{23226c9d-8d6c-4920-8a86-6c9241523ba3}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [
+                                    25,
+                                    0
+                                ]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 2
+                            },
+                            {
+                                "property": "size",
+                                "value": [
+                                    1,
+                                    1
+                                ]
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 12
+                            }
+                        ],
+                        "uuid": "{99abdfb1-3d7f-4bd9-9dad-00483ab456ec}"
+                    },
+                    {
+                        "class": "ControlItem",
+                        "parent": "{23226c9d-8d6c-4920-8a86-6c9241523ba3}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [
+                                    31,
+                                    0
+                                ]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "size",
+                                "value": [
+                                    10,
+                                    1
+                                ]
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 9
+                            }
+                        ],
+                        "uuid": "{6697261b-f187-426e-8401-f57f91d1f627}"
+                    },
+                    {
+                        "class": "TextItem",
+                        "parent": "{23226c9d-8d6c-4920-8a86-6c9241523ba3}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [
+                                    28,
+                                    0
+                                ]
+                            },
+                            {
+                                "property": "size",
+                                "value": [
+                                    1,
+                                    1
+                                ]
+                            },
+                            {
+                                "property": "text",
+                                "value": "с"
+                            }
+                        ],
+                        "uuid": "{e7174ebb-6d8e-4d6b-a353-d0c7fd4789c4}"
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Выбор по F3 с кодом(string) и описанием(string)",
+            "icon": ":/img/ComboBox_24x.png",
+            "tooltip": "Элемент фильтра с флагом для выбора по f3 с кодом(string) и описанием(string)",
+            "mimetype": "application/toolboxitem",
+            "groups": [6],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "TextItem",
+                        "parent": "{639c5eff-5d6d-4a2e-9687-f6159ae26502}",
+                        "properties": [
+                            {
+                                "property": "text",
+                                "value": "Справочник            [ ]"
+                            },
+                            {
+                                "property": "point",
+                                "value": [
+                                    2,
+                                    0
+                                ]
+                            },
+                            {
+                                "property": "size",
+                                "value": [
+                                    25,
+                                    1
+                                ]
+                            }
+                        ],
+                        "uuid": "{88c5d0e5-48e4-4148-9e88-ab16443c63f3}"
+                    },
+                    {
+                        "class": "ControlItem",
+                        "parent": "{639c5eff-5d6d-4a2e-9687-f6159ae26502}",
+                        "properties": [
+                            {
+                                "property": "dataType",
+                                "value": 7
+                            },
+                            {
+                                "property": "point",
+                                "value": [
+                                    28,
+                                    0
+                                ]
+                            },
+                            {
+                                "property": "dataLength",
+                                "value": "16"
+                            },
+                            {
+                                "property": "size",
+                                "value": [
+                                    5,
+                                    1
+                                ]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            }
+                        ],
+                        "uuid": "{be58cbc1-5b46-48be-a247-6e4368b07195}"
+                    },
+                    {
+                        "class": "ControlItem",
+                        "parent": "{639c5eff-5d6d-4a2e-9687-f6159ae26502}",
+                        "properties": [
+                            {
+                                "property": "dataType",
+                                "value": 7
+                            },
+                            {
+                                "property": "point",
+                                "value": [
+                                    34,
+                                    0
+                                ]
+                            },
+                            {
+                                "property": "dataLength",
+                                "value": "26"
+                            },
+                            {
+                                "property": "size",
+                                "value": [
+                                    25,
+                                    1
+                                ]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 2
+                            }
+                        ],
+                        "uuid": "{3da2f03b-0b5f-425d-8cbb-b89959327af2}"
+                    },
+                    {
+                        "class": "ControlItem",
+                        "parent": "{639c5eff-5d6d-4a2e-9687-f6159ae26502}",
+                        "properties": [
+                            {
+                                "property": "dataType",
+                                "value": 12
+                            },
+                            {
+                                "property": "point",
+                                "value": [
+                                    25,
+                                    0
+                                ]
+                            },
+                            {
+                                "property": "size",
+                                "value": [
+                                    1,
+                                    1
+                                ]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 2
+                            }
+                        ],
+                        "uuid": "{2980add3-7692-40e3-a0a9-f42105e55a88}"
+                    }
+                ]
+            }
+        }
+    ]
+}
