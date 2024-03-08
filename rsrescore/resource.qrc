@@ -79,5 +79,7 @@
         <file>img/FilterDateRange.png</file>
         <file>img/ComboBox_24x.png</file>
         <file>tools/viewresi.exe</file>
+        <file>img/rsbank.png</file>
+        <file>img/PanelCmd.png</file>
     </qresource>
 </RCC>

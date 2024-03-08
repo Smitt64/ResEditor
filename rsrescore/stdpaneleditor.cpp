@@ -9,6 +9,7 @@
 #include "baseeditorview.h"
 #include "undoredo/undoitemadd.h"
 #include "undoredo/undoitemdelete.h"
+#include "bankdistribselect.h"
 #include "lbrobject.h"
 #include "textitem.h"
 #include "controlitem.h"
@@ -45,6 +46,8 @@
 #include <QProcess>
 #include <QInputDialog>
 #include "propertymodel.h"
+#include <QTextCodec>
+#include <QProgressDialog>
 
 #define SHADOW_CODE 9617
 
@@ -272,11 +275,13 @@ void StdPanelEditor::setupMenus()
     m_SaveToXml = addAction(m_pResMenu, QIcon(":/img/XMLFileHS.png"), tr("Сохранить в XML"), QKeySequence("Ctrl+ALT+S"));
     m_pCheckAction = addAction(m_pResMenu, QIcon(":/img/CheckRes.png"), tr("Проверить"), QKeySequence("Ctrl+H"));
     m_EwViewAction = addAction(m_pResMenu, QIcon(":/img/Panel2.png"), tr("Просмотр в EW"), QKeySequence("Ctrl+F3"));
+    m_ViewAction = addAction(m_pResMenu, QIcon(":/img/PanelCmd.png"), tr("Просмотр"), QKeySequence("Alt+F3"));
     m_Statistic = addAction(m_pResMenu, QIcon(":/img/Statistic.png"), tr("Информация"));
 
     connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
     connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
     connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
+    connect(m_ViewAction, &QAction::triggered, this, &StdPanelEditor::onViewCmd);
 }
 
 void StdPanelEditor::setupEditor()
@@ -875,48 +880,15 @@ QAbstractItemModel *StdPanelEditor::propertyModel()
     return rectItem->propertyModel();
 }
 
-void StdPanelEditor::onViewEasyWin()
+void StdPanelEditor::ViewResource(bool EwFlag)
 {
-    QStringList DisplayNames, BankPaths;
-    QString basePath = "HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
-    QSettings keys(basePath, QSettings::NativeFormat);
-
-    QStringList keysGroup = keys.childGroups();
-    for (const QString &key : qAsConst(keysGroup))
-    {
-        keys.beginGroup(key);
-
-        QString DisplayName = keys.value("DisplayName").toString();
-        QString Publisher = keys.value("Publisher").toString();
-        QString DisplayVersion = keys.value("DisplayVersion").toString();
-
-        DisplayVersion = DisplayVersion.mid(DisplayVersion.indexOf("31"));
-        if (Publisher.contains("R-Style Softlab") && (DisplayName.contains("RS-Bank") || DisplayName.contains("RS-FinMarkets")))
-        {
-            QDir d(keys.value("InstallLocation").toString());
-
-            if (d.cd("obj"))
-            {
-                DisplayNames.append(DisplayName);
-                BankPaths.append(d.absolutePath());
-            }
-        }
-        keys.endGroup();
-    }
-
-    QInputDialog dlg(this);
-    dlg.setWindowTitle(tr("Просмотр в EW"));
-    dlg.setLabelText(tr("Выбор дистрибутива: "));
-    dlg.setOption(QInputDialog::UseListViewForComboBoxItems);
-    dlg.setComboBoxItems(DisplayNames);
-    dlg.setMinimumSize(350, 150);
-
+    BankDistribSelect dlg(this);
     if (dlg.exec() == QDialog::Accepted)
     {
-        QString BankPath = BankPaths[DisplayNames.indexOf(dlg.textValue())];
-        QTemporaryDir tmpdir;
+        QString selected = dlg.path();
+        m_ViewerDir.reset(new QTemporaryDir());
 
-        QDir dir(tmpdir.path());
+        QDir dir(m_ViewerDir->path());
         QString fileName = dir.absoluteFilePath("viewresi.exe");
         QFile viewresi(fileName);
         QFile source(":/tools/viewresi.exe");
@@ -927,8 +899,7 @@ void StdPanelEditor::onViewEasyWin()
         viewresi.close();
         source.close();
 
-        QDir BankDir(BankPath);
-        BankDir.cd("obj");
+        QDir BankDir(selected);
 
         QString typeparam;
         switch(type())
@@ -950,11 +921,35 @@ void StdPanelEditor::onViewEasyWin()
             break;
         }
 
-        QProcess proc;
-        proc.setWorkingDirectory(BankDir.path());
+        QStringList params;
 
-        QStringList params = {"/w", lbr()->fileName(), name(), typeparam};
-        proc.start(fileName, params);
-        // /w d:\Build\Complect.19\Build\utils\redit\BANK.lbr ACCRNZAP panel
+        if (EwFlag)
+            params.append("/w");
+
+        params << QDir::toNativeSeparators(lbr()->fileName())
+               << name()
+               << typeparam;
+
+        QProcess *process = new QProcess();
+        connect(process, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this, &StdPanelEditor::ViewerFinished);
+        process->setWorkingDirectory(selected);
+        process->start(fileName, params);
+        process->waitForStarted();
     }
+}
+
+void StdPanelEditor::onViewEasyWin()
+{
+    ViewResource(true);
+}
+
+void StdPanelEditor::onViewCmd()
+{
+    ViewResource(false);
+}
+
+void StdPanelEditor::ViewerFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    m_ViewerDir.reset();
+    sender()->deleteLater();
 }

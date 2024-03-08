@@ -13,3 +13,8 @@ ResApplication::~ResApplication()
 {
 
 }
+
+QSettings *ResApplication::settings()
+{
+    return m_pSettings;
+}

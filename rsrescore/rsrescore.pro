@@ -14,6 +14,7 @@ include(../config.pri)
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    bankdistribselect.cpp \
     baseeditorview.cpp \
     baseeditorwindow.cpp \
     #baseresourceeditor.cpp \
@@ -59,6 +60,7 @@ SOURCES += \
 HEADERS += \
     ResourceEditorInterface.h \
     RsResInterface.h \
+    bankdistribselect.h \
     baseeditorview.h \
     baseeditorwindow.h \
     #baseresourceeditor.h \
@@ -104,6 +106,7 @@ HEADERS += \
     widgets/labeltexteditdlg.h
 
 FORMS += \
+    bankdistribselect.ui \
     controlpropertysdlg.ui \
     panelpropertysdlg.ui \
     propertymodel/textstyledlg.ui \

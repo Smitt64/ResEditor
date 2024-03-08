@@ -2,6 +2,7 @@
 #define STDPANELEDITOR_H
 
 #include "baseeditorwindow.h"
+#include <QProcess>
 
 class ResPanel;
 class PanelItem;
@@ -15,6 +16,7 @@ class QGraphicsItem;
 class ToolBoxModel;
 class QClipboard;
 class QTabWidget;
+class QTemporaryDir;
 class StdPanelEditor : public BaseEditorWindow
 {
     Q_OBJECT
@@ -43,6 +45,8 @@ private slots:
     void onCheckRes();
     void clipboardChanged();
     void onViewEasyWin();
+    void onViewCmd();
+    void ViewerFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
@@ -71,6 +75,7 @@ private:
                    const FillItemsChildMode &mode);
 
     const char *resTypeStr(int tp);
+    void ViewResource(bool EwFlag);
 
     BaseEditorView *m_pView;
     QTabWidget *m_TabContainer;
@@ -88,7 +93,7 @@ private:
     QAction *m_pSave;
     QAction *m_pContrst, *m_pDelete, *m_pProperty, *m_pScrolAreaAction;
     QAction *m_pCutAction, *m_pCopyAction, *m_pPasteAction;
-    QAction *m_pCheckAction, *m_EwViewAction, *m_Statistic;
+    QAction *m_pCheckAction, *m_EwViewAction, *m_ViewAction, *m_Statistic;
     QAction *m_SaveToXml;
 
     QMenuBar *m_pMenuBar;
@@ -96,6 +101,8 @@ private:
 
     QToolBar *m_pToolBar;
     QClipboard *m_pClipboard;
+
+    QScopedPointer<QTemporaryDir> m_ViewerDir;
 };
 
 #endif // STDPANELEDITOR_H
