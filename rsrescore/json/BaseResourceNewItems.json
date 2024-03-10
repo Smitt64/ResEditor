@@ -7,7 +7,8 @@
             "group": "Файлы",
             "description": "Создание новой библиотеки ресурсов",
             "needname": true,
-            "needpath": true
+            "needpath": true,
+            "needlbr": false
         },
         {
             "action": "{57f88805-7474-42fb-bc00-24a90cd5e85d}",
@@ -17,6 +18,7 @@
             "description": "Создание простой панелии<br><b>Рамка: </b>Двойная<br><b>Стиль: </b>SCOM Основной стиль",
             "needname": true,
             "needpath": false,
+            "needlbr": true,
             "namelen": 8,
             "validator": "StdPanNameValidator"
         },
@@ -28,6 +30,7 @@
             "description": "Создание панелии с двойной рамкой<br><font color='red'>не реализовано</font>",
             "needname": true,
             "needpath": false,
+            "needlbr": true,
             "namelen": 8,
             "validator": "StdPanNameValidator"
         },
@@ -39,6 +42,7 @@
             "description": "Создание таблицы BSCROL<br><b>Рамка: </b>Двойная<br><b>Стиль: </b>SCOM Основной стиль",
             "needname": true,
             "needpath": false,
+            "needlbr": true,
             "namelen": 8,
             "validator": "StdPanNameValidator"
         }

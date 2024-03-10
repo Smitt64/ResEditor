@@ -15,15 +15,17 @@ enum
     RoleAction,
     RoleGroup,
     RoleNeedName,
+    RoleNeedLbr,
     RoleNeedPath,
     RoleNameLen
 };
 
 #define isSeted(item,role) item->data(role).toBool()
 
-NewItemsDlg::NewItemsDlg(QWidget *parent) :
+NewItemsDlg::NewItemsDlg(LbrObjectInterface *lbr, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::NewItemsDlg)
+    ui(new Ui::NewItemsDlg),
+    m_pLbrObj(lbr)
 {
     m_pSelectedItem = nullptr;
 
@@ -129,6 +131,20 @@ void NewItemsDlg::buildStandartNewItems()
     for (const QString &meta : qAsConst(metalist))
         addFromMetaDataList(meta);
 
+    for (int i = ui->treeWidget->topLevelItemCount() - 1; i >= 0; i--)
+    {
+        QTreeWidgetItem *item = ui->treeWidget->topLevelItem(i);
+        QListWidget *list = qobject_cast<QListWidget*>(ui->treeWidget->itemWidget(item->child(0), 0));
+
+        if (list->count() <= 0)
+        {
+            item = ui->treeWidget->takeTopLevelItem(i);
+            m_Groups.remove(item->text(0));
+            ui->treeWidget->removeItemWidget(item->child(0), 0);
+            delete item;
+        }
+    }
+
     ui->treeWidget->expandAll();
 }
 
@@ -163,6 +179,11 @@ void NewItemsDlg::addFromMetaData(const QJsonObject &metadata)
 
 void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metadata)
 {
+    bool needlbr = metadata["needlbr"].toBool(true);
+
+    if (needlbr && !m_pLbrObj)
+        return;
+
     QListWidgetItem *item = new QListWidgetItem();
     item->setIcon(QIcon(metadata["icon"].toString()));
     item->setText(metadata["title"].toString());
@@ -171,6 +192,7 @@ void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metad
     item->setData(RoleAction, metadata["action"].toString());
     item->setData(RoleNeedName, metadata["needname"].toBool());
     item->setData(RoleNeedPath, metadata["needpath"].toBool());
+    item->setData(RoleNeedLbr, needlbr);
     item->setData(RoleNameLen, metadata["namelen"].toInt(255));
 
     list->addItem(item);

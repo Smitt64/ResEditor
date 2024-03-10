@@ -11,12 +11,13 @@ class QListWidget;
 class QTreeWidgetItem;
 class QJsonObject;
 class QListWidgetItem;
+class LbrObjectInterface;
 class NewItemsDlg : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit NewItemsDlg(QWidget *parent = nullptr);
+    explicit NewItemsDlg(LbrObjectInterface *lbr, QWidget *parent = nullptr);
     ~NewItemsDlg();
 
     void buildStandartNewItems();
@@ -42,6 +43,8 @@ private:
 
     QListWidgetItem *m_pSelectedItem;
     Ui::NewItemsDlg *ui;
+
+    LbrObjectInterface *m_pLbrObj;
 
     QHash<QString, QTreeWidgetItem*> m_Groups;
 };

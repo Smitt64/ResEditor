@@ -47,7 +47,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 #ifdef _DEBUG
     CreateLbrObject(&m_pLbrObj, this);
-    //m_pLbrObj = new LbrObject(this);
 
     QDir dir = qApp->applicationDirPath();
     QString filename = dir.absoluteFilePath("BANK.lbr");
@@ -213,7 +212,7 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
 
 void MainWindow::onNew()
 {
-    NewItemsDlg dlg(this);
+    NewItemsDlg dlg(m_pLbrObj, this);
     dlg.buildStandartNewItems();
     if (dlg.exec() == QDialog::Accepted)
     {
