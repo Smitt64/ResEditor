@@ -204,13 +204,43 @@ void ControlItem::setDataType(const ControlItem::DataType &val)
     if (isSkipUndoStack() || !undoStack())
     {
         m_DataType = val;
+
         updateCorners();
         emit dataTypeChanged();
         update();
         scene()->update();
     }
     else
+    {
+        undoStack()->beginMacro(UndoPropertyChange::ChangePropertyMsg("dataType", metaObject()));
         pushUndoPropertyData("dataType", val);
+
+        if (val == DATE)
+        {
+            QSize sz = getSize();
+            sz.setWidth(10);
+
+            pushUndoPropertyData("dataLength", 10);
+            pushUndoPropertyData("size", sz);
+        }
+        else if (val == TIME)
+        {
+            QSize sz = getSize();
+            sz.setWidth(8);
+
+            pushUndoPropertyData("dataLength", 8);
+            pushUndoPropertyData("size", sz);
+        }
+        else if (val == SHTM)
+        {
+            QSize sz = getSize();
+            sz.setWidth(5);
+
+            pushUndoPropertyData("dataLength", 5);
+            pushUndoPropertyData("size", sz);
+        }
+        undoStack()->endMacro();
+    }
 }
 
 const quint16 &ControlItem::dataLength() const
