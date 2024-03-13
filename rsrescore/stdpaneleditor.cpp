@@ -281,7 +281,10 @@ void StdPanelEditor::setupMenus()
     connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
     connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
     connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
+<<<<<<< Updated upstream
     connect(m_ViewAction, &QAction::triggered, this, &StdPanelEditor::onViewCmd);
+=======
+>>>>>>> Stashed changes
 }
 
 void StdPanelEditor::setupEditor()
@@ -880,6 +883,7 @@ QAbstractItemModel *StdPanelEditor::propertyModel()
     return rectItem->propertyModel();
 }
 
+<<<<<<< Updated upstream
 void StdPanelEditor::ViewResource(bool EwFlag)
 {
     BankDistribSelect dlg(this);
@@ -889,6 +893,50 @@ void StdPanelEditor::ViewResource(bool EwFlag)
         m_ViewerDir.reset(new QTemporaryDir());
 
         QDir dir(m_ViewerDir->path());
+=======
+void StdPanelEditor::onViewEasyWin()
+{
+    QStringList DisplayNames, BankPaths;
+    QString basePath = "HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+    QSettings keys(basePath, QSettings::NativeFormat);
+
+    QStringList keysGroup = keys.childGroups();
+    for (const QString &key : qAsConst(keysGroup))
+    {
+        keys.beginGroup(key);
+
+        QString DisplayName = keys.value("DisplayName").toString();
+        QString Publisher = keys.value("Publisher").toString();
+        QString DisplayVersion = keys.value("DisplayVersion").toString();
+
+        DisplayVersion = DisplayVersion.mid(DisplayVersion.indexOf("31"));
+        if (Publisher.contains("R-Style Softlab") && (DisplayName.contains("RS-Bank") || DisplayName.contains("RS-FinMarkets")))
+        {
+            QDir d(keys.value("InstallLocation").toString());
+
+            if (d.cd("obj"))
+            {
+                DisplayNames.append(DisplayName);
+                BankPaths.append(d.absolutePath());
+            }
+        }
+        keys.endGroup();
+    }
+
+    QInputDialog dlg(this);
+    dlg.setWindowTitle(tr("Просмотр в EW"));
+    dlg.setLabelText(tr("Выбор дистрибутива: "));
+    dlg.setOption(QInputDialog::UseListViewForComboBoxItems);
+    dlg.setComboBoxItems(DisplayNames);
+    dlg.setMinimumSize(350, 150);
+
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        QString BankPath = BankPaths[DisplayNames.indexOf(dlg.textValue())];
+        QTemporaryDir tmpdir;
+
+        QDir dir(tmpdir.path());
+>>>>>>> Stashed changes
         QString fileName = dir.absoluteFilePath("viewresi.exe");
         QFile viewresi(fileName);
         QFile source(":/tools/viewresi.exe");
@@ -899,7 +947,12 @@ void StdPanelEditor::ViewResource(bool EwFlag)
         viewresi.close();
         source.close();
 
+<<<<<<< Updated upstream
         QDir BankDir(selected);
+=======
+        QDir BankDir(BankPath);
+        BankDir.cd("obj");
+>>>>>>> Stashed changes
 
         QString typeparam;
         switch(type())
@@ -921,6 +974,7 @@ void StdPanelEditor::ViewResource(bool EwFlag)
             break;
         }
 
+<<<<<<< Updated upstream
         QStringList params;
 
         if (EwFlag)
@@ -953,3 +1007,13 @@ void StdPanelEditor::ViewerFinished(int exitCode, QProcess::ExitStatus exitStatu
     m_ViewerDir.reset();
     sender()->deleteLater();
 }
+=======
+        QProcess proc;
+        proc.setWorkingDirectory(BankDir.path());
+
+        QStringList params = {"/w", lbr()->fileName(), name(), typeparam};
+        proc.start(fileName, params);
+        // /w d:\Build\Complect.19\Build\utils\redit\BANK.lbr ACCRNZAP panel
+    }
+}
+>>>>>>> Stashed changes

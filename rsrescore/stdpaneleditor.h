@@ -45,8 +45,11 @@ private slots:
     void onCheckRes();
     void clipboardChanged();
     void onViewEasyWin();
+<<<<<<< Updated upstream
     void onViewCmd();
     void ViewerFinished(int exitCode, QProcess::ExitStatus exitStatus);
+=======
+>>>>>>> Stashed changes
 
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
