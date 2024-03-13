@@ -281,10 +281,6 @@ void StdPanelEditor::setupMenus()
     connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
     connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
     connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
-<<<<<<< Updated upstream
-    connect(m_ViewAction, &QAction::triggered, this, &StdPanelEditor::onViewCmd);
-=======
->>>>>>> Stashed changes
 }
 
 void StdPanelEditor::setupEditor()
@@ -883,17 +879,6 @@ QAbstractItemModel *StdPanelEditor::propertyModel()
     return rectItem->propertyModel();
 }
 
-<<<<<<< Updated upstream
-void StdPanelEditor::ViewResource(bool EwFlag)
-{
-    BankDistribSelect dlg(this);
-    if (dlg.exec() == QDialog::Accepted)
-    {
-        QString selected = dlg.path();
-        m_ViewerDir.reset(new QTemporaryDir());
-
-        QDir dir(m_ViewerDir->path());
-=======
 void StdPanelEditor::onViewEasyWin()
 {
     QStringList DisplayNames, BankPaths;
@@ -936,7 +921,6 @@ void StdPanelEditor::onViewEasyWin()
         QTemporaryDir tmpdir;
 
         QDir dir(tmpdir.path());
->>>>>>> Stashed changes
         QString fileName = dir.absoluteFilePath("viewresi.exe");
         QFile viewresi(fileName);
         QFile source(":/tools/viewresi.exe");
@@ -947,12 +931,8 @@ void StdPanelEditor::onViewEasyWin()
         viewresi.close();
         source.close();
 
-<<<<<<< Updated upstream
-        QDir BankDir(selected);
-=======
         QDir BankDir(BankPath);
         BankDir.cd("obj");
->>>>>>> Stashed changes
 
         QString typeparam;
         switch(type())
@@ -974,40 +954,6 @@ void StdPanelEditor::onViewEasyWin()
             break;
         }
 
-<<<<<<< Updated upstream
-        QStringList params;
-
-        if (EwFlag)
-            params.append("/w");
-
-        params << QDir::toNativeSeparators(lbr()->fileName())
-               << name()
-               << typeparam;
-
-        QProcess *process = new QProcess();
-        connect(process, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this, &StdPanelEditor::ViewerFinished);
-        process->setWorkingDirectory(selected);
-        process->start(fileName, params);
-        process->waitForStarted();
-    }
-}
-
-void StdPanelEditor::onViewEasyWin()
-{
-    ViewResource(true);
-}
-
-void StdPanelEditor::onViewCmd()
-{
-    ViewResource(false);
-}
-
-void StdPanelEditor::ViewerFinished(int exitCode, QProcess::ExitStatus exitStatus)
-{
-    m_ViewerDir.reset();
-    sender()->deleteLater();
-}
-=======
         QProcess proc;
         proc.setWorkingDirectory(BankDir.path());
 
@@ -1016,4 +962,3 @@ void StdPanelEditor::ViewerFinished(int exitCode, QProcess::ExitStatus exitStatu
         // /w d:\Build\Complect.19\Build\utils\redit\BANK.lbr ACCRNZAP panel
     }
 }
->>>>>>> Stashed changes
