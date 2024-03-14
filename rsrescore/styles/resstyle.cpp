@@ -2,12 +2,14 @@
 #include "customrectitem.h"
 #include "rscoreheader.h"
 #include "basescene.h"
+#include "resapplication.h"
 #include <QMetaClassInfo>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QMetaObject>
 #include <QFile>
 #include <stdexcept>
+#include <QSettings>
 
 ResStyleOption::ResStyleOption() :
     contrast(false)
@@ -80,8 +82,15 @@ ResStyle::ResStyle() :
     m_BorderChars[Border_Solid]      = { 9608, 9608, 9608, 9608, 9608, 9608 };
 
     loadDefaultColors();
+    resetFont();
+}
 
-    m_Font = QFont("TerminalVector", 10);
+void ResStyle::resetFont()
+{
+    int fontsize = fontSizeForGrid(getGridSizeOption());
+
+    m_Font = QFont("TerminalVector", fontsize);
+    m_Font.setPixelSize(fontsize);
     m_Font.setFixedPitch(true);
     m_Font.setBold(true);
 }
@@ -177,9 +186,47 @@ void ResStyle::loadColorSheme(const QJsonObject &obj, ColorScheme &sheme)
     }
 }
 
+int ResStyle::getGridSizeOption() const
+{
+    int index = 0;
+    QSettings *settings = ResApp->settings();
+
+    settings->beginGroup("StdEditor");
+    QString mode = settings->value("GridSizeMode", "Standard").toString();
+
+    if (mode == "Large")
+        index = 1;
+
+    settings->endGroup();
+
+    return index;
+}
+
+int ResStyle::fontSizeForGrid(int index)
+{
+    static QList<int> fontsizes = {
+        14,
+        20
+    };
+
+    return fontsizes[index];
+}
+
+GrigSizes ResStyle::gridSizes()
+{
+    static GrigSizes sizes = {
+        QSize(8, 12),
+        QSize(12, 16),
+    };
+
+    return sizes;
+}
+
 QSize ResStyle::gridSize() const
 {
-    return QSize(8, 12);
+    GrigSizes sizes = gridSizes();
+    return sizes[getGridSizeOption()];
+    //return QSize(8, 12);
 }
 
 QColor ResStyle::color(const StyleColor &type, ResStyleOption *option) const

@@ -12,6 +12,8 @@
 #define CONTRAST_PROPERTY "contrast"
 #define SCROLAREA_PROPERTY "scrolarea"
 
+typedef QList<QSize> GrigSizes;
+
 class CustomRectItem;
 class QGraphicsItem;
 class ResStyleOption;
@@ -111,6 +113,9 @@ public:
     virtual QString controlDefaultText(const ControlType &type);
     bool isNumeric(const quint8 &fvt) const;
 
+    static GrigSizes gridSizes();
+    static int fontSizeForGrid(int index);
+
 protected:
     typedef struct ColorScheme
     {
@@ -126,9 +131,11 @@ protected:
     QFont m_Font;
 
 private:
+    void resetFont();
     void loadDefaultColors();
     void loadColorSheme(const QJsonObject &obj, ColorScheme &sheme);
     int enumValueFromName(const QString &enumname, const QString &name) const;
+    int getGridSizeOption() const;
 };
 
 class ResStyleOption
