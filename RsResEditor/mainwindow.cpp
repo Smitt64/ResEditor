@@ -74,7 +74,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::onAbout()
 {
-    AboutDlg dlg(this);
+    AboutDlg dlg(":/json/AboutDlg.json", this);
     dlg.exec();
 }
 
