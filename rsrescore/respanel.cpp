@@ -1426,6 +1426,10 @@ int ResPanel::savePanel(ResBuffer *data)
     m_pPanel->Pnumf = m_Fields.size();
     m_pPanel->flags |= P_NAME2ALLOCED;
 
+    SizesTuple sizes;
+    def_panelsize(sizes, data->version());
+    m_pPanel->len = std::get<1>(sizes);
+
     if (!m_pPanel->Pff)
         m_pPanel->Pff = -1;
 
@@ -1434,10 +1438,6 @@ int ResPanel::savePanel(ResBuffer *data)
         PanelSize = sizeof(PanelR);
     else
         PanelSize = sizeof(PanelR_1);
-
-    SizesTuple sizes;
-    def_panelsize(sizes, data->version());
-    m_pPanel->len = std::get<1>(sizes);
 
     if (data->write((char*)m_pPanel, PanelSize) != PanelSize)
         return 1;
@@ -1674,6 +1674,26 @@ void ResPanel::def_panelsize(ResPanel::SizesTuple &sizes, int ver)
 
         for (TextStruct &item : m_Texts)
             adsize += item.value.size() + 1;
+    }
+
+    if(!m_Fields.isEmpty())
+    {
+        size += m_Fields.size() * sizeof(FieldR);
+
+        for (FieldStruct &item : m_Fields)
+        {
+            if (!item.formatStr.isEmpty())
+                adsize += item.formatStr.size() + 1;
+
+            if (!item.toolTip.isEmpty())
+                adsize += item.toolTip.size() + 1;
+
+            if (!item.name.isEmpty())
+                adsize += item.name.size() + 1;
+
+            if (!item.name2.isEmpty())
+                adsize += item.name2.size() + 1;
+        }
     }
 
     sizes = std::make_tuple(size, adsize);

@@ -5,7 +5,8 @@ SUBDIRS += \
     RsResEditor \
     rsbaseeditor \
     rsrescore \
-    rsreslbrfn
+    rsreslbrfn \
+    RsWorkTools/ToolsRuntime
 
-rsrescore.depends = rsbaseeditor rsreslbrfn PropertyEditor
-RsResEditor.depends = rsreslbrfn rsrescore
+rsrescore.depends = rsbaseeditor rsreslbrfn PropertyEditor RsWorkTools/ToolsRuntime
+RsResEditor.depends = rsreslbrfn rsrescore RsWorkTools/ToolsRuntime

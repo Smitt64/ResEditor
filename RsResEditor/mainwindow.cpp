@@ -17,6 +17,7 @@
 #include <QWidgetAction>
 #include <QComboBox>
 #include <QFileDialog>
+#include <aboutdlg.h>>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -63,11 +64,18 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
     connect(ui->actionNew, &QAction::triggered, this, &MainWindow::onNew);
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::onOpen);
+    connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onAbout);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::onAbout()
+{
+    AboutDlg dlg(this);
+    dlg.exec();
 }
 
 void MainWindow::SetupMenus()
