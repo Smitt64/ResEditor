@@ -7,6 +7,7 @@
 #include <QMultiHash>
 
 class ResPanel;
+class LbrObjectInterface;
 class ResourceEditorInterface;
 class RSRESCORE_EXPORT RsResCore
 {
@@ -24,6 +25,13 @@ public:
     void init();
 
     void loadFromXml(QIODevice *device, ResPanel **panel);
+    const char *resTypePrefix(int tp);
+
+    QString saveResToXml(const qint16 &Type,
+                      const QString &name,
+                      LbrObjectInterface *lbr,
+                      const QString &dirtemplate,
+                      const QString &encode = QString("UTF-8"));
 
 private:
     void loadPlugins();

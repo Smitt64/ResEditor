@@ -805,7 +805,12 @@ void StdPanelEditor::saveToXml()
     if (filename.isEmpty())
         return;
 
-    QDir dir(filename);
+    QString encodetxt = encode->currentText();
+    QString result =
+        RsResCore::inst()->saveResToXml(type(), name(), lbr(), filename, encodetxt);
+
+    addCodeWindow(tr("XML"), result);
+    /*QDir dir(filename);
 
     ResPanel resPanel;
     ResBuffer *buffer = nullptr;
@@ -825,7 +830,7 @@ void StdPanelEditor::saveToXml()
 
         addCodeWindow(tr("XML"), result);
         f.close();
-    }
+    }*/
 }
 
 void StdPanelEditor::showCheckError(int stat)

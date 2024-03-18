@@ -16,6 +16,7 @@
 #include <QFontDatabase>
 #include <QToolButton>
 #include <QDomDocument>
+#include <QDir>
 
 Q_IMPORT_PLUGIN(BaseResourceEditor)
 
@@ -217,6 +218,53 @@ QStringList RsResCore::newItemsMetaList() const
     }
 
     return metalist;
+}
+
+const char *RsResCore::resTypePrefix(int tp)
+{
+    switch(tp)
+    {
+    case LbrObject::RES_PANEL:   return "P";
+    case LbrObject::RES_SCROL:   return "S";
+    case LbrObject::RES_LS:      return "L";
+    case LbrObject::RES_BS:      return "B";
+    case LbrObject::RES_REP:     return "R";
+    case LbrObject::RES_MENU2:   return "M";
+    }
+
+    return "N";
+}
+
+QString RsResCore::saveResToXml(const qint16 &Type,
+                  const QString &name,
+                  LbrObjectInterface *lbr,
+                  const QString &dirtemplate,
+                  const QString &encode)
+{
+    QString result;
+
+    ResPanel resPanel;
+    ResBuffer *buffer = nullptr;
+    lbr->getResource(name, Type, &buffer);
+    resPanel.load(buffer);
+
+    QDir dir(dirtemplate);
+    const char *preffix = resTypePrefix(Type);
+
+    QFile f(dir.absoluteFilePath(QString("%1_%2.xml").arg(name).arg(preffix)));
+    if (f.open(QIODevice::WriteOnly))
+    {
+        QTextStream stream(&f);
+        stream.setCodec(encode.toLocal8Bit().data());
+
+        result = resPanel.saveXml(encode);
+        stream << result;
+
+        //addCodeWindow(tr("XML"), result);
+        f.close();
+    }
+
+    return result;
 }
 
 void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel)

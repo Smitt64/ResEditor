@@ -25,6 +25,10 @@ public:
     ~MainWindow();
 
     virtual bool eventFilter(QObject *watched, QEvent *event) Q_DECL_OVERRIDE;
+    void setAutoUnloadDir(const QString &filename);
+
+public slots:
+    void open(const QString &filename);
 
 private slots:
     void doubleResClicked(const QString &name, const int &type);
@@ -56,5 +60,6 @@ private:
     QMdiSubWindow *m_LastActiveWindow;
 
     LbrObjectInterface *m_pLbrObj;
+    QString m_AutoUnloadDir;
 };
 #endif // MAINWINDOW_H

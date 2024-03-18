@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_Mdi->setViewMode(QMdiArea::TabbedView);
     setCentralWidget(m_Mdi);
 
-#ifdef _DEBUG
+/*#ifdef _DEBUG
     CreateLbrObject(&m_pLbrObj, this);
 
     QDir dir = qApp->applicationDirPath();
@@ -54,7 +54,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_pLbrObj->open(filename);
 
     m_ResListDock->setModel(m_pLbrObj->list());
-#endif
+#endif*/
 
     SetupMenus();
     CreateWindowsCombo();
@@ -149,6 +149,9 @@ void MainWindow::readySave(BaseEditorWindow *editor)
         m_pLbrObj->endSaveRes(&resBuffer);
     }
 
+    if (errorMsg.isEmpty() && !m_AutoUnloadDir.isEmpty())
+        RsResCore::inst()->saveResToXml(type, name, m_pLbrObj, m_AutoUnloadDir);
+
     if (!errorMsg.isEmpty())
     {
         QString text = tr("Ошибка сохранения ресурса %1 [<b>%2</b>]")
@@ -239,13 +242,8 @@ void MainWindow::onNew()
     }
 }
 
-void MainWindow::onOpen()
+void MainWindow::open(const QString &filename)
 {
-    QString filename = QFileDialog::getOpenFileName(this,
-                                                    tr("Выбор библиотеки"),
-                                                    QString(),
-                                                    tr("Библиотека ресурсов (*.lbr)"));
-
     if (!filename.isEmpty())
     {
         if (m_pLbrObj)
@@ -260,6 +258,16 @@ void MainWindow::onOpen()
         m_pLbrObj->open(filename);
         m_ResListDock->setModel(m_pLbrObj->list());
     }
+}
+
+void MainWindow::onOpen()
+{
+    QString filename = QFileDialog::getOpenFileName(this,
+                                                    tr("Выбор библиотеки"),
+                                                    QString(),
+                                                    tr("Библиотека ресурсов (*.lbr)"));
+
+    open(filename);
 }
 
 void MainWindow::SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
@@ -356,4 +364,9 @@ void MainWindow::OnDeleteRequest(const QString &name, const int &type)
 
     if (btn == QMessageBox::Yes)
         m_pLbrObj->deleteResource(name, type);
+}
+
+void MainWindow::setAutoUnloadDir(const QString &filename)
+{
+    m_AutoUnloadDir = filename;
 }

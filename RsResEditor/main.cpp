@@ -3,9 +3,26 @@
 #include "resapplication.h"
 #include <QtPlugin>
 #include <QScopedPointer>
+#include <QCommandLineParser>
 
 int main(int argc, char *argv[])
 {
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Work Lbr");
+    parser.addHelpOption();
+    parser.addVersionOption();
+
+    QCommandLineOption lbrFileOption(QStringList() << "l" << "lbr",
+                                     QCoreApplication::translate("main", "Source lbr file to open"),
+                                     QCoreApplication::translate("main", "file"));
+
+    QCommandLineOption resUnloadDirOption(QStringList() << "s" << "sd",
+                                     QCoreApplication::translate("main", "Unload resource to xml file into <directory>"),
+                                     QCoreApplication::translate("main", "directory"));
+
+    parser.addOption(lbrFileOption);
+    parser.addOption(resUnloadDirOption);
+
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     char **argvnew = (char **)malloc((argc + 2) * sizeof(char*));
@@ -29,10 +46,19 @@ int main(int argc, char *argv[])
     strncpy_s(argvnew[argc + 1], 23, "windows:dpiawareness=1", 23);
 
     QScopedPointer<ResApplication> a(new ResApplication(argc, argv));
+
     RsResCore::inst()->init();
+    qDebug() << a->arguments();
+    parser.process(a->arguments());
 
     MainWindow w;
     w.showMaximized();
+
+    if (parser.isSet(lbrFileOption))
+        w.open(parser.value(lbrFileOption));
+
+    if (parser.isSet(resUnloadDirOption))
+        w.setAutoUnloadDir(parser.value(resUnloadDirOption));
 
     int stat = a->exec();
 
