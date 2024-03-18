@@ -884,15 +884,48 @@ QAbstractItemModel *StdPanelEditor::propertyModel()
     return rectItem->propertyModel();
 }
 
-void StdPanelEditor::ViewResource(bool EwFlag)
+void StdPanelEditor::onViewEasyWin()
 {
-    BankDistribSelect dlg(this);
+    QStringList DisplayNames, BankPaths;
+    QString basePath = "HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+    QSettings keys(basePath, QSettings::NativeFormat);
+
+    QStringList keysGroup = keys.childGroups();
+    for (const QString &key : qAsConst(keysGroup))
+    {
+        keys.beginGroup(key);
+
+        QString DisplayName = keys.value("DisplayName").toString();
+        QString Publisher = keys.value("Publisher").toString();
+        QString DisplayVersion = keys.value("DisplayVersion").toString();
+
+        DisplayVersion = DisplayVersion.mid(DisplayVersion.indexOf("31"));
+        if (Publisher.contains("R-Style Softlab") && (DisplayName.contains("RS-Bank") || DisplayName.contains("RS-FinMarkets")))
+        {
+            QDir d(keys.value("InstallLocation").toString());
+
+            if (d.cd("obj"))
+            {
+                DisplayNames.append(DisplayName);
+                BankPaths.append(d.absolutePath());
+            }
+        }
+        keys.endGroup();
+    }
+
+    QInputDialog dlg(this);
+    dlg.setWindowTitle(tr("Просмотр в EW"));
+    dlg.setLabelText(tr("Выбор дистрибутива: "));
+    dlg.setOption(QInputDialog::UseListViewForComboBoxItems);
+    dlg.setComboBoxItems(DisplayNames);
+    dlg.setMinimumSize(350, 150);
+
     if (dlg.exec() == QDialog::Accepted)
     {
-        QString selected = dlg.path();
-        m_ViewerDir.reset(new QTemporaryDir());
+        QString BankPath = BankPaths[DisplayNames.indexOf(dlg.textValue())];
+        QTemporaryDir tmpdir;
 
-        QDir dir(m_ViewerDir->path());
+        QDir dir(tmpdir.path());
         QString fileName = dir.absoluteFilePath("viewresi.exe");
         QFile viewresi(fileName);
         QFile source(":/tools/viewresi.exe");
@@ -903,7 +936,8 @@ void StdPanelEditor::ViewResource(bool EwFlag)
         viewresi.close();
         source.close();
 
-        QDir BankDir(selected);
+        QDir BankDir(BankPath);
+        BankDir.cd("obj");
 
         QString typeparam;
         switch(type())
@@ -925,35 +959,11 @@ void StdPanelEditor::ViewResource(bool EwFlag)
             break;
         }
 
-        QStringList params;
+        QProcess proc;
+        proc.setWorkingDirectory(BankDir.path());
 
-        if (EwFlag)
-            params.append("/w");
-
-        params << QDir::toNativeSeparators(lbr()->fileName())
-               << name()
-               << typeparam;
-
-        QProcess *process = new QProcess();
-        connect(process, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this, &StdPanelEditor::ViewerFinished);
-        process->setWorkingDirectory(selected);
-        process->start(fileName, params);
-        process->waitForStarted();
+        QStringList params = {"/w", lbr()->fileName(), name(), typeparam};
+        proc.start(fileName, params);
+        // /w d:\Build\Complect.19\Build\utils\redit\BANK.lbr ACCRNZAP panel
     }
-}
-
-void StdPanelEditor::onViewEasyWin()
-{
-    ViewResource(true);
-}
-
-void StdPanelEditor::onViewCmd()
-{
-    ViewResource(false);
-}
-
-void StdPanelEditor::ViewerFinished(int exitCode, QProcess::ExitStatus exitStatus)
-{
-    m_ViewerDir.reset();
-    sender()->deleteLater();
 }

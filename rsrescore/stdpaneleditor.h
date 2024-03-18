@@ -45,8 +45,6 @@ private slots:
     void onCheckRes();
     void clipboardChanged();
     void onViewEasyWin();
-    void onViewCmd();
-    void ViewerFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
