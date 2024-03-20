@@ -1,9 +1,6 @@
 #include "mainwindow.h"
 #include "lbrobject.h"
 #include "newitemsdlg.h"
-#include "qboxlayout.h"
-#include "qlistview.h"
-#include "qstringlistmodel.h"
 #include "ui_mainwindow.h"
 #include "reslistdockwidget.h"
 #include "resbuffer.h"
@@ -57,8 +54,6 @@ MainWindow::MainWindow(QWidget *parent)
     SetupMenus();
     CreateWindowsCombo();
 
-    // 2 min
-    pUpdateChecker->setInterval(120000);
     QThreadPool::globalInstance()->start(pUpdateChecker);
 
     connect(pUpdateChecker, &UpdateChecker::checkFinished, this, &MainWindow::checkUpdateFinished);
