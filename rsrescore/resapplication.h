@@ -3,6 +3,7 @@
 
 #include "rsrescore_global.h"
 #include <QApplication>
+#include <QTranslator>
 
 class QSettings;
 class RSRESCORE_EXPORT ResApplication : public QApplication
@@ -13,9 +14,11 @@ public:
     virtual ~ResApplication();
 
     QSettings *settings();
+    void init();
 
 private:
     QSettings *m_pSettings;
+    QTranslator qt_translator;
 };
 
 #define ResApp ((ResApplication*)qApp)

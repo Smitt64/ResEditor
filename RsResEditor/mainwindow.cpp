@@ -1,6 +1,9 @@
 #include "mainwindow.h"
 #include "lbrobject.h"
 #include "newitemsdlg.h"
+#include "qboxlayout.h"
+#include "qlistview.h"
+#include "qstringlistmodel.h"
 #include "ui_mainwindow.h"
 #include "reslistdockwidget.h"
 #include "resbuffer.h"
@@ -9,6 +12,7 @@
 #include "propertymodel/propertydockwidget.h"
 #include "toolbox/toolboxdockwidget.h"
 #include "rsrescore.h"
+#include "updatecheckermessagebox.h"
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QDebug>
@@ -17,7 +21,8 @@
 #include <QWidgetAction>
 #include <QComboBox>
 #include <QFileDialog>
-#include <aboutdlg.h>>
+#include <aboutdlg.h>
+#include <QThreadPool>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -27,6 +32,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     setWindowIcon(QIcon(":/img/lbrlogo.png"));
+
+    pUpdateChecker = new UpdateChecker();
+    pUpdateChecker->setProgramName("RsWorkMaintenanceTool.exe");
 
     m_ResListDock = new ResListDockWidget(this);
     m_PropertyDock = new PropertyDockWidget(this);
@@ -46,19 +54,14 @@ MainWindow::MainWindow(QWidget *parent)
     m_Mdi->setViewMode(QMdiArea::TabbedView);
     setCentralWidget(m_Mdi);
 
-/*#ifdef _DEBUG
-    CreateLbrObject(&m_pLbrObj, this);
-
-    QDir dir = qApp->applicationDirPath();
-    QString filename = dir.absoluteFilePath("BANK.lbr");
-    m_pLbrObj->open(filename);
-
-    m_ResListDock->setModel(m_pLbrObj->list());
-#endif*/
-
     SetupMenus();
     CreateWindowsCombo();
 
+    // 2 min
+    pUpdateChecker->setInterval(120000);
+    QThreadPool::globalInstance()->start(pUpdateChecker);
+
+    connect(pUpdateChecker, &UpdateChecker::checkFinished, this, &MainWindow::checkUpdateFinished);
     connect(m_ResListDock, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
     connect(m_ResListDock, &ResListDockWidget::deleteRequest, this, &MainWindow::OnDeleteRequest);
     connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
@@ -369,4 +372,16 @@ void MainWindow::OnDeleteRequest(const QString &name, const int &type)
 void MainWindow::setAutoUnloadDir(const QString &filename)
 {
     m_AutoUnloadDir = filename;
+}
+
+void MainWindow::checkUpdateFinished(bool hasUpdates, const CheckDataList &updatedata)
+{
+    if (hasUpdates)
+    {
+        pUpdateChecker->setCheckUpdateFlag(false);
+        UpdateCheckerMessageBox dlg(this);
+        dlg.setList(updatedata);
+        dlg.exec();
+        pUpdateChecker->setCheckUpdateFlag(true);
+    }
 }

@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "updatechecker.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -41,6 +42,7 @@ private slots:
     void readySave(BaseEditorWindow *editor);
     void titleChanged(const QString &title);
     void modifyChanged(bool changed);
+    void checkUpdateFinished(bool hasUpdates, const CheckDataList &updatedata);
 
 private:
     void CreateWindowsCombo();
@@ -61,5 +63,7 @@ private:
 
     LbrObjectInterface *m_pLbrObj;
     QString m_AutoUnloadDir;
+
+    UpdateChecker *pUpdateChecker;
 };
 #endif // MAINWINDOW_H
