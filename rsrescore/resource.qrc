@@ -79,5 +79,6 @@
         <file>img/FilterDateRange.png</file>
         <file>img/ComboBox_24x.png</file>
         <file>tools/viewresi.exe</file>
+        <file>json/AboutDlg.json</file>
     </qresource>
 </RCC>

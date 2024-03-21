@@ -17,6 +17,7 @@ class ToolBoxDockWidget;
 class QMdiSubWindow;
 class BaseEditorWindow;
 class QComboBox;
+class QCloseEvent;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -43,6 +44,9 @@ private slots:
     void titleChanged(const QString &title);
     void modifyChanged(bool changed);
     void checkUpdateFinished(bool hasUpdates, const CheckDataList &updatedata);
+
+protected:
+    virtual void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
 private:
     void CreateWindowsCombo();

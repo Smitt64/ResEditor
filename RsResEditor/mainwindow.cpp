@@ -380,3 +380,8 @@ void MainWindow::checkUpdateFinished(bool hasUpdates, const CheckDataList &updat
         pUpdateChecker->setCheckUpdateFlag(true);
     }
 }
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    pUpdateChecker->requestInterruption();
+}
