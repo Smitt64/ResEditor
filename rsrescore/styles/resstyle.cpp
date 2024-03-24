@@ -67,6 +67,7 @@ void ResStyleOption::init(CustomRectItem *item)
 
     panelStyle = readProperty<ResStyle::PanelStyle>(item, "panelStyle", ResStyle::SCOM);
     contrast = readProperty<bool>(item, CONTRAST_PROPERTY, false);
+    astext = readProperty<bool>(item, "isText", false);
 }
 
 // --------------------------------------------------------------------------
@@ -527,7 +528,12 @@ void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleO
     else
     {
         painter->save();
-        painter->fillRect(option->rect, color(Color_ControlBg, option));
+        QBrush brush(color(Color_ControlBg, option));
+
+        if (option->astext)
+            brush.setStyle(Qt::Dense4Pattern);
+
+        painter->fillRect(option->rect, brush);
         drawText(painter, option->rect, option->text, option->alignment, color(Color_ControlText, option));
         painter->restore();
     }

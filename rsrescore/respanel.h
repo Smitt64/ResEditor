@@ -25,13 +25,6 @@ public:
 
     }
 
-    TextStruct(TextStruct &&other):
-        _text{ other._text },
-        value { other.value }
-    {
-
-    }
-
     TextStruct(const TextStruct &other);
 
     ~TextStruct()
@@ -47,8 +40,11 @@ public:
     const qint8 &y() const;
     const qint16 &style() const;
     qint16 len() const;
+
+    TextStruct &operator =(const TextStruct &other);
+    static int compare(const void *elem1, const void *elem2);
 };
-typedef QList<TextStruct> TextStructList;
+typedef QVector<TextStruct> TextStructList;
 
 typedef struct FieldStruct
 {
@@ -78,7 +74,8 @@ typedef struct FieldStruct
 
     void reset();
 
-    static bool compare(const FieldStruct &s1, const FieldStruct &s2);
+    //static bool compare(const FieldStruct &s1, const FieldStruct &s2);
+    static int compare(const void *s1, const void *s2);
 }FieldStruct;
 typedef QVector<FieldStruct> FieldStructList;
 
@@ -134,7 +131,8 @@ public:
     void setFieldDataType(const quint8 &FieldType,
                           const quint8 &DataType,
                           const quint16 &DataLength,
-                          const bool &fdm);
+                          const bool &fdm,
+                          const bool &istext);
     void setFieldFlags(const quint32 &value);
     void setLenHeight(const quint8 &len, const quint8 &height);
     void setFieldPos(const quint8 &x, const quint8 &y);
@@ -200,7 +198,7 @@ private:
     QDateTime m_ResTime;
 
     struct PanelR *m_pPanel;
-    QList<struct BordR> m_BordR;
+    QVector<struct BordR> m_BordR;
     TextStructList m_Texts;
     FieldStructList m_Fields;
 

@@ -693,9 +693,10 @@ void StdPanelEditor::fillResPanel(ResPanel *resPanel)
     {
         resPanel->beginAddField(item->controlName(), item->controlName2());
         resPanel->setFieldDataType(item->fieldType(),
-                                  item->dataType(),
-                                  item->dataLength(),
-                                  item->fdm());
+                                   item->dataType(),
+                                   item->dataLength(),
+                                   item->fdm(),
+                                   item->isText());
         resPanel->setFieldFlags(item->controlFlags());
         resPanel->setLenHeight(item->length(), item->lines());
         resPanel->setFieldPos(item->getPoint().x(), item->getPoint().y());
@@ -810,27 +811,6 @@ void StdPanelEditor::saveToXml()
         RsResCore::inst()->saveResToXml(type(), name(), lbr(), filename, encodetxt);
 
     addCodeWindow(tr("XML"), result);
-    /*QDir dir(filename);
-
-    ResPanel resPanel;
-    ResBuffer *buffer = nullptr;
-    lbr()->getResource(name(), type(), &buffer);
-    resPanel.load(buffer);
-    //fillResPanel(&resPanel);
-
-    const char *preffix = resTypeStr(type());
-    QFile f(dir.absoluteFilePath(QString("%1_%2.xml").arg(name()).arg(preffix)));
-    if (f.open(QIODevice::WriteOnly))
-    {
-        QTextStream stream(&f);
-        stream.setCodec(encode->currentText().toLocal8Bit().data());
-
-        QString result = resPanel.saveXml(encode->currentText());
-        stream << result;
-
-        addCodeWindow(tr("XML"), result);
-        f.close();
-    }*/
 }
 
 void StdPanelEditor::showCheckError(int stat)

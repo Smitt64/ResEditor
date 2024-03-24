@@ -198,7 +198,7 @@ private:
     FieldType m_FieldType;
     DataType m_DataType;
     quint16 m_DataLength, m_Point;
-    bool m_Fdm;
+    bool m_Fdm, m_isText;
     ControlFlags m_Flags;
 
     QString m_ControlName, m_ControlName2, m_ValueTemplate, m_ToolTip;

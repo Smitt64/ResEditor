@@ -23,6 +23,7 @@ ControlItem::ControlItem(QGraphicsItem *parent) :
     m_DataLength(0),
     m_Point(0),
     m_Fdm(false),
+    m_isText(false),
     m_Flags(ControlFlags()),
     m_Style(ResStyle::MainStyle),
     m_ControlGroup(0),
@@ -82,6 +83,7 @@ void ControlItem::setFieldStruct(struct FieldStruct *value, const int &id)
 
     m_FieldType = static_cast<FieldType>(typeF(m_pFieldStruct->_field->Ftype));
     m_Fdm = !isActF(m_pFieldStruct->_field->Ftype);
+    m_isText = (bool)(!m_pFieldStruct->_field->vfl);
     //m_FieldType = static_cast<FieldType>(m_pFieldStruct->_field->Ftype);
     m_DataType = static_cast<DataType>(m_pFieldStruct->_field->FVt);
     m_DataLength = m_pFieldStruct->_field->FVp;
@@ -290,7 +292,7 @@ void ControlItem::setFdm(const bool &val)
 
 bool ControlItem::isText() const
 {
-    return m_Flags & RF_ASTEXT;
+    return m_isText;
 }
 
 void ControlItem::setIsText(const bool &val)
@@ -299,13 +301,9 @@ void ControlItem::setIsText(const bool &val)
 
     if (isSkipUndoStack() || !undoStack())
     {
-        if (val)
-            m_Flags |= RF_ASTEXT;
-        else
-            m_Flags &= ~RF_ASTEXT;
+        m_isText = val;
 
         emit isTextChanged();
-        emit controlFlagsChanged();
         update();
         scene()->update();
     }

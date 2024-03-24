@@ -150,7 +150,7 @@ public:
     ResStyle::BorderStyle borderStyle;
     ResStyle::ControlType ftype;
     ResStyle::PanelStyle panelStyle;
-    bool contrast;
+    bool contrast, astext;
     quint16 rowHeight;
 
     Qt::Alignment alignment;
