@@ -460,6 +460,12 @@ int ResPanel::readItems(struct PanelR *pp, ResBuffer *data, bool readName2)
 
         if(!(err = (err != toRead)))
         {
+            if (m_Type != LbrObjectInterface::RES_PANEL)
+            {
+                element._field->x += m_pPanel->x;
+                element._field->y += m_pPanel->y;
+            }
+
             char *s = (char*)malloc(sizeof(char)*(element._field->lens + 1));
             memset(s, 0, element._field->lens + 1);
             if(element._field->lens)
