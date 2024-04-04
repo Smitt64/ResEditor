@@ -58,7 +58,12 @@ bool ContainerItem::childCanMove(const QPointF &newPos, CustomRectItem *item)
     qreal w = item->boundingRect().width();
     qreal h = item->boundingRect().height();
     if (newPos.x() + w > thisBound.width() - gridSize.width() || newPos.y() + h > thisBound.height() - gridSize.height())
+    {
+        /*qDebug() << "childCanMove" << newPos.y() + h << thisBound.height() - gridSize.height();
+        qDebug() << newPos.y() << h;
+        qDebug() << thisBound.height();*/
         return false;
+    }
 
     return true;
 }
@@ -115,7 +120,7 @@ void ContainerItem::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
 BorderItem::BorderItem(QGraphicsItem *parent) :
     ContainerItem(parent)
 {
-
+    //setCoord(QPoint(0, 0));
 }
 
 BorderItem::BorderItem(const QRect& rect, CustomRectItem* parent) :

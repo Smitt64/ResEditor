@@ -125,12 +125,16 @@ QUndoStack *CustomRectItem::undoStack()
 {
     return m_pUndoStack;
 }
-
+//#include "containeritem.h"
 QVariant CustomRectItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-    if (change == QGraphicsItem::ItemPositionChange && scene())
+    if (/*change == QGraphicsItem::ItemPositionChange*/m_MousePressed && scene())
     {
+        //BorderItem *border = dynamic_cast<BorderItem*>(this);
         QPointF newPos = value.toPointF();// - m_MousePressedPos;
+
+        //if (border)
+        //    qDebug() << value;
 
         if(QApplication::mouseButtons() == Qt::LeftButton && qobject_cast<BaseScene*> (scene()))
         {
@@ -818,6 +822,7 @@ void CustomRectItem::drawIntersects(QPainter *painter)
     painter->setBrush(saveBrush);
 }
 
+#include "containeritem.h"
 void CustomRectItem::setCoord(const QPoint &coord)
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
@@ -828,6 +833,12 @@ void CustomRectItem::setCoord(const QPoint &coord)
 
     prepareGeometryChange();
     m_Coord = coord;
+
+    BorderItem *container = dynamic_cast<BorderItem*>(this);
+
+    if (container)
+        qDebug() << m_Coord << xV - x() << yV - y() << x() << y();
+
     moveBy(xV - x(), yV - y());
 
     update();

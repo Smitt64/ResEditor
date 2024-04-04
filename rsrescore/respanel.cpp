@@ -780,6 +780,7 @@ int ResPanel::borderCount() const
 QRect ResPanel::borderRect(const int &index) const
 {
     const BordR &border = m_BordR[index];
+    //qDebug() << index << QRect(border.x, border.y, border.l, border.h);
     return QRect(border.x, border.y, border.l, border.h);
 }
 

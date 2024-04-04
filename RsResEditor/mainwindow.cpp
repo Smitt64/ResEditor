@@ -31,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowIcon(QIcon(":/img/lbrlogo.png"));
 
     pUpdateChecker = new UpdateChecker();
+    pUpdateChecker->setAutoDelete(false);
     pUpdateChecker->setProgramName("RsWorkMaintenanceTool.exe");
 
     m_ResListDock = new ResListDockWidget(this);
@@ -384,4 +385,5 @@ void MainWindow::checkUpdateFinished(bool hasUpdates, const CheckDataList &updat
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     pUpdateChecker->requestInterruption();
+    pUpdateChecker->deleteLater();
 }
