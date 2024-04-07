@@ -117,11 +117,10 @@ QVariant ResFilterModel::data(const QModelIndex &index, int role) const
 // =======================================================================
 
 ResListDockWidget::ResListDockWidget(QWidget *parent) :
-    QDockWidget(parent)
+    QDockWidget(parent),
+    m_pFiler(nullptr)
 {
     m_List = new QTreeView();
-    m_pFiler = new ResFilterModel(this);
-    m_List->setModel(m_pFiler);
     m_List->setRootIsDecorated(false);
     m_List->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -161,7 +160,6 @@ ResListDockWidget::ResListDockWidget(QWidget *parent) :
 
     connect(m_List, &QTreeView::customContextMenuRequested, this, &ResListDockWidget::onCustomContextMenuRequested);
     connect(m_List, &QTreeView::doubleClicked, this, &ResListDockWidget::onDoubleClicked);
-    connect(m_pNameFilter, &QLineEdit::textChanged, m_pFiler, &ResFilterModel::setFilterName);
     connect(m_pTypesModel, &QStandardItemModel::itemChanged, this, &ResListDockWidget::typeItemChanged);
 }
 
@@ -169,6 +167,17 @@ ResListDockWidget::~ResListDockWidget()
 {
     if (m_List)
         delete m_List;
+}
+
+void ResListDockWidget::resetFilterModel()
+{
+    if (m_pFiler)
+        delete m_pFiler;
+
+    m_pFiler = new ResFilterModel(this);
+    m_List->setModel(m_pFiler);
+
+    connect(m_pNameFilter, &QLineEdit::textChanged, m_pFiler, &ResFilterModel::setFilterName);
 }
 
 void ResListDockWidget::setupTypesFilter(QAbstractItemModel *model)
@@ -206,10 +215,11 @@ void ResListDockWidget::setModel(QAbstractItemModel *model)
     if (!model)
         return;
 
+    resetFilterModel();
     setupTypesFilter(model);
     m_pFiler->setSourceModel(model);
     m_List->header()->resizeSection(1, 50);
-    model->sort(0);
+    m_pFiler->sort(0);
 }
 
 void ResListDockWidget::onDoubleClicked(const QModelIndex &index)

@@ -36,6 +36,7 @@ signals:
     void deleteRequest(const QString &name, const int &type);
 
 private:
+    void resetFilterModel();
     void setupTypesFilter(QAbstractItemModel *model);
     QMainWindow *m_Container;
     QTreeView *m_List;

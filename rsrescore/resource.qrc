@@ -75,10 +75,18 @@
         <file>templates/EMPTY_BSCROL_DOUBLE.xml</file>
         <file>img/appicon.svg</file>
         <file>img/lbrlogo.png</file>
-        <file>json/StdPanelEditorToolBoxFilter.json</file>
+        <file>json/tooboxincludes/StdPanelEditorToolBoxFilter.json</file>
         <file>img/FilterDateRange.png</file>
         <file>img/ComboBox_24x.png</file>
         <file>tools/viewresi.exe</file>
         <file>json/AboutDlg.json</file>
+        <file>img/CascadeWindowsHS.png</file>
+        <file>img/TileWindowsHorizontallyHS.png</file>
+        <file>img/WindowsHS.png</file>
+        <file>json/tooboxincludes/StdPanelEditorToolBoxFvt.json</file>
+        <file>img/TextBoxI16_24x_fvt.png</file>
+        <file>img/TextBoxI32_24x_fvt.png</file>
+        <file>img/TextBox_24x_fvt.png</file>
+        <file>img/DatePicker_24x_fvt.png</file>
     </qresource>
 </RCC>

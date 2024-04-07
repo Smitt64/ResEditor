@@ -66,7 +66,7 @@ Qt::ItemFlags ToolBoxModel::flags(const QModelIndex &index) const
 
 QVariant ToolBoxModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    static const QVector<QString> headers = { tr("Свойство"), tr("Значение") };
+    static const QVector<QString> headers = { tr("Элемент") };
 
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
         return headers[section];

@@ -18,15 +18,20 @@ RC_FILE = res/winfmt.rc
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    newitemsdlg.cpp
+    newitemsdlg.cpp \
+    subwindowsmodel.cpp \
+    windowslistdlg.cpp
 
 HEADERS += \
     mainwindow.h \
-    newitemsdlg.h
+    newitemsdlg.h \
+    subwindowsmodel.h \
+    windowslistdlg.h
 
 FORMS += \
     mainwindow.ui \
-    newitemsdlg.ui
+    newitemsdlg.ui \
+    windowslistdlg.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

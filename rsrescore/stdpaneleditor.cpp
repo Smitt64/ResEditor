@@ -298,6 +298,9 @@ void StdPanelEditor::setupEditor()
     m_TabContainer->addTab(m_pView, tr("Редактор"));
     m_TabContainer->setTabPosition(QTabWidget::South);
     m_TabContainer->setTabShape(QTabWidget::Triangular);
+    m_TabContainer->setTabsClosable(true);
+    m_TabContainer->tabBar()->setTabButton(0, QTabBar::RightSide, nullptr);
+
     setCentralWidget(m_TabContainer);
 
     panelItem->setBrush(QColor(128, 128, 0));
@@ -338,6 +341,13 @@ void StdPanelEditor::setupEditor()
     connect(panelItem, &PanelItem::titleChanged, [=]()
     {
         emit titleChanged(panelItem->title());
+    });
+
+    connect(m_TabContainer->tabBar(), &QTabBar::tabCloseRequested, [=](int index)
+    {
+        QWidget *w = m_TabContainer->widget(index);
+        m_TabContainer->removeTab(index);
+        w ->deleteLater();
     });
 }
 

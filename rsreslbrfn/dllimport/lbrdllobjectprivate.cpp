@@ -257,7 +257,6 @@ bool LbrDllObjectPrivate::beginSaveRes(const QString &name, const int &type, Res
         return false;
     }
 
-    qDebug() << "stream opened for write";
     q->createResBuffer(name, type, buffer);
     (*buffer)->setResStream(strm1);
     (*buffer)->open(QIODevice::ReadWrite);
@@ -308,7 +307,7 @@ bool LbrDllObjectPrivate::endSaveRes(ResBuffer **buffer)
         elem.ftime = strm1->derived.rhead.ftime;
         elem.ver = strm1->derived.rhead.ver;
         m_pDirModel->addDirElement(&elem);
-        m_pDirModel->sort(0);
+        //m_pDirModel->sort(0);
     }
     free(strm1);
 

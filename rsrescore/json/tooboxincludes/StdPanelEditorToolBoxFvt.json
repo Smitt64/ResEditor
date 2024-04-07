@@ -1,0 +1,144 @@
+{    
+    "templates": [
+        {
+            "alias": "Статическое поле (Int16)",
+            "icon": ":/img/TextBoxI16_24x_fvt.png",
+            "tooltip": "Статическое поле данных",
+            "mimetype": "application/toolboxitem",
+            "groups": [3],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{c6a30d34-1ac3-40d7-9ded-b1aa1dcde520}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 5
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 0
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Статическое поле (Int32)",
+            "icon": ":/img/TextBoxI32_24x_fvt.png",
+            "tooltip": "Статическое поле данных",
+            "mimetype": "application/toolboxitem",
+            "groups": [3],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{7228866e-af2f-42dd-9c20-9c5d0c14091c}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 5
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 1
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Статическое поле (String)",
+            "icon": ":/img/TextBox_24x_fvt.png",
+            "tooltip": "Статическое поле данных",
+            "mimetype": "application/toolboxitem",
+            "groups": [3],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{f35b8253-eadb-4437-89b5-2cd4cb9c1f1c}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 5
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 7
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Статическое поле (Date)",
+            "icon": ":/img/DatePicker_24x_fvt.png",
+            "tooltip": "Редактируемое поле данных",
+            "mimetype": "application/toolboxitem",
+            "groups": [3],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{35027c5c-9b28-4ee9-819d-275d13a39f95}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [10, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 5
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 9
+                            },
+                            {
+                                "property": "dataLength",
+                                "value": "10"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

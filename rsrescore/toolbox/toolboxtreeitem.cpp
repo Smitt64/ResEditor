@@ -69,7 +69,7 @@ QVariant ToolBoxTreeItem::data(const int &role) const
         if (m_TypeItem == TypeItem_Data)
             return QSize(10, 24);
         else
-            return QSize(10, 16);
+            return QSize(10, 20);
     }
 
     return QVariant();

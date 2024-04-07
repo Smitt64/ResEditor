@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QShortcut>
 #include "updatechecker.h"
 
 QT_BEGIN_NAMESPACE
@@ -18,6 +19,7 @@ class QMdiSubWindow;
 class BaseEditorWindow;
 class QComboBox;
 class QCloseEvent;
+class SubWindowsModel;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -44,12 +46,16 @@ private slots:
     void titleChanged(const QString &title);
     void modifyChanged(bool changed);
     void checkUpdateFinished(bool hasUpdates, const CheckDataList &updatedata);
+    void subWindowIndexChanged(const int &index);
+    void showWindowList();
 
 protected:
     virtual void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
 private:
+    void SetActiveWindow(QMdiSubWindow *wnd);
     void CreateWindowsCombo();
+    void CreateWindowFunctional();
     void AddEditorWindow(BaseEditorWindow *editor);
     void SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
                           const QString &name, const QString &title,
@@ -69,5 +75,8 @@ private:
     QString m_AutoUnloadDir;
 
     UpdateChecker *pUpdateChecker;
+    SubWindowsModel *pWindowsModel;
+
+    QShortcut  *m_ResListKey, *m_ToolsListKey;;
 };
 #endif // MAINWINDOW_H

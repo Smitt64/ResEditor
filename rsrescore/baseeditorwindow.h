@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "rsrescore_global.h"
+#include <QMap>
 
 #define CLASSINFO_TOOLBOX_FILE "TOOLBOX_FILE"
 
@@ -20,6 +21,8 @@ class LbrObjectInterface;
 class RSRESCORE_EXPORT BaseEditorWindow : public QMainWindow
 {
     Q_OBJECT
+
+    typedef QMap<quint16, QString> GroupsMapType;
 public:
     explicit BaseEditorWindow(QWidget *parent = nullptr);
     virtual ~BaseEditorWindow();
@@ -52,10 +55,9 @@ protected:
     void initUndoRedo(QToolBar *toolbar);
     void initpropertyModelSignals(BaseScene *scene);
     virtual void loadToolBox();
-    void loadToolBoxFile(const QString &fname);
+    void loadToolBoxFile(const QString &fname, const GroupsMapType &outergroups = GroupsMapType());
 
 private:
-    typedef QMap<quint16, QString> GroupsMapType;
     void loadToolBarElement(GroupsMapType &GroupsMap, const QJsonObject &obj);
     QUndoStack *m_pUndoStack;
     QAction *m_pUndoAction, *m_pRedoAction;

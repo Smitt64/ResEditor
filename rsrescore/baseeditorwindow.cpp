@@ -189,7 +189,7 @@ void BaseEditorWindow::loadToolBox()
     loadToolBoxFile(fname);
 }
 
-void BaseEditorWindow::loadToolBoxFile(const QString &fname)
+void BaseEditorWindow::loadToolBoxFile(const QString &fname, const GroupsMapType &outergroups)
 {
     QFile file(fname);
     if (!file.open(QIODevice::ReadOnly))
@@ -198,7 +198,7 @@ void BaseEditorWindow::loadToolBoxFile(const QString &fname)
     QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
     QJsonObject root = doc.object();
 
-    GroupsMapType GroupsMap;
+    GroupsMapType GroupsMap = outergroups;
     QJsonArray groups = root["groups"].toArray();
     for (const QJsonValue &group : qAsConst(groups))
     {
@@ -215,7 +215,7 @@ void BaseEditorWindow::loadToolBoxFile(const QString &fname)
 
     QJsonArray includes = root["includes"].toArray();
     for (const QJsonValue &templ : qAsConst(includes))
-        loadToolBoxFile(templ.toString());
+        loadToolBoxFile(templ.toString(), GroupsMap);
 }
 
 void BaseEditorWindow::setLbrObject(LbrObjectInterface *obj)

@@ -6,7 +6,7 @@
         },
         {
             "id": 2,
-            "title": "Элементы ввода"
+            "title": "Элементы ввода (FET поля)"
         },
         {
             "id": 4,
@@ -14,7 +14,7 @@
         },
         {
             "id": 3,
-            "title": "Cтатический текст"
+            "title": "Cтатический текст (FVT поля)"
         },
         {
             "id": 5,
@@ -27,7 +27,8 @@
     ],
 
     "includes": [
-        ":/json/StdPanelEditorToolBoxFilter.json"
+        ":/json/tooboxincludes/StdPanelEditorToolBoxFilter.json",
+        ":/json/tooboxincludes/StdPanelEditorToolBoxFvt.json"
     ],
     
     "templates": [

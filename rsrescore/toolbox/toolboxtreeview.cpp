@@ -6,11 +6,49 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QDebug>
+#include <QStyledItemDelegate>
+#include <QApplication>
+#include <QStyleOptionToolBox>
+
+class ToolBoxDelegate : public QStyledItemDelegate
+{
+    QStyle *m_pStyle;
+public:
+    ToolBoxDelegate(QObject *parent = nullptr) :
+        QStyledItemDelegate(parent)
+    {
+        m_pStyle = QApplication::style();
+    }
+
+    virtual ~ToolBoxDelegate()
+    {
+
+    }
+
+    virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const Q_DECL_FINAL
+    {
+        if (!index.parent().isValid())
+        {
+            QStyleOptionToolBox opt;
+            (*((QStyleOption*)&opt)) = option;
+            opt.text = index.data().toString();
+
+            m_pStyle->drawControl(QStyle::CE_ToolBoxTab, &opt, painter);
+            return;
+        }
+        QStyledItemDelegate::paint(painter, option, index);
+    }
+};
 
 ToolBoxTreeView::ToolBoxTreeView(QWidget *parent) :
     QTreeView(parent)
 {
     setIconSize(QSize(24, 24));
+
+    m_pDelegate = new ToolBoxDelegate(this);
+    setItemDelegate(m_pDelegate);
+    setItemsExpandable(false);
+    setRootIsDecorated(false);
 }
 
 ToolBoxTreeView::~ToolBoxTreeView()

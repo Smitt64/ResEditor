@@ -10,6 +10,8 @@
 #include "toolbox/toolboxdockwidget.h"
 #include "rsrescore.h"
 #include "updatecheckermessagebox.h"
+#include "subwindowsmodel.h"
+#include "windowslistdlg.h"
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QDebug>
@@ -20,6 +22,7 @@
 #include <QFileDialog>
 #include <aboutdlg.h>
 #include <QThreadPool>
+#include <QKeySequence>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -52,11 +55,17 @@ MainWindow::MainWindow(QWidget *parent)
     m_Mdi->setViewMode(QMdiArea::TabbedView);
     setCentralWidget(m_Mdi);
 
-    SetupMenus();
     CreateWindowsCombo();
+    CreateWindowFunctional();
+    SetupMenus();
+
+    m_ResListKey = new QShortcut(QKeySequence(tr("Alt+1")), this);
+    m_ToolsListKey = new QShortcut(QKeySequence(tr("Alt+2")), this);
 
     QThreadPool::globalInstance()->start(pUpdateChecker);
 
+    connect(m_ResListKey, &QShortcut::activated, m_ResListDock, &QDockWidget::raise);
+    connect(m_ToolsListKey, &QShortcut::activated, m_ToolBoxDock, &QDockWidget::raise);
     connect(pUpdateChecker, &UpdateChecker::checkFinished, this, &MainWindow::checkUpdateFinished);
     connect(m_ResListDock, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
     connect(m_ResListDock, &ResListDockWidget::deleteRequest, this, &MainWindow::OnDeleteRequest);
@@ -68,6 +77,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    delete m_ResListKey;
+    delete m_ToolsListKey;
     delete ui;
 }
 
@@ -87,6 +98,13 @@ void MainWindow::SetupMenus()
 
     ui->toolBar->addAction(ui->actionNew);
     ui->toolBar->addAction(ui->actionOpen);
+
+    ui->viewMenu->addAction(m_ResListDock->toggleViewAction());
+    ui->viewMenu->addAction(m_PropertyDock->toggleViewAction());
+    ui->viewMenu->addAction(m_ToolBoxDock->toggleViewAction());
+    ui->viewMenu->addSeparator();
+    ui->viewMenu->addAction(ui->toolBar->toggleViewAction());
+    ui->viewMenu->addAction(ui->windowToolBar->toggleViewAction());
 }
 
 void MainWindow::doubleResClicked(const QString &name, const int &type)
@@ -116,6 +134,9 @@ void MainWindow::AddEditorWindow(BaseEditorWindow *editor)
     wnd->installEventFilter(this);
     wnd->showMaximized();
     wnd->setWindowIcon(editor->windowIcon());
+
+    QModelIndex index = pWindowsModel->addWindow(wnd);
+    pWindowsComboBox->setCurrentIndex(index.row());
 }
 
 void MainWindow::readySave(BaseEditorWindow *editor)
@@ -215,6 +236,9 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
     {
         m_ToolBoxDock->setModel(wnd->toolBox());
         m_PropertyDock->setPropertyModel(wnd->propertyModel());
+
+        QModelIndex index = pWindowsModel->findWindow(window);
+        pWindowsComboBox->setCurrentIndex(index.row());
     }
 
     m_LastActiveWindow = window;
@@ -386,4 +410,41 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     pUpdateChecker->requestInterruption();
     pUpdateChecker->deleteLater();
+}
+
+void MainWindow::CreateWindowFunctional()
+{
+    pWindowsModel = new SubWindowsModel(this);
+    pWindowsComboBox->setModel(pWindowsModel);
+
+    ui->actionNextWnd->setShortcut(QKeySequence(QKeySequence::NextChild));
+    ui->actionPrevWnd->setShortcut(QKeySequence(QKeySequence::PreviousChild));
+
+    connect(ui->actionNextWnd, SIGNAL(triggered(bool)), m_Mdi, SLOT(activateNextSubWindow()));
+    connect(ui->actionPrevWnd, SIGNAL(triggered(bool)), m_Mdi, SLOT(activatePreviousSubWindow()));
+    connect(ui->actionCloseWnd, SIGNAL(triggered(bool)), m_Mdi, SLOT(closeActiveSubWindow()));
+    connect(ui->actionCloseAllWnd, SIGNAL(triggered(bool)), m_Mdi, SLOT(closeAllSubWindows()));
+    connect(ui->actionWindowList, SIGNAL(triggered(bool)), SLOT(showWindowList()));
+
+    connect(pWindowsComboBox, SIGNAL(currentIndexChanged(int)), SLOT(subWindowIndexChanged(int)));
+}
+
+void MainWindow::subWindowIndexChanged(const int &index)
+{
+    QMdiSubWindow *wnd = pWindowsModel->window(pWindowsModel->index(index, 0));
+
+    if (wnd)
+        SetActiveWindow(wnd);
+}
+
+void MainWindow::SetActiveWindow(QMdiSubWindow *wnd)
+{
+    //wnd->setWindowState(Qt::WindowNoState);
+    m_Mdi->setActiveSubWindow(wnd);
+}
+
+void MainWindow::showWindowList()
+{
+    WindowsListDlg dlg(pWindowsModel, m_Mdi, this);
+    dlg.exec();
 }

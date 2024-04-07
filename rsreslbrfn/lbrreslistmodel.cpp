@@ -46,6 +46,7 @@ void LbrResListModel::addDirElement(void *elem)
 
     int size = d->m_Elements.size();
     beginInsertRows(QModelIndex(), size, size);
+    //beginResetModel();
     ModelElement *copy = new ModelElement();
     memcpy(copy, elem, sizeof(RLibDirElem));
 
@@ -53,6 +54,7 @@ void LbrResListModel::addDirElement(void *elem)
     copy->comment = d->m_p866->toUnicode(comment);
     //strncpy_s(copy->comment, comment, _MAX_PATH);
     d->m_Elements.append(copy);
+    //endResetModel();
     endInsertRows();
 }
 
@@ -118,7 +120,7 @@ QVariant LbrResListModel::data(const QModelIndex &index, int role) const
     {
         RLibDirElem *elem = d->m_Elements[index.row()];
         const ftime &ftime = elem->ftime;
-        QDateTime dt = QDateTime(QDate(ftime.ft_year, ftime.ft_month, ftime.ft_day),
+        QDateTime dt = QDateTime(QDate(ftime.ft_year + 1980, ftime.ft_month, ftime.ft_day),
                   QTime(ftime.ft_hour, ftime.ft_min, ftime.ft_tsec));
 
         QString tooltip = QString("<b>Ресурс: </b>%1<br><b>Тип: </b>%2<br><b>Изменен: </b>%3")
