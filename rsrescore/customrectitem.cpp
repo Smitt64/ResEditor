@@ -128,18 +128,14 @@ QUndoStack *CustomRectItem::undoStack()
 //#include "containeritem.h"
 QVariant CustomRectItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-    if (/*change == QGraphicsItem::ItemPositionChange*/m_MousePressed && scene())
+    if (change == QGraphicsItem::ItemPositionChange && scene())
     {
-        //BorderItem *border = dynamic_cast<BorderItem*>(this);
+        BaseScene* customScene = qobject_cast<BaseScene*> (scene());
         QPointF newPos = value.toPointF();// - m_MousePressedPos;
 
-        //if (border)
-        //    qDebug() << value;
-
-        if(QApplication::mouseButtons() == Qt::LeftButton && qobject_cast<BaseScene*> (scene()))
+        //qDebug() << customScene->mousePressPoints();
+        if(/*QApplication::mouseButtons() == Qt::LeftButton*/customScene->mousePressPoints().contains(this) && qobject_cast<BaseScene*> (scene()))
         {
-            //qDebug() << newPos;
-            BaseScene* customScene = qobject_cast<BaseScene*> (scene());
             QSize gridSize = customScene->getGridSize();
             qreal xV = round(newPos.x() / gridSize.width()) * gridSize.width();
             qreal yV = round(newPos.y() / gridSize.height())* gridSize.height();
