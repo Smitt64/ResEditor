@@ -2,6 +2,8 @@
 #include "stdpaneleditor.h"
 #include "respanel.h"
 #include "rsrescore.h"
+#include "wizards/texttopanel/texttopanelwizard.h"
+#include "panelitem.h"
 #include <lbrobject.h>
 #include <resbuffer.h>
 #include <QFile>
@@ -54,7 +56,7 @@ bool BaseResourceEditor::newItemsActionAvalible(const QString &guid)
     return actions.contains(guid);
 }
 
-BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const QString &name, const QString &path)
+BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const QString &name, const QString &path, QWidget *parent)
 {
     BaseEditorWindow *pNewEditor = nullptr;
 
@@ -85,6 +87,19 @@ BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const 
     else if (guid == "{c01bd070-a483-482c-9a30-2946a4317b71}")
     {
         // Панель из текста
+        TextToPanelWizard dlg(parent);
+
+        if (dlg.exec() == QDialog::Accepted)
+        {
+            PanelItem *item = dlg.makePanel();
+
+            pNewEditor = new StdPanelEditor(LbrObject::RES_PANEL);
+            pNewEditor->setWindowIcon(RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL));
+            pNewEditor->setupEditor();
+
+            //qobject_cast<StdPanelEditor*>(pNewEditor)->setPanel(testPan);
+            SetupEditorTitle(pNewEditor, LbrObject::RES_PANEL, name, item->title());
+        }
     }
     else if (guid == "{80384143-d159-4264-95c8-19e8a2cf7b70}")
     {

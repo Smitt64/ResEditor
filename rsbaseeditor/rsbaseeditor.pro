@@ -21,10 +21,17 @@ unix {
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    baseresourceeditor.h
+    baseresourceeditor.h\
+    wizards/texttopanel/textpage.h \
+    wizards/texttopanel/texttopanelwizard.h
 
 SOURCES += \
-    baseresourceeditor.cpp
+    baseresourceeditor.cpp \
+    wizards/texttopanel/textpage.cpp \
+    wizards/texttopanel/texttopanelwizard.cpp
+
+FORMS += \
+    wizards/texttopanel/textpage.ui
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../rsreslbrfn/release/ -lrsreslbrfn
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../rsreslbrfn/debug/ -lrsreslbrfn

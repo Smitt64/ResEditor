@@ -1767,12 +1767,14 @@ QString ResPanel::saveXml(const QString &encode)
                   .arg(m_pPanel->flags);
 
     if(type() != LbrObject::RES_PANEL)
-        stream << QString(" Mn=\"%1\" x=\"%2\" y=\"%3\" l=\"%44\" h=\"%5\">")
+    {
+        stream << QString(" Mn=\"%1\" x=\"%2\" y=\"%3\" l=\"%4\" h=\"%5\">")
                       .arg(m_pPanel->Mn)
                       .arg(m_pPanel->x)
                       .arg(m_pPanel->y)
                       .arg(m_pPanel->l)
                       .arg(m_pPanel->h) << Qt::endl;
+    }
     else
         stream << ">" << Qt::endl;
 
@@ -1817,8 +1819,8 @@ QString ResPanel::saveXml(const QString &encode)
                       .arg(m_Fields[i]._field->St)
                       .arg(m_Fields[i]._field->FVt)
                       .arg(m_Fields[i]._field->FVp)
-                      .arg(m_Fields[i]._field->x)
-                      .arg(m_Fields[i]._field->y)
+                      .arg(m_Fields[i]._field->x - m_pPanel->x)
+                      .arg(m_Fields[i]._field->y - m_pPanel->y)
                       .arg(m_Fields[i]._field->l)
                       .arg(m_Fields[i]._field->h);
 

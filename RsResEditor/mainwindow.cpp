@@ -219,6 +219,7 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
     {
         m_ToolBoxDock->setModel(nullptr);
         m_PropertyDock->setPropertyModel(nullptr);
+        m_LastActiveWindow = nullptr;
         return;
     }
 

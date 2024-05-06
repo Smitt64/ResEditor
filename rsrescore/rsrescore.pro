@@ -111,7 +111,8 @@ FORMS += \
     panelpropertysdlg.ui \
     propertymodel/textstyledlg.ui \
     widgets/controltaborderedit.ui \
-    widgets/labeltexteditdlg.ui
+    widgets/labeltexteditdlg.ui \
+    wizards/texttopanel/textpage.ui
 
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
