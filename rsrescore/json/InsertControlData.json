@@ -1,0 +1,28 @@
+
+{
+    "items": [
+        {
+            "class": "ControlItem",
+            "parent": "",
+            "uuid": "{c6a30d34-1ac3-40d7-9ded-b1aa1dcde520}",
+            "properties": [
+                {
+                    "property": "point",
+                    "value": [0, 0]
+                },
+                {
+                    "property": "size",
+                    "value": [7, 1]
+                },
+                {
+                    "property": "fieldType",
+                    "value": 1
+                },
+                {
+                    "property": "dataType",
+                    "value": 0
+                }
+            ]
+        }
+    ]
+}

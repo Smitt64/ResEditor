@@ -12,6 +12,7 @@
 #include "updatecheckermessagebox.h"
 #include "subwindowsmodel.h"
 #include "windowslistdlg.h"
+#include "selectresourcedlg.h"
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QDebug>
@@ -64,6 +65,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     QThreadPool::globalInstance()->start(pUpdateChecker);
 
+    ui->actionOpenRes->setShortcut(QKeySequence("Alt+O"));
+
     connect(m_ResListKey, &QShortcut::activated, m_ResListDock, &QDockWidget::raise);
     connect(m_ToolsListKey, &QShortcut::activated, m_ToolBoxDock, &QDockWidget::raise);
     connect(pUpdateChecker, &UpdateChecker::checkFinished, this, &MainWindow::checkUpdateFinished);
@@ -73,6 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionNew, &QAction::triggered, this, &MainWindow::onNew);
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::onOpen);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onAbout);
+    connect(ui->actionOpenRes, &QAction::triggered, this, &MainWindow::onOpenRes);
 }
 
 MainWindow::~MainWindow()
@@ -98,6 +102,8 @@ void MainWindow::SetupMenus()
 
     ui->toolBar->addAction(ui->actionNew);
     ui->toolBar->addAction(ui->actionOpen);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(ui->actionOpenRes);
 
     ui->viewMenu->addAction(m_ResListDock->toggleViewAction());
     ui->viewMenu->addAction(m_PropertyDock->toggleViewAction());
@@ -448,4 +454,21 @@ void MainWindow::showWindowList()
 {
     WindowsListDlg dlg(pWindowsModel, m_Mdi, this);
     dlg.exec();
+}
+
+void MainWindow::onOpenRes()
+{
+    if (!m_pLbrObj)
+        return;
+
+    SelectResourceDlg dlg(this);
+    dlg.setModel(m_pLbrObj->list());
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        int m_type;
+        QString m_name;
+
+        dlg.getRes(m_type, m_name);
+        doubleResClicked(m_name, m_type);
+    }
 }

@@ -81,7 +81,7 @@ public:
 
     void retranslateUi(QDialog *BankDistribSelect)
     {
-        BankDistribSelect->setWindowTitle(QCoreApplication::translate("BankDistribSelect", "Dialog", nullptr));
+        BankDistribSelect->setWindowTitle(QCoreApplication::translate("BankDistribSelect", "\320\222\321\213\320\261\320\276\321\200 \321\201\320\261\320\276\321\200\320\272\320\270 \320\261\320\260\320\275\320\272\320\260", nullptr));
         QTreeWidgetItem *___qtreewidgetitem = treeWidget->headerItem();
         ___qtreewidgetitem->setText(0, QCoreApplication::translate("BankDistribSelect", "1", nullptr));
 

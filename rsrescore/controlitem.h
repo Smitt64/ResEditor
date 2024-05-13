@@ -167,6 +167,8 @@ public:
 
     virtual QVariant userAction(const qint32 &action, const QVariant &param = QVariant()) Q_DECL_OVERRIDE;
 
+    void FillItemControl(ControlPropertysDlg &dlg);
+
 signals:
     void fieldTypeChanged();
     void dataTypeChanged();
@@ -193,7 +195,6 @@ protected:
 private:
     struct FieldStruct *m_pFieldStruct;
     void updateCorners();
-    void FillItemControl(ControlPropertysDlg &dlg);
 
     FieldType m_FieldType;
     DataType m_DataType;

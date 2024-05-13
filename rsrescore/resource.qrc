@@ -88,5 +88,9 @@
         <file>img/TextBoxI32_24x_fvt.png</file>
         <file>img/TextBox_24x_fvt.png</file>
         <file>img/DatePicker_24x_fvt.png</file>
+        <file>img/openbook.png</file>
+        <file>img/information.png</file>
+        <file>img/insctrl.png</file>
+        <file>json/InsertControlData.json</file>
     </qresource>
 </RCC>

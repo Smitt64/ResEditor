@@ -112,7 +112,7 @@ QVariant LbrResListModel::data(const QModelIndex &index, int role) const
         {
             RLibDirElem *elem = d->m_Elements[index.row()];
             const ftime &ftime = elem->ftime;
-            return QDateTime(QDate(ftime.ft_year, ftime.ft_month, ftime.ft_day),
+            return QDateTime(QDate(ftime.ft_year + 1980, ftime.ft_month, ftime.ft_day),
                              QTime(ftime.ft_hour, ftime.ft_min, ftime.ft_tsec));
         }
     }

@@ -46,6 +46,8 @@
     <property name="title">
      <string>Сервис</string>
     </property>
+    <addaction name="actionOpenRes"/>
+    <addaction name="separator"/>
     <addaction name="action"/>
    </widget>
    <widget class="QMenu" name="menu_3">
@@ -156,6 +158,10 @@
    </property>
   </action>
   <action name="actionAbout">
+   <property name="icon">
+    <iconset resource="../rsrescore/resource.qrc">
+     <normaloff>:/img/information.png</normaloff>:/img/information.png</iconset>
+   </property>
    <property name="text">
     <string>О программе...</string>
    </property>
@@ -176,6 +182,15 @@
    </property>
    <property name="text">
     <string>Каскад</string>
+   </property>
+  </action>
+  <action name="actionOpenRes">
+   <property name="icon">
+    <iconset resource="../rsrescore/resource.qrc">
+     <normaloff>:/img/openbook.png</normaloff>:/img/openbook.png</iconset>
+   </property>
+   <property name="text">
+    <string>Открыть ресурс</string>
    </property>
   </action>
  </widget>

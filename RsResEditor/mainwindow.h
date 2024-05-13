@@ -49,6 +49,8 @@ private slots:
     void subWindowIndexChanged(const int &index);
     void showWindowList();
 
+    void onOpenRes();
+
 protected:
     virtual void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 

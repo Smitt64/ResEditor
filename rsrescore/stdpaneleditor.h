@@ -46,6 +46,7 @@ private slots:
     void clipboardChanged();
     void onViewEasyWin();
     void onViewCmd();
+    void onInsertControl();
     void ViewerFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 protected:
@@ -95,9 +96,10 @@ private:
     QAction *m_pCutAction, *m_pCopyAction, *m_pPasteAction;
     QAction *m_pCheckAction, *m_EwViewAction, *m_ViewAction, *m_Statistic;
     QAction *m_SaveToXml;
+    QAction *m_pCreateControl;
 
     QMenuBar *m_pMenuBar;
-    QMenu *m_pEditMenu, *m_pViewMenu, *m_pResMenu;
+    QMenu *m_pEditMenu, *m_pViewMenu, *m_pResMenu, *m_pElements;
 
     QToolBar *m_pToolBar;
     QClipboard *m_pClipboard;

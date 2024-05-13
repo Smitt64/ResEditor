@@ -1,5 +1,6 @@
 #include "stdpaneleditor.h"
 #include "baseeditorview.h"
+#include "controlpropertysdlg.h"
 #include "panelitem.h"
 #include "respanel.h"
 #include "rsrescore.h"
@@ -14,6 +15,7 @@
 #include "textitem.h"
 #include "controlitem.h"
 #include "containeritem.h"
+#include "toolsruntime.h"
 #include <QStatusBar>
 #include <QHBoxLayout>
 #include <QGraphicsSceneMouseEvent>
@@ -61,7 +63,7 @@ public:
         m_fShowCursor(false)
     {
         m_pCursorTimer = new QTimer(this);
-        m_pCursorTimer->setInterval(1000);
+        m_pCursorTimer->setInterval(500);
         m_pCursorTimer->setSingleShot(false);
 
         connect(m_pCursorTimer, &QTimer::timeout, [&]()
@@ -127,6 +129,37 @@ protected:
         }
 
         update(rect);
+    }
+
+    virtual void keyPressEvent(QKeyEvent *keyEvent) Q_DECL_OVERRIDE
+    {
+        QSize grSize = getGridSize();
+        auto CheckNewPos = [this, &grSize](const QPointF &point)
+        {
+            const CustomRectItem *panel = findTopLevelItem();
+            QRectF bound = panel->mapRectToScene(panel->boundingRect());
+            QRectF caret(point, QSizeF(grSize.width(), grSize.height()));
+
+            return bound.contains(caret);
+        };
+
+        QPointF savepos = m_CursorPos;
+        if (keyEvent->key() == Qt::Key_Down)
+            m_CursorPos.setY(m_CursorPos.y() + grSize.height());
+
+        if (keyEvent->key() == Qt::Key_Up)
+            m_CursorPos.setY(m_CursorPos.y() - grSize.height());
+
+        if (keyEvent->key() == Qt::Key_Right)
+            m_CursorPos.setX(m_CursorPos.x() + grSize.width());
+
+        if (keyEvent->key() == Qt::Key_Left)
+            m_CursorPos.setX(m_CursorPos.x() - grSize.width());
+
+        if (!CheckNewPos(m_CursorPos))
+            m_CursorPos = savepos;
+
+        BaseScene::keyPressEvent(keyEvent);
     }
 
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent) Q_DECL_OVERRIDE
@@ -278,9 +311,12 @@ void StdPanelEditor::setupMenus()
     m_ViewAction = addAction(m_pResMenu, QIcon(":/img/PanelCmd.png"), tr("Просмотр"), QKeySequence("Alt+F3"));
     m_Statistic = addAction(m_pResMenu, QIcon(":/img/Statistic.png"), tr("Информация"));
 
+    m_pCreateControl = addAction(m_pElements, QIcon(":/img/insctrl.png"), tr("Создать поле"), QKeySequence(Qt::Key_Insert));
+
     connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
     connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
     connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
+    connect(m_pCreateControl, &QAction::triggered, this, &StdPanelEditor::onInsertControl);
 }
 
 void StdPanelEditor::setupEditor()
@@ -325,6 +361,7 @@ void StdPanelEditor::setupEditor()
     m_pEditMenu = m_pMenuBar->addMenu(tr("&Правка"));
     m_pViewMenu = m_pMenuBar->addMenu(tr("&Вид"));
     m_pResMenu = m_pMenuBar->addMenu(tr("&Ресурс"));
+    m_pElements = m_pMenuBar->addMenu(tr("&Элементы"));
     setupContrastAction();
     setupScrolAreaAction();
     setupPropertyAction();
@@ -946,4 +983,71 @@ void StdPanelEditor::ViewerFinished(int exitCode, QProcess::ExitStatus exitStatu
 {
     m_ViewerDir.reset();
     sender()->deleteLater();
+}
+
+void StdPanelEditor::onInsertControl()
+{
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+
+    if (!pScene)
+        return;
+
+    QPointF CursorPos = pScene->cursorPos();
+    if (CursorPos.isNull())
+        return;
+
+    CustomRectItem *pPanel = pScene->findTopLevelItem();
+    if (!pPanel)
+        return;
+
+    CursorPos = pPanel->mapFromScene(CursorPos);
+
+    bool found = false;
+    QSize grid = pScene->getGridSize();
+    QRectF cursor(CursorPos, QSizeF(grid.width(), grid.height()));
+    QList<CustomRectItem*> lst = pScene->findItems<CustomRectItem>();
+    for (CustomRectItem *item : lst)
+    {
+        if (pPanel == item)
+            continue;
+
+        QRectF rect = item->boundingRect();
+        rect.moveTo(item->pos());
+
+        if (rect.contains(cursor))
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        undoStack()->beginMacro(tr("Изменение параметров элемента"));
+        QList<QGraphicsItem*> Created;
+        UndoItemAdd *pUndo = new UndoItemAdd(pScene);
+        pUndo->setData(toolReadTextFileContent(":/json/InsertControlData.json").toLocal8Bit());
+        pUndo->setOffset(pPanel->realCoordToEw(CursorPos));
+        pUndo->setItemsListPtr(&Created);
+        undoStack()->push(pUndo);
+
+        ControlPropertysDlg dlg(this);
+        dlg.setControlItem(dynamic_cast<ControlItem*>(Created[0]));
+
+        if (dlg.exec() == QDialog::Accepted)
+        {
+            pUndo->setItemsListPtr(nullptr);
+            dynamic_cast<ControlItem*>(Created[0])->FillItemControl(dlg);
+            undoStack()->endMacro();
+        }
+        else
+        {
+            auto* cmd = const_cast<QUndoCommand*>(undoStack()->command(undoStack()->count() - 1));
+            cmd->undo();
+            cmd->setObsolete(true);
+            undoStack()->endMacro();
+            undoStack()->undo();
+        }
+        pScene->update();
+    }
 }

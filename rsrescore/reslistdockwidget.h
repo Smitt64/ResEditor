@@ -26,18 +26,20 @@ public:
 
     void setModel(QAbstractItemModel *model);
 
+    static QMainWindow *MakeContainer();
+    static void SetModel(QMainWindow *Container, QAbstractItemModel *model);
+    static void ResetFilterModel(QMainWindow *Container);
+    static void SetupTypesFilter(QMainWindow *Container, QAbstractItemModel *model);
+
 private slots:
     void onDoubleClicked(const QModelIndex &index);
     void onCustomContextMenuRequested(const QPoint &pos);
-    void typeItemChanged(QStandardItem *item);
 
 signals:
     void doubleClicked(const QString &name, const int &type);
     void deleteRequest(const QString &name, const int &type);
 
 private:
-    void resetFilterModel();
-    void setupTypesFilter(QAbstractItemModel *model);
     QMainWindow *m_Container;
     QTreeView *m_List;
     QLineEdit *m_pNameFilter;
@@ -47,12 +49,12 @@ private:
 
     QListView *m_FilterView;
     QWidgetAction *m_FilterViewAction;
-    ResFilterModel *m_pFiler;
+    //ResFilterModel *m_pFiler;
 
     QStandardItemModel *m_pTypesModel;
 };
 
-class ResFilterModel : public QSortFilterProxyModel
+class RSRESCORE_EXPORT ResFilterModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 
@@ -61,6 +63,7 @@ public:
     {
         fldName,
         fldType,
+        fldTime,
         fldComment
     };
 

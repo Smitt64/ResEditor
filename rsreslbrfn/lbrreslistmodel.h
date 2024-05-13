@@ -14,8 +14,8 @@ public:
     {
         ColumnName,
         ColumnType,
-        ColumnComment,
         ColumnTime,
+        ColumnComment,
 
         ColumnCount
     };

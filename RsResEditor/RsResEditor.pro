@@ -19,18 +19,21 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     newitemsdlg.cpp \
+    selectresourcedlg.cpp \
     subwindowsmodel.cpp \
     windowslistdlg.cpp
 
 HEADERS += \
     mainwindow.h \
     newitemsdlg.h \
+    selectresourcedlg.h \
     subwindowsmodel.h \
     windowslistdlg.h
 
 FORMS += \
     mainwindow.ui \
     newitemsdlg.ui \
+    selectresourcedlg.ui \
     windowslistdlg.ui
 
 # Default rules for deployment.
