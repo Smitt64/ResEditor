@@ -5,6 +5,7 @@
 
 class TextPage;
 class PanelItem;
+class ResPanel;
 class TextToPanelWizard : public QWizard
 {
     Q_OBJECT
@@ -12,7 +13,7 @@ public:
     TextToPanelWizard(QWidget *parent = nullptr);
     virtual ~TextToPanelWizard();
 
-    PanelItem *makePanel();
+    ResPanel *makePanel();
 
 private:
     TextPage *m_pMaketText;

@@ -14,9 +14,7 @@ TextToPanelWizard::~TextToPanelWizard()
 
 }
 
-PanelItem *TextToPanelWizard::makePanel()
+ResPanel *TextToPanelWizard::makePanel()
 {
-    PanelItem *item = nullptr;
-
-    return item;
+    return m_pMaketText->m_pPanel;
 }

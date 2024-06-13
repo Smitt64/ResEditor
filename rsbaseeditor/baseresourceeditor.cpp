@@ -91,11 +91,13 @@ BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const 
 
         if (dlg.exec() == QDialog::Accepted)
         {
-            PanelItem *item = dlg.makePanel();
+            ResPanel *item = dlg.makePanel();
 
             pNewEditor = new StdPanelEditor(LbrObject::RES_PANEL);
             pNewEditor->setWindowIcon(RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL));
             pNewEditor->setupEditor();
+
+            ((StdPanelEditor*)pNewEditor)->setPanel(item);
 
             //qobject_cast<StdPanelEditor*>(pNewEditor)->setPanel(testPan);
             SetupEditorTitle(pNewEditor, LbrObject::RES_PANEL, name, item->title());

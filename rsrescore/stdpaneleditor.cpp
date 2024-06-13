@@ -201,7 +201,9 @@ protected:
 
             for (QGraphicsItem *tmpItem : qAsConst(panelItems))
             {
-                if (tmpItem == panelItem)
+                ScrolAreaRectItem *area = dynamic_cast<ScrolAreaRectItem*>(tmpItem);
+
+                if (tmpItem == panelItem || area || !tmpItem->isVisible())
                     continue;
 
                 QRectF itemSceneBound = tmpItem->mapRectToScene(tmpItem->boundingRect());
