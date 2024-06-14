@@ -225,6 +225,7 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
     {
         m_ToolBoxDock->setModel(nullptr);
         m_PropertyDock->setPropertyModel(nullptr);
+        m_PropertyDock->setStructModel(nullptr);
         m_LastActiveWindow = nullptr;
         return;
     }
@@ -238,11 +239,13 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
     {
         m_ToolBoxDock->setModel(nullptr);
         m_PropertyDock->setPropertyModel(nullptr);
+        m_PropertyDock->setStructModel(nullptr);
     }
     else
     {
         m_ToolBoxDock->setModel(wnd->toolBox());
         m_PropertyDock->setPropertyModel(wnd->propertyModel());
+        m_PropertyDock->setStructModel(wnd->structModel());
 
         QModelIndex index = pWindowsModel->findWindow(window);
         pWindowsComboBox->setCurrentIndex(index.row());

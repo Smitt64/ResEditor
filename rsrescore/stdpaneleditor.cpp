@@ -5,6 +5,7 @@
 #include "respanel.h"
 #include "rsrescore.h"
 #include "scrolitem.h"
+#include "panelstructmodel.h"
 #include "statusbarelement.h"
 #include "basescene.h"
 #include "baseeditorview.h"
@@ -268,6 +269,8 @@ StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
             setWindowIcon(RsResCore::inst()->iconFromResType(m_Type));
         });
     }
+
+    m_pStructModel = new PanelStructModel(panelItem);
 
     m_StatusBar = new QStatusBar(this);
     m_pStatusContainer = new QWidget(this);
@@ -911,6 +914,11 @@ QAbstractItemModel *StdPanelEditor::propertyModel()
         return nullptr;
 
     return rectItem->propertyModel();
+}
+
+QAbstractItemModel *StdPanelEditor::structModel()
+{
+    return m_pStructModel;
 }
 
 void StdPanelEditor::ViewResource(bool EwFlag)

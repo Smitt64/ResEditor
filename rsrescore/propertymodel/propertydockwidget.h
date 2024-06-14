@@ -8,6 +8,8 @@
 
 class QMainWindow;
 class PropertyTreeView;
+class QTreeView;
+class QSplitter;
 class QAbstractItemModel;
 class RSRESCORE_EXPORT PropertyDockWidget : public QDockWidget
 {
@@ -18,10 +20,13 @@ public:
 
 public slots:
     void setPropertyModel(QAbstractItemModel *model);
+    void setStructModel(QAbstractItemModel *model);
 
 private:
     QMainWindow *m_pContainer;
     PropertyTreeView *m_pTreeView;
+    QTreeView *m_pStructView;
+    QSplitter *m_pSplitter;
 
     QSet<QString> m_Expanded;
 };

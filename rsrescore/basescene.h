@@ -23,6 +23,7 @@ public:
     ResStyle *style();
 
     CustomRectItem *findItem(const QUuid &uuid) const;
+    CustomRectItem *findItem(const QGraphicsItem *item) const;
     CustomRectItem *findTopLevelItem() const;
 
     void insertMousePressPoint(CustomRectItem *rectItem);

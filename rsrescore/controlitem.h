@@ -211,6 +211,8 @@ private:
     ControTabOrder m_TabOrder;
 };
 
+QIcon IconForDataType(int DataType);
+
 Q_DECLARE_OPAQUE_POINTER(ControlItem)
 Q_DECLARE_OPERATORS_FOR_FLAGS(ControlItem::ControlFlags)
 Q_DECLARE_METATYPE(ControlItem::ControlFlags)

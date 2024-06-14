@@ -83,6 +83,9 @@ signals:
     void panelExcludeChanged();
     void helpPageChanged();
 
+    void childAdded(CustomRectItem *item);
+    void childRemoved(CustomRectItem *item);
+
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
     virtual bool event(QEvent *e) Q_DECL_OVERRIDE;
@@ -96,6 +99,7 @@ protected:
     virtual void FillItemPanel(PanelPropertysDlg &dlg);
 
 private:
+    virtual QVariant itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value) Q_DECL_OVERRIDE;
     void setChildsVisible(const bool &value);
 
     ResPanel *m_Panel;

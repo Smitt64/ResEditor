@@ -641,3 +641,25 @@ void PanelItem::updateChildControlsOrder()
             item->setTabOrder(tabOrder);
     }
 }
+
+QVariant PanelItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value)
+{
+    if (change == QGraphicsItem::ItemChildAddedChange)
+    {
+        QGraphicsItem *item = value.value<QGraphicsItem*>();
+        if (item)
+            emit childAdded(nullptr);
+
+        return ContainerItem::itemChange(change, value);
+    }
+    else if (change == QGraphicsItem::ItemChildRemovedChange)
+    {
+        QGraphicsItem *item = value.value<QGraphicsObject*>();
+        if (item)
+            emit childRemoved(nullptr);
+
+        return ContainerItem::itemChange(change, value);
+    }
+
+    return ContainerItem::itemChange(change, value);
+}

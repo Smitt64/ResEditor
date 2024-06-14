@@ -27,6 +27,7 @@ SOURCES += \
     easywinini.cpp \
     panelitem.cpp \
     panelpropertysdlg.cpp \
+    panelstructmodel.cpp \
     propertymodel/ctrltabordertreeitem.cpp \
     propertymodel/ewtextstylepropertytreeitem.cpp \
     propertymodel/labeltextpropertyitem.cpp \
@@ -73,6 +74,7 @@ HEADERS += \
     easywinini.h \
     panelitem.h \
     panelpropertysdlg.h \
+    panelstructmodel.h \
     propertymodel/ctrltabordertreeitem.h \
     propertymodel/ewtextstylepropertytreeitem.h \
     propertymodel/labeltextpropertyitem.h \

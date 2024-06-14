@@ -4,14 +4,31 @@
 #include <QMainWindow>
 #include <QDebug>
 #include <QHeaderView>
+#include <QSplitter>
 // https://stackoverflow.com/questions/27149733/qtreeview-merge-some-cells
 PropertyDockWidget::PropertyDockWidget(QWidget *paretn) :
     QDockWidget(paretn)
 {
     m_pTreeView = new PropertyTreeView(this);
+    m_pTreeView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
     m_pContainer = new QMainWindow();
-    m_pContainer->setCentralWidget(m_pTreeView);
     m_pContainer->setMinimumWidth(350);
+
+    m_pStructView = new QTreeView(this);
+    m_pStructView->setRootIsDecorated(false);
+    m_pStructView->setIndentation(10);
+    m_pStructView->header()->setStretchLastSection(false);
+
+    m_pStructView->setMaximumHeight(200);
+    m_pStructView->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+
+    m_pSplitter = new QSplitter(Qt::Vertical, this);
+    m_pSplitter->setObjectName("PropertyDockSplitter");
+    m_pSplitter->addWidget(m_pTreeView);
+    m_pSplitter->addWidget(m_pStructView);
+
+    m_pContainer->setCentralWidget(m_pSplitter);
     setWidget(m_pContainer);
 
     setWindowTitle(tr("Свойства"));
@@ -30,6 +47,18 @@ PropertyDockWidget::PropertyDockWidget(QWidget *paretn) :
 PropertyDockWidget::~PropertyDockWidget()
 {
 
+}
+
+void PropertyDockWidget::setStructModel(QAbstractItemModel *model)
+{
+    m_pStructView->setModel(model);
+
+    if (!model)
+        return;
+
+    m_pStructView->expandAll();
+
+    m_pStructView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 }
 
 void PropertyDockWidget::setPropertyModel(QAbstractItemModel *model)

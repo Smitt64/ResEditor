@@ -32,6 +32,7 @@ public:
     QUndoStack *undoStack();
     ToolBoxModel *toolBox();
     virtual QAbstractItemModel *propertyModel();
+    virtual QAbstractItemModel *structModel();
 
     QAction *undoAction();
     QAction *redoAction();

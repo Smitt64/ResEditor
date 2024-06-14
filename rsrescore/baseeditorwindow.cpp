@@ -123,6 +123,11 @@ QAbstractItemModel *BaseEditorWindow::propertyModel()
     return nullptr;
 }
 
+QAbstractItemModel *BaseEditorWindow::structModel()
+{
+    return nullptr;
+}
+
 QAction *BaseEditorWindow::undoAction()
 {
     return m_pUndoAction;

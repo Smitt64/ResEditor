@@ -2,6 +2,7 @@
 #include "styles/resstyle.h"
 #include "customrectitem.h"
 #include "propertymodel.h"
+#include "panelitem.h"
 #include <QPainter>
 #include <QMapIterator>
 #include <QGraphicsSceneMouseEvent>
@@ -55,6 +56,25 @@ CustomRectItem *BaseScene::findItem(const QUuid &uuid) const
         CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(element);
 
         if (rectItem && rectItem->uuid() == uuid)
+        {
+            foundItem = rectItem;
+            break;
+        }
+    }
+
+    return foundItem;
+}
+
+CustomRectItem *BaseScene::findItem(const QGraphicsItem *item) const
+{
+    CustomRectItem *foundItem = nullptr;
+    QList<QGraphicsItem*> elements = items();
+
+    for (auto element : qAsConst(elements))
+    {
+        CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(element);
+
+        if (rectItem && element == item)
         {
             foundItem = rectItem;
             break;

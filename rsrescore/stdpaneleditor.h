@@ -17,6 +17,7 @@ class ToolBoxModel;
 class QClipboard;
 class QTabWidget;
 class QTemporaryDir;
+class PanelStructModel;
 class StdPanelEditor : public BaseEditorWindow
 {
     Q_OBJECT
@@ -33,6 +34,7 @@ public:
     virtual qint16 type() const Q_DECL_OVERRIDE;
 
     virtual QAbstractItemModel *propertyModel() Q_DECL_OVERRIDE;
+    virtual QAbstractItemModel *structModel() Q_DECL_OVERRIDE;
 
 private slots:
     void sceneSelectionChanged();
@@ -103,6 +105,8 @@ private:
 
     QToolBar *m_pToolBar;
     QClipboard *m_pClipboard;
+
+    PanelStructModel *m_pStructModel;
 
     QScopedPointer<QTemporaryDir> m_ViewerDir;
 };

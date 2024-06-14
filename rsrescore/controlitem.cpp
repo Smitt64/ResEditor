@@ -15,6 +15,57 @@
 #include <QUndoStack>
 #include <QGraphicsView>
 
+QIcon IconForDataType(int DataType)
+{
+    QIcon icon;
+
+    switch(DataType)
+    {
+    case ControlItem::INT16:
+        icon = QIcon(":/img/TextBoxI16_24x.png");
+        break;
+    case ControlItem::INT32:
+        icon = QIcon(":/img/TextBoxI32_24x.png");
+        break;
+    case ControlItem::INT64:
+        icon = QIcon(":/img/TextBox_24x.png");
+        break;
+    case ControlItem::FLOAT:
+    case ControlItem::FLOATG:
+    case ControlItem::DOUBLE:
+    case ControlItem::DOUBLEG:
+    case ControlItem::MONEY:
+    case ControlItem::MONEYR:
+    case ControlItem::LMONEY:
+    case ControlItem::LMONEYR:
+    case ControlItem::DECIMAL:
+    case ControlItem::NUMERIC:
+         icon = QIcon(":/img/TextBoxMoney_24x.png");
+        break;
+    case ControlItem::STRING:
+    case ControlItem::SNR:
+    case ControlItem::NUMSTR:
+        icon = QIcon(":/img/TextBox_24x.png");
+        break;
+    case ControlItem::DATE:
+        icon = QIcon(":/img/DatePicker_24x.png");
+        break;
+    case ControlItem::TIME:
+    case ControlItem::SHTM:
+        icon = QIcon(":/img/TimePicker_24x.png");
+        break;
+    case ControlItem::CHAR:
+    case ControlItem::UCHAR:
+        icon = QIcon(":/img/TextBox_24x.png");
+        break;
+    case ControlItem::PICTURE:
+        icon = QIcon(":/img/Image_24x.png");
+        break;
+    }
+
+    return icon;
+}
+
 ControlItem::ControlItem(QGraphicsItem *parent) :
     CustomRectItem(parent),
     m_pFieldStruct(nullptr),
