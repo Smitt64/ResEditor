@@ -83,8 +83,7 @@ signals:
     void panelExcludeChanged();
     void helpPageChanged();
 
-    void childAdded(CustomRectItem *item);
-    void childRemoved(CustomRectItem *item);
+    void structChanged();
 
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;

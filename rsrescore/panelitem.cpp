@@ -461,6 +461,7 @@ void PanelItem::dropEvent(QGraphicsSceneDragDropEvent *event)
         pUndo->setOffset(realCoordToEw(event->pos()));
 
         undoStack()->push(pUndo);
+        emit structChanged();
 
         dragLeaveEvent(nullptr);
         event->accept();
@@ -644,11 +645,11 @@ void PanelItem::updateChildControlsOrder()
 
 QVariant PanelItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value)
 {
-    if (change == QGraphicsItem::ItemChildAddedChange)
+    /*if (change == QGraphicsItem::ItemChildAddedChange)
     {
         QGraphicsItem *item = value.value<QGraphicsItem*>();
         if (item)
-            emit childAdded(nullptr);
+            emit structChanged();
 
         return ContainerItem::itemChange(change, value);
     }
@@ -656,10 +657,10 @@ QVariant PanelItem::itemChange(QGraphicsItem::GraphicsItemChange change, const Q
     {
         QGraphicsItem *item = value.value<QGraphicsObject*>();
         if (item)
-            emit childRemoved(nullptr);
+            emit structChanged();
 
         return ContainerItem::itemChange(change, value);
-    }
+    }*/
 
     return ContainerItem::itemChange(change, value);
 }

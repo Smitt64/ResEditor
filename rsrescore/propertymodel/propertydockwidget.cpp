@@ -1,6 +1,8 @@
 #include "propertydockwidget.h"
 #include "propertytreeview.h"
 #include "propertymodel.h"
+#include "customrectitem.h"
+#include <QGraphicsScene>
 #include <QMainWindow>
 #include <QDebug>
 #include <QHeaderView>
@@ -18,6 +20,7 @@ PropertyDockWidget::PropertyDockWidget(QWidget *paretn) :
     m_pStructView = new QTreeView(this);
     m_pStructView->setRootIsDecorated(false);
     m_pStructView->setIndentation(10);
+    m_pStructView->setItemsExpandable(false);
     m_pStructView->header()->setStretchLastSection(false);
 
     m_pStructView->setMaximumHeight(200);
@@ -42,6 +45,17 @@ PropertyDockWidget::PropertyDockWidget(QWidget *paretn) :
     {
         m_Expanded.remove(index.data().toString());
     });
+
+    connect(m_pStructView, &QTreeView::clicked, [=](const QModelIndex &index)
+    {
+        CustomRectItem *item = index.data(Qt::UserRole + 1).value<CustomRectItem*>();
+
+        if (item)
+        {
+            item->scene()->clearSelection();
+            item->setSelected(true);
+        }
+    });
 }
 
 PropertyDockWidget::~PropertyDockWidget()
@@ -59,6 +73,11 @@ void PropertyDockWidget::setStructModel(QAbstractItemModel *model)
     m_pStructView->expandAll();
 
     m_pStructView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+
+    connect(model, &QAbstractItemModel::modelReset, [=]()
+    {
+        m_pStructView->expandAll();
+    });
 }
 
 void PropertyDockWidget::setPropertyModel(QAbstractItemModel *model)

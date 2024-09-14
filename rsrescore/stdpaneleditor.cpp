@@ -501,6 +501,7 @@ void StdPanelEditor::setPanel(ResPanel *panel, const QString &comment)
     panelItem->setPanel(m_pPanel, comment);
 
     m_pNameLineEdit->setText(m_pPanel->name());
+    m_pStructModel->structChanged();
 
     emit titleChanged(m_pPanel->title());
 }

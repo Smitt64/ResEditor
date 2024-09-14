@@ -5,6 +5,8 @@
 #include <QObject>
 #include <memory>
 
+#define CustomRectItemRole (Qt::UserRole + 1)
+
 class TreeItem;
 class CustomRectItem;
 class QGraphicsItem;
@@ -27,8 +29,8 @@ public:
     int rowCount(const QModelIndex &parent = {}) const override;
     int columnCount(const QModelIndex &parent = {}) const override;
 
-private slots:
-    void childAdded(CustomRectItem *item);
+public slots:
+    void structChanged();
 
 private:
     std::unique_ptr<TreeItem> rootItem;

@@ -144,12 +144,12 @@ PanelStructModel::PanelStructModel(CustomRectItem *item, QObject *parent) :
 
     rootItem->appendChild(std::make_unique<TreeItem>(item, rootItem.get()));
 
-    connect(item, SIGNAL(childAdded(CustomRectItem*)), this, SLOT(childAdded(CustomRectItem*)));
+    connect(item, SIGNAL(structChanged()), this, SLOT(structChanged()));
 }
 
 PanelStructModel::~PanelStructModel() = default;
 
-void PanelStructModel::childAdded(CustomRectItem *item)
+void PanelStructModel::structChanged()
 {
     TreeItem *panel = rootItem->child(0);
 
@@ -188,10 +188,14 @@ int PanelStructModel::columnCount(const QModelIndex &parent) const
 
 QVariant PanelStructModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid() || (role != Qt::DisplayRole && role != Qt::DecorationRole))
+    if (!index.isValid() || (role != Qt::DisplayRole && role != Qt::DecorationRole && role != CustomRectItemRole))
         return {};
 
     const auto *item = static_cast<const TreeItem*>(index.internalPointer());
+
+    if (role == CustomRectItemRole)
+        return QVariant::fromValue<CustomRectItem*>(item->m_pItem);
+
     return item->data(index.column(), role);
 }
 

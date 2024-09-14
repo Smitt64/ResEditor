@@ -2,4 +2,6 @@
 	path = PropertyEditor
 	url = https://github.com/Smitt64/PropertyEditor
 [submodule "RsWorkTools"]
+	path = ToolsRuntimeProj
 	url = https://github.com/Smitt64/RsWorkTools.git
+	branch = RsScript
