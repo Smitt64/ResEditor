@@ -25,6 +25,7 @@ SOURCES += \
     controtaborder.cpp \
     customrectitem.cpp \
     easywinini.cpp \
+    options/resoptions.cpp \
     panelitem.cpp \
     panelpropertysdlg.cpp \
     panelstructmodel.cpp \
@@ -72,6 +73,7 @@ HEADERS += \
     controtaborder.h \
     customrectitem.h \
     easywinini.h \
+    options/resoptions.h \
     panelitem.h \
     panelpropertysdlg.h \
     panelstructmodel.h \
@@ -159,9 +161,9 @@ else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PW
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../PropertyEditor/debug/PropertyEditor.lib
 else:unix: PRE_TARGETDEPS += $$OUT_PWD/../PropertyEditor/libPropertyEditor.a
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../RsWorkTools/ToolsRuntime/release/ -lToolsRuntime
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../RsWorkTools/ToolsRuntime/debug/ -lToolsRuntime
-else:unix: LIBS += -L$$OUT_PWD/../RsWorkTools/ToolsRuntime/ -lToolsRuntime
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../ToolsRuntimeProj/ToolsRuntime/release/ -lToolsRuntime
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../ToolsRuntimeProj/ToolsRuntime/debug/ -lToolsRuntime
+else:unix: LIBS += -L$$OUT_PWD/../ToolsRuntimeProj/ToolsRuntime/ -lToolsRuntime
 
-INCLUDEPATH += $$PWD/../RsWorkTools/ToolsRuntime
-DEPENDPATH += $$PWD/../RsWorkTools/ToolsRuntime
+INCLUDEPATH += $$PWD/../ToolsRuntimeProj/ToolsRuntime $$PWD/../ToolsRuntimeProj/ToolsRuntime/optionsdlg $$PWD/../ToolsRuntimeProj/ToolsRuntime/widgets
+DEPENDPATH += $$PWD/../ToolsRuntimeProj/ToolsRuntime

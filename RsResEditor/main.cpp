@@ -4,9 +4,20 @@
 #include <QtPlugin>
 #include <QScopedPointer>
 #include <QCommandLineParser>
+#include <QDir>
 
 int main(int argc, char *argv[])
 {
+    QDir current(QCoreApplication::applicationDirPath());
+    QCoreApplication::addLibraryPath(QFileInfo(QCoreApplication::applicationFilePath()).path());
+    QCoreApplication::addLibraryPath(current.absolutePath());
+    QCoreApplication::addLibraryPath(current.absoluteFilePath("platforms"));
+    QCoreApplication::addLibraryPath(current.absoluteFilePath("iconengines"));
+    QCoreApplication::addLibraryPath(current.absoluteFilePath("imageformats"));
+    QCoreApplication::addLibraryPath(current.absoluteFilePath("platforms"));
+    QCoreApplication::addLibraryPath(current.absoluteFilePath("sqldrivers"));
+    QCoreApplication::addLibraryPath(current.absoluteFilePath("styles"));
+
     QCommandLineParser parser;
     parser.setApplicationDescription("Work Lbr");
     parser.addHelpOption();
@@ -25,7 +36,7 @@ int main(int argc, char *argv[])
 
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
-    char **argvnew = (char **)malloc((argc + 2) * sizeof(char*));
+    /*char **argvnew = (char **)malloc((argc + 2) * sizeof(char*));
     for (int i = 0; i < argc + 2; i++)
     {
         if (i < argc)
@@ -43,16 +54,17 @@ int main(int argc, char *argv[])
     }
 
     strncpy_s(argvnew[argc], 11, "--platform", 11);
-    strncpy_s(argvnew[argc + 1], 23, "windows:dpiawareness=1", 23);
+    strncpy_s(argvnew[argc + 1], 23, "windows:dpiawareness=1", 23);*/
 
-    QScopedPointer<ResApplication> a(new ResApplication(argc, argv));
+    ResApplication a(argc, argv);
+    qDebug() << a.arguments();
+    parser.process(a.arguments());
 
     RsResCore::inst()->init();
-    qDebug() << a->arguments();
-    parser.process(a->arguments());
 
     MainWindow w;
     w.showMaximized();
+    a.applyStyle();
 
     if (parser.isSet(lbrFileOption))
         w.open(parser.value(lbrFileOption));
@@ -60,12 +72,12 @@ int main(int argc, char *argv[])
     if (parser.isSet(resUnloadDirOption))
         w.setAutoUnloadDir(parser.value(resUnloadDirOption));
 
-    int stat = a->exec();
+    int stat = a.exec();
 
     // Освобождение памяти
-    for (int i = 0; i < argc + 2; i++)
+    /*for (int i = 0; i < argc + 2; i++)
         free(argvnew[i]);
-    free(argvnew);
+    free(argvnew);*/
 
     return stat;
 }

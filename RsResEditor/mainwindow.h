@@ -48,6 +48,7 @@ private slots:
     void checkUpdateFinished(bool hasUpdates, const CheckDataList &updatedata);
     void subWindowIndexChanged(const int &index);
     void showWindowList();
+    void onOptions();
 
     void onOpenRes();
 

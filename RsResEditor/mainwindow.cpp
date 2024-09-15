@@ -13,6 +13,8 @@
 #include "subwindowsmodel.h"
 #include "windowslistdlg.h"
 #include "selectresourcedlg.h"
+#include "resapplication.h"
+#include "options/resoptions.h"
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QDebug>
@@ -111,6 +113,13 @@ void MainWindow::SetupMenus()
     ui->viewMenu->addSeparator();
     ui->viewMenu->addAction(ui->toolBar->toggleViewAction());
     ui->viewMenu->addAction(ui->windowToolBar->toggleViewAction());
+}
+
+void MainWindow::onOptions()
+{
+    ResApplication *app = (ResApplication*)qApp;
+    ResOptions dlg(app->settings(), this);
+    dlg.exec();
 }
 
 void MainWindow::doubleResClicked(const QString &name, const int &type)
@@ -344,11 +353,14 @@ void MainWindow::CreateWindowsCombo()
     ui->actionNextWnd->setShortcut(QKeySequence(QKeySequence::NextChild));
     ui->actionPrevWnd->setShortcut(QKeySequence(QKeySequence::PreviousChild));
 
+    ui->windowToolBar->addAction(ui->actionOptions);
     ui->windowToolBar->addAction(ui->actionPrevWnd);
     ui->windowToolBar->addAction(ui->actionNextWnd);
     ui->windowToolBar->addWidget(pWindowsComboBox);
     ui->windowToolBar->addAction(ui->actionCloseWnd);
     ui->windowToolBar->addAction(ui->actionCloseAllWnd);
+
+    connect(ui->actionOptions, SIGNAL(triggered(bool)), SLOT(onOptions()));
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)

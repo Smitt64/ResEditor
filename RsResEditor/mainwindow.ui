@@ -49,6 +49,8 @@
     <addaction name="actionOpenRes"/>
     <addaction name="separator"/>
     <addaction name="action"/>
+    <addaction name="separator"/>
+    <addaction name="actionOptions"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -193,9 +195,19 @@
     <string>Открыть ресурс</string>
    </property>
   </action>
+  <action name="actionOptions">
+   <property name="icon">
+    <iconset resource="../ToolsRuntimeProj/ToolsRuntime/res/res.qrc">
+     <normaloff>:/icons/shell32.dll_14_274-0.png</normaloff>:/icons/shell32.dll_14_274-0.png</iconset>
+   </property>
+   <property name="text">
+    <string>Параметры</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="../rsrescore/resource.qrc"/>
+  <include location="../ToolsRuntimeProj/ToolsRuntime/res/res.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -6,7 +6,7 @@ SUBDIRS += \
     rsbaseeditor \
     rsrescore \
     rsreslbrfn \
-    RsWorkTools/ToolsRuntime
+    ToolsRuntimeProj
 
-rsrescore.depends = rsbaseeditor rsreslbrfn PropertyEditor RsWorkTools/ToolsRuntime
-RsResEditor.depends = rsreslbrfn rsrescore RsWorkTools/ToolsRuntime
+rsrescore.depends = rsbaseeditor rsreslbrfn PropertyEditor ToolsRuntimeProj
+RsResEditor.depends = rsreslbrfn rsrescore ToolsRuntimeProj

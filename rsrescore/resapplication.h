@@ -10,11 +10,13 @@ class RSRESCORE_EXPORT ResApplication : public QApplication
 {
     Q_OBJECT
 public:
-    ResApplication(int argc, char *argv[]);
+    ResApplication(int &argc, char **argv);
     virtual ~ResApplication();
 
     QSettings *settings();
     void init();
+
+    void applyStyle();
 
 private:
     QSettings *m_pSettings;

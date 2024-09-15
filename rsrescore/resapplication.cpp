@@ -1,14 +1,15 @@
 #include "resapplication.h"
 #include <QSettings>
 #include <QDir>
+#include <QStyleFactory>
 
-ResApplication::ResApplication(int argc, char *argv[]) :
+ResApplication::ResApplication(int &argc, char **argv) :
     QApplication(argc, argv)
 {
     QDir dir = QDir(applicationDirPath());
     m_pSettings = new QSettings(dir.absoluteFilePath("lbropt.ini"), QSettings::IniFormat);
 
-    QDir current(QDir::current());
+    /*QDir current(QDir::current());
     addLibraryPath(QFileInfo(QCoreApplication::applicationFilePath()).path());
     addLibraryPath(current.absolutePath());
     addLibraryPath(current.absoluteFilePath("platforms"));
@@ -16,7 +17,7 @@ ResApplication::ResApplication(int argc, char *argv[]) :
     addLibraryPath(current.absoluteFilePath("imageformats"));
     addLibraryPath(current.absoluteFilePath("platforms"));
     addLibraryPath(current.absoluteFilePath("sqldrivers"));
-    addLibraryPath(current.absoluteFilePath("styles"));
+    addLibraryPath(current.absoluteFilePath("styles"));*/
 }
 
 ResApplication::~ResApplication()
@@ -27,6 +28,13 @@ ResApplication::~ResApplication()
 QSettings *ResApplication::settings()
 {
     return m_pSettings;
+}
+
+void ResApplication::applyStyle()
+{
+    QString styleName = m_pSettings->value("style").toString();
+    QStyle *style = QStyleFactory::create(styleName);
+    QApplication::setStyle(style);
 }
 
 void ResApplication::init()

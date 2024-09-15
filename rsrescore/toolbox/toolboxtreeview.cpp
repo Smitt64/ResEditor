@@ -12,12 +12,10 @@
 
 class ToolBoxDelegate : public QStyledItemDelegate
 {
-    QStyle *m_pStyle;
 public:
     ToolBoxDelegate(QObject *parent = nullptr) :
         QStyledItemDelegate(parent)
     {
-        m_pStyle = QApplication::style();
     }
 
     virtual ~ToolBoxDelegate()
@@ -29,6 +27,8 @@ public:
     {
         if (!index.parent().isValid())
         {
+            QStyle *m_pStyle = QApplication::style();
+
             QStyleOptionToolBox opt;
             (*((QStyleOption*)&opt)) = option;
             opt.text = index.data().toString();
