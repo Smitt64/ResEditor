@@ -17,6 +17,8 @@
 #include "controlitem.h"
 #include "containeritem.h"
 #include "toolsruntime.h"
+#include "codeeditor/codeeditor.h"
+#include "codeeditor/codehighlighter.h"
 #include <QStatusBar>
 #include <QHBoxLayout>
 #include <QGraphicsSceneMouseEvent>
@@ -623,6 +625,8 @@ void StdPanelEditor::sceneDeleteItems()
 
     if (realDelete.size() > 1)
         undoStack()->endMacro();
+
+    m_pStructModel->structChanged();
 }
 
 void StdPanelEditor::sceneCopyItems()
@@ -722,6 +726,8 @@ void StdPanelEditor::scenePasteItems()
 
         pScene->update();
     }
+
+    m_pStructModel->structChanged();
 }
 
 void StdPanelEditor::clipboardChanged()
@@ -809,10 +815,11 @@ bool StdPanelEditor::save(ResBuffer *res, QString *error)
 
 void StdPanelEditor::addCodeWindow(const QString &title, const QString &text)
 {
-    QPlainTextEdit *pEdit = new QPlainTextEdit(this);
+    CodeEditor *pEdit = new CodeEditor(this);
     pEdit->setReadOnly(true);
     pEdit->setPlainText(text);
 
+    ToolApplyHighlighter(pEdit, HighlighterXml);
     m_TabContainer->addTab(pEdit, title);
 }
 

@@ -8,16 +8,6 @@
 
 int main(int argc, char *argv[])
 {
-    QDir current(QCoreApplication::applicationDirPath());
-    QCoreApplication::addLibraryPath(QFileInfo(QCoreApplication::applicationFilePath()).path());
-    QCoreApplication::addLibraryPath(current.absolutePath());
-    QCoreApplication::addLibraryPath(current.absoluteFilePath("platforms"));
-    QCoreApplication::addLibraryPath(current.absoluteFilePath("iconengines"));
-    QCoreApplication::addLibraryPath(current.absoluteFilePath("imageformats"));
-    QCoreApplication::addLibraryPath(current.absoluteFilePath("platforms"));
-    QCoreApplication::addLibraryPath(current.absoluteFilePath("sqldrivers"));
-    QCoreApplication::addLibraryPath(current.absoluteFilePath("styles"));
-
     QCommandLineParser parser;
     parser.setApplicationDescription("Work Lbr");
     parser.addHelpOption();
@@ -57,7 +47,6 @@ int main(int argc, char *argv[])
     strncpy_s(argvnew[argc + 1], 23, "windows:dpiawareness=1", 23);*/
 
     ResApplication a(argc, argv);
-    qDebug() << a.arguments();
     parser.process(a.arguments());
 
     RsResCore::inst()->init();

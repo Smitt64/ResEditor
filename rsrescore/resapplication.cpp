@@ -1,4 +1,5 @@
 #include "resapplication.h"
+#include "codeeditor/highlighterstyle.h"
 #include <QSettings>
 #include <QDir>
 #include <QStyleFactory>
@@ -6,10 +7,13 @@
 ResApplication::ResApplication(int &argc, char **argv) :
     QApplication(argc, argv)
 {
+    QApplication::setApplicationName("WorkLbr");
+    //QApplication::setApplicationVersion(GetVersionNumberString());
+
     QDir dir = QDir(applicationDirPath());
     m_pSettings = new QSettings(dir.absoluteFilePath("lbropt.ini"), QSettings::IniFormat);
 
-    /*QDir current(QDir::current());
+    QDir current(QDir::current());
     addLibraryPath(QFileInfo(QCoreApplication::applicationFilePath()).path());
     addLibraryPath(current.absolutePath());
     addLibraryPath(current.absoluteFilePath("platforms"));
@@ -17,7 +21,12 @@ ResApplication::ResApplication(int &argc, char **argv) :
     addLibraryPath(current.absoluteFilePath("imageformats"));
     addLibraryPath(current.absoluteFilePath("platforms"));
     addLibraryPath(current.absoluteFilePath("sqldrivers"));
-    addLibraryPath(current.absoluteFilePath("styles"));*/
+    addLibraryPath(current.absoluteFilePath("styles"));
+
+    m_pSettings->beginGroup("CodeEditor");
+    QString sHighlighterStyle = m_pSettings->value("theme", "Default").toString();
+    HighlighterStyle::inst()->setDefaultTheme(sHighlighterStyle);
+    m_pSettings->endGroup();
 }
 
 ResApplication::~ResApplication()
