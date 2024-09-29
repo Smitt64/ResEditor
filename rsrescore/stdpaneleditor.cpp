@@ -2,6 +2,7 @@
 #include "baseeditorview.h"
 #include "controlpropertysdlg.h"
 #include "panelitem.h"
+#include "resapplication.h"
 #include "respanel.h"
 #include "rsrescore.h"
 #include "scrolitem.h"
@@ -19,6 +20,8 @@
 #include "toolsruntime.h"
 #include "codeeditor/codeeditor.h"
 #include "codeeditor/codehighlighter.h"
+#include <errorsmodel.h>
+#include <errordlg.h>
 #include <QStatusBar>
 #include <QHBoxLayout>
 #include <QGraphicsSceneMouseEvent>
@@ -397,6 +400,8 @@ void StdPanelEditor::setupEditor()
 
 void StdPanelEditor::setupContrastAction()
 {
+    ResApplication *app = (ResApplication*)qApp;
+
     m_pToolBar->addSeparator();
 
     m_pContrst = addAction(QIcon(":/img/EditBrightContrastHS.png"), tr("Контраст"), QKeySequence("Alt+F9"));
@@ -407,7 +412,9 @@ void StdPanelEditor::setupContrastAction()
         panelItem->setProperty(CONTRAST_PROPERTY, toogled);
     });
 
-    m_pContrst->setChecked(true);
+    app->settings()->beginGroup("StdEditor");
+    m_pContrst->setChecked(app->settings()->value("AutoContrast", true).toBool());
+    app->settings()->endGroup();
     m_pViewMenu->addAction(m_pContrst);
 }
 
@@ -873,12 +880,22 @@ void StdPanelEditor::saveToXml()
     addCodeWindow(tr("XML"), result);
 }
 
-void StdPanelEditor::showCheckError(int stat)
+void StdPanelEditor::showCheckError(int stat, ErrorsModel *model)
 {
     if (stat)
     {
-        QMessageBox::critical(this, tr("Ошибка проверки ресурса"),
-                              ResPanel::GetCheckError(stat));
+        if (!model)
+        {
+            QMessageBox::critical(this, tr("Ошибка проверки ресурса"),
+                                  ResPanel::GetCheckError(stat));
+        }
+        else
+        {
+            ErrorDlg dlg(ErrorDlg::ModeInformation, this);
+            dlg.setMessage(tr("Ошибка проверки ресурса"));
+            dlg.setErrors(model);
+            dlg.exec();
+        }
     }
     else
     {
@@ -892,8 +909,9 @@ void StdPanelEditor::onCheckRes()
     ResPanel panel;
     fillResPanel(&panel);
 
-    int stat = panel.checkResource();
-    showCheckError(stat);
+    ErrorsModel model;
+    int stat = panel.checkResource(&model);
+    showCheckError(stat, &model);
 }
 
 void StdPanelEditor::onSave()
@@ -901,12 +919,13 @@ void StdPanelEditor::onSave()
     ResPanel panel;
     fillResPanel(&panel);
 
-    int stat = panel.checkResource();
+    ErrorsModel model;
+    int stat = panel.checkResource(&model);
 
     if (!stat)
         emit readySave();
     else
-        showCheckError(stat);
+        showCheckError(stat, &model);
 }
 
 QAbstractItemModel *StdPanelEditor::propertyModel()

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<reslib xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.softlab.ru reslib.xsd"
+    xmlns="http://www.softlab.ru">
+ <panel name="CD_OPER" dt="2001-08-31T14:21:18" St="258" x1="1" y1="1" x2="30" y2="5" PHelp="933" Pff="0" flags="1048576">
+  <stline>~SPACE~ Изменить  ~ENTER~ Выполнить  ~ESC~ Отменить</stline>
+  <headLine>Панель предпросмотра</headLine>
+  <text  St="0" x="3" y="2">[ ]  Пример переключателя</text>
+  <field  Ftype="2" St="0" FVt="12" FVp="0" x="4" y="2" l="1" h="1" kl="0" kr="0" ku="0" kd="0" FHelp="0" vfl="1" flags="0" group="0">
+  </field>
+ </panel>
+</reslib>

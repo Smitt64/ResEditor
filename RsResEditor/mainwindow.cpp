@@ -15,6 +15,7 @@
 #include "selectresourcedlg.h"
 #include "resapplication.h"
 #include "options/resoptions.h"
+#include "options/recentlbrlist.h"
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QDebug>
@@ -96,6 +97,9 @@ void MainWindow::onAbout()
 
 void MainWindow::SetupMenus()
 {
+    ResApplication *app = (ResApplication*)qApp;
+    m_RecentLbrList.reset(new RecentLbrList(app->settings()));
+
     ui->actionNew->setIcon(QIcon(":/img/DocumentHS.png"));
     ui->actionNew->setShortcuts(QKeySequence::New);
 
@@ -113,12 +117,20 @@ void MainWindow::SetupMenus()
     ui->viewMenu->addSeparator();
     ui->viewMenu->addAction(ui->toolBar->toggleViewAction());
     ui->viewMenu->addAction(ui->windowToolBar->toggleViewAction());
+
+    QList<QAction*> actions = m_RecentLbrList->actions();
+    for (QAction *action : actions)
+    {
+        ui->menuFile->addAction(action);
+        connect(action, SIGNAL(triggered(bool)), this, SLOT(onOpenRecent()));
+    }
 }
 
 void MainWindow::onOptions()
 {
     ResApplication *app = (ResApplication*)qApp;
     ResOptions dlg(app->settings(), this);
+    dlg.setAutoUnloadDir(m_AutoUnloadDir);
     dlg.exec();
 }
 
@@ -297,9 +309,22 @@ void MainWindow::open(const QString &filename)
 
         CreateLbrObject(&m_pLbrObj, this);
 
-        m_pLbrObj->open(filename);
-        m_ResListDock->setModel(m_pLbrObj->list());
+        if (m_pLbrObj->open(filename))
+        {
+            m_ResListDock->setModel(m_pLbrObj->list());
+            m_RecentLbrList->addFile(filename);
+        }
     }
+}
+
+void MainWindow::onOpenRecent()
+{
+    QAction *action = qobject_cast<QAction*>(sender());
+
+    if (!action)
+        return;
+
+    open(action->data().toString());
 }
 
 void MainWindow::onOpen()

@@ -320,9 +320,12 @@ void TextItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         undoprop->setPropertyName("text");
         undoprop->setValues(m_SaveValue, m_Value);
 
-        undoStack()->beginMacro(undocmd->text());
-        undoStack()->push(undocmd);
-        undoStack()->push(undoprop);
+        if (undoStack())
+        {
+            undoStack()->beginMacro(undocmd->text());
+            undoStack()->push(undocmd);
+            undoStack()->push(undoprop);
+        }
 
         if (!m_AttachedControl.isNull())
         {
@@ -338,6 +341,11 @@ void TextItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
     m_AttachedControl = QUuid();
     afterReleaseMouse(event);
+}
+
+void TextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+    userAction(ActionKeyEnter);
 }
 
 void TextItem::onInsertUndoRedoMove(const QMap<CustomRectItem *, QPointF> &MousePressPoint)

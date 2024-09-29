@@ -20,6 +20,7 @@ class BaseEditorWindow;
 class QComboBox;
 class QCloseEvent;
 class SubWindowsModel;
+class RecentLbrList;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -51,6 +52,7 @@ private slots:
     void onOptions();
 
     void onOpenRes();
+    void onOpenRecent();
 
 protected:
     virtual void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -80,6 +82,8 @@ private:
     UpdateChecker *pUpdateChecker;
     SubWindowsModel *pWindowsModel;
 
-    QShortcut  *m_ResListKey, *m_ToolsListKey;;
+    QShortcut  *m_ResListKey, *m_ToolsListKey;
+
+    QScopedPointer<RecentLbrList> m_RecentLbrList;
 };
 #endif // MAINWINDOW_H

@@ -829,12 +829,6 @@ void CustomRectItem::setCoord(const QPoint &coord)
 
     prepareGeometryChange();
     m_Coord = coord;
-
-    BorderItem *container = dynamic_cast<BorderItem*>(this);
-
-    if (container)
-        qDebug() << m_Coord << xV - x() << yV - y() << x() << y();
-
     moveBy(xV - x(), yV - y());
 
     update();
@@ -1427,4 +1421,22 @@ void CustomRectItem::createItemResizeUndoObj(BaseScene* customScene,
     undocmd->setSizes(Actual, New);
 
     *cmd = undocmd;
+}
+
+void CustomRectItem::recalcByGridChanges()
+{
+    QPoint pt = getPoint();
+    QSize sz = getSize();
+
+    setCoord(pt);
+    setSize(sz);
+
+    QList<QGraphicsItem*> childs = childItems();
+    for (QGraphicsItem *item : childs)
+    {
+        CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
+
+        if (rectItem)
+            rectItem->recalcByGridChanges();
+    }
 }

@@ -1,6 +1,7 @@
 #include "respanel.h"
 #include "resbuffer.h"
 #include "rscoreheader.h"
+#include <errorsmodel.h>
 #include <stdlib.h>
 #include <QDebug>
 #include <lbrobject.h>
@@ -1568,14 +1569,14 @@ bool ResPanel::__CheckCrossFields(int curr)
     return ret;
 }
 
-int ResPanel::checkResource()
+int ResPanel::checkResource(ErrorsModel *errors)
 {
     int  stat = 0;
 
     switch(type())
     {
     case LbrObject::RES_PANEL:
-        stat = checkPanel();
+        stat = checkPanel(errors);
         break;
 
     case LbrObject::RES_SCROL:
@@ -1588,7 +1589,9 @@ int ResPanel::checkResource()
     return stat;
 }
 
-int ResPanel::checkPanel()
+#define CHECK_ADD_ERR(stat) if (errors)errors->addError(GetCheckError(stat))
+
+int ResPanel::checkPanel(ErrorsModel *errors)
 {
     int stat = 0;
     int border = dGET_BORDER(m_pPanel);
@@ -1614,6 +1617,8 @@ int ResPanel::checkPanel()
             if(!ret)
             {
                 stat = 2;
+                CHECK_ADD_ERR(stat);
+
                 break;
             }
         }
@@ -1631,6 +1636,7 @@ int ResPanel::checkPanel()
         if(!ret)
         {
             stat = 4;
+            CHECK_ADD_ERR(stat);
             break;
         }
     }
@@ -1646,6 +1652,7 @@ int ResPanel::checkPanel()
         if(!ret)
         {
             stat = 5;
+            CHECK_ADD_ERR(stat);
             break;
         }
     }
@@ -1653,17 +1660,17 @@ int ResPanel::checkPanel()
     return stat;
 }
 
-int ResPanel::checkScrol()
+int ResPanel::checkScrol(ErrorsModel *errors)
 {
-    int stat = checkPanel();
+    int stat = checkPanel(errors);
 
     if (!stat)
-        stat = checkScrolRect(m_pPanel->x, m_pPanel->y, m_pPanel->h * m_pPanel->Mn, m_pPanel->l);
+        stat = checkScrolRect(m_pPanel->x, m_pPanel->y, m_pPanel->h * m_pPanel->Mn, m_pPanel->l, errors);
 
     return stat;
 }
 
-int ResPanel::checkScrolRect(int sx, int sy, int sh, int sl)
+int ResPanel::checkScrolRect(int sx, int sy, int sh, int sl, ErrorsModel *errors)
 {
     int  stat = 0;
 
@@ -1678,14 +1685,20 @@ int ResPanel::checkScrolRect(int sx, int sy, int sh, int sl)
 
         // Область скроллинга не должна выходить за границы панели
         if(!__CheckElement(sx, sy, sh, sl, m_pPanel->x1, m_pPanel->y1, m_pPanel->x2, m_pPanel->y2, border))
+        {
             stat = 8;
+            CHECK_ADD_ERR(stat);
+        }
 
         // Если скроллинг с автоформированием заголовка, то область скроллинга
         // должна начинаться с 4-й строки
         if(!stat && (m_pPanel->flags & RFP_AUTOHEAD))
         {
             if(sy < (border + 3))
+            {
+                CHECK_ADD_ERR(stat);
                 stat = 6;
+            }
         }
     }
 
@@ -1709,6 +1722,7 @@ int ResPanel::checkScrolRect(int sx, int sy, int sh, int sl)
 
                     if(!__CheckEntryRect(x, y, h, l, sx, sy, sh, sl))
                     {
+                        CHECK_ADD_ERR(stat);
                         stat = 3;
                         break;
                     }

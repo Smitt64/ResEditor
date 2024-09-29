@@ -82,13 +82,17 @@ ResStyle::ResStyle() :
     m_BorderChars[Border_Combine2]   = { 9555, 9558, 9472, 9553, 9561, 9564 };
     m_BorderChars[Border_Solid]      = { 9608, 9608, 9608, 9608, 9608, 9608 };
 
+    int GridOption = getGridSizeOption();
+    GrigSizes sizes = gridSizes();
+    m_GridSize = sizes[GridOption];
+
     loadDefaultColors();
-    resetFont();
+    resetFont(GridOption);
 }
 
-void ResStyle::resetFont()
+void ResStyle::resetFont(int GridOption)
 {
-    int fontsize = fontSizeForGrid(getGridSizeOption());
+    int fontsize = fontSizeForGrid(GridOption);
 
     m_Font = QFont("TerminalVector", fontsize);
     m_Font.setPixelSize(fontsize);
@@ -223,11 +227,27 @@ GrigSizes ResStyle::gridSizes()
     return sizes;
 }
 
+QStringList ResStyle::gridSizesName()
+{
+    static QStringList names = 
+    {
+        "Standard",
+        "Large",
+    };
+
+    return names;
+}
+
 QSize ResStyle::gridSize() const
 {
-    GrigSizes sizes = gridSizes();
-    return sizes[getGridSizeOption()];
-    //return QSize(8, 12);
+    return m_GridSize;
+}
+
+void ResStyle::setGridSize(const int &index)
+{
+    static GrigSizes sizes = gridSizes();
+    m_GridSize = sizes[index];
+    resetFont(index);
 }
 
 QColor ResStyle::color(const StyleColor &type, ResStyleOption *option) const

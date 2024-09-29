@@ -18,6 +18,7 @@ class QClipboard;
 class QTabWidget;
 class QTemporaryDir;
 class PanelStructModel;
+class ErrorsModel;
 class StdPanelEditor : public BaseEditorWindow
 {
     Q_OBJECT
@@ -71,7 +72,7 @@ private:
     void setupPropertyAction();
     void setupCopyPaste();
     void setupMenus();
-    void showCheckError(int stat);
+    void showCheckError(int stat, ErrorsModel *model);
 
     void fillResPanel(ResPanel *resPanel);
     void fillItems(const QList<QGraphicsItem*> &selectedItems, QSet<CustomRectItem*> &result,

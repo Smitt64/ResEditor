@@ -99,6 +99,7 @@ public:
     ResStyle();
 
     virtual QSize gridSize() const;
+    void setGridSize(const int &index);
     virtual QColor color(const StyleColor &type, ResStyleOption *option = nullptr) const;
     virtual BorderChars borderChars(const BorderStyle &style) const;
     virtual QFont font() const;
@@ -114,6 +115,7 @@ public:
     bool isNumeric(const quint8 &fvt) const;
 
     static GrigSizes gridSizes();
+    static QStringList gridSizesName();
     static int fontSizeForGrid(int index);
 
 protected:
@@ -131,11 +133,13 @@ protected:
     QFont m_Font;
 
 private:
-    void resetFont();
+    void resetFont(int GridOption);
     void loadDefaultColors();
     void loadColorSheme(const QJsonObject &obj, ColorScheme &sheme);
     int enumValueFromName(const QString &enumname, const QString &name) const;
     int getGridSizeOption() const;
+
+    QSize m_GridSize;
 };
 
 class ResStyleOption

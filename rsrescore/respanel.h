@@ -81,6 +81,7 @@ typedef QVector<FieldStruct> FieldStructList;
 
 class ResBuffer;
 class QDomElement;
+class ErrorsModel;
 class ResPanel : public QObject/*, public RsResInterface*/
 {
     Q_OBJECT
@@ -165,7 +166,7 @@ public:
     void setPanelStyle(const ResStyle::BorderStyle &border, const ResStyle::PanelStyle &style);
     void setPanelStrings(const QString &Title, const QString &Status, const QString &StatusRD);
 
-    int checkResource();
+    int checkResource(ErrorsModel *errors = nullptr);
     static QString GetCheckError(int stat);
 
 protected:
@@ -181,8 +182,8 @@ protected:
     virtual int readItems(struct PanelR *pp, ResBuffer *data, bool readName2);
     virtual bool readString(ResBuffer *data, char **s, qint16 vfl, qint16 lens);
 
-    int checkPanel();
-    int checkScrol();
+    int checkPanel(ErrorsModel *errors = nullptr);
+    int checkScrol(ErrorsModel *errors = nullptr);
 
 private:
     bool __CheckElement(int x, int y, int h, int l, int x1, int y1, int x2, int y2, int border);
@@ -190,7 +191,7 @@ private:
     bool __CheckEntryRect(int r1_x, int r1_y, int r1_h, int r1_l, int r2_x, int r2_y, int r2_h, int r2_l);
     bool __CheckCrossField(FieldR *f1, FieldR *f2);
     bool __CheckCrossFields(int curr);
-    int checkScrolRect(int sx, int sy, int sh, int sl);
+    int checkScrolRect(int sx, int sy, int sh, int sl, ErrorsModel *errors);
 
     QString m_Status, m_StatusRD, m_Title, m_Name, m_Comment;
     qint16 m_Type;

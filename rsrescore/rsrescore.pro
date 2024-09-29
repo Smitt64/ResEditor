@@ -25,6 +25,8 @@ SOURCES += \
     controtaborder.cpp \
     customrectitem.cpp \
     easywinini.cpp \
+    options/generaloptionspage.cpp \
+    options/recentlbrlist.cpp \
     options/resoptions.cpp \
     panelitem.cpp \
     panelpropertysdlg.cpp \
@@ -73,6 +75,8 @@ HEADERS += \
     controtaborder.h \
     customrectitem.h \
     easywinini.h \
+    options/generaloptionspage.h \
+    options/recentlbrlist.h \
     options/resoptions.h \
     panelitem.h \
     panelpropertysdlg.h \
@@ -112,6 +116,7 @@ HEADERS += \
 FORMS += \
     bankdistribselect.ui \
     controlpropertysdlg.ui \
+    options/generaloptionspage.ui \
     panelpropertysdlg.ui \
     propertymodel/textstyledlg.ui \
     widgets/controltaborderedit.ui \

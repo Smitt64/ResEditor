@@ -69,6 +69,8 @@ public:
     void setAvailableCorners(ResizeCorners flag, bool enable);
     const ResizeCornersFlags &availableCorners() const;
 
+    virtual void recalcByGridChanges();
+
     QRect geometry() const;
     void setGeometry(const QRect &_geometry);
 
@@ -108,6 +110,8 @@ public:
 
     bool setSkipUndoStack(const bool &value);
     const bool &isSkipUndoStack() const;
+
+    void updateSizePos(const QString &from);
 
 signals:
     void geometryChanged();
@@ -156,7 +160,6 @@ private:
     void deserializeProperty(QJsonObject &obj);
     QRubberBand *rubberBand();
     bool mousePosOnHandles(QPointF pos);
-    void updateSizePos(const QString &from);
 
     QVector<QRectF> m_ResizeHandles;
     QRubberBand *pRubberBand;

@@ -16,6 +16,7 @@ LabelTextEditDlg::LabelTextEditDlg(QWidget *parent) :
     QFont font = m_pCharMap->displayFont();
     font.setPointSize(12);
     ui->lineEdit->setFont(font);
+    ui->lineEdit->setMaxLength(127);
 
     connect(m_pCharMap, &CharacterWidget::characterSelected, [=](const QChar &character)
     {

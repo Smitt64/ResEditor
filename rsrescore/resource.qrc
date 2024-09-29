@@ -92,5 +92,7 @@
         <file>img/information.png</file>
         <file>img/insctrl.png</file>
         <file>json/InsertControlData.json</file>
+        <file>img/explorer.exe_14_103-6.png</file>
+        <file>res/options_preview.xml</file>
     </qresource>
 </RCC>
