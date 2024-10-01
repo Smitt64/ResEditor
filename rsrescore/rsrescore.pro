@@ -59,7 +59,8 @@ SOURCES += \
     undoredo/undopropertychange.cpp \
     widgets/characterwidget.cpp \
     widgets/controltaborderedit.cpp \
-    widgets/labeltexteditdlg.cpp
+    widgets/labeltexteditdlg.cpp \
+    widgets/resinfodlg.cpp
 
 HEADERS += \
     ResourceEditorInterface.h \
@@ -111,7 +112,8 @@ HEADERS += \
     undoredo/undopropertychange.h \
     widgets/characterwidget.h \
     widgets/controltaborderedit.h \
-    widgets/labeltexteditdlg.h
+    widgets/labeltexteditdlg.h \
+    widgets/resinfodlg.h
 
 FORMS += \
     bankdistribselect.ui \
@@ -121,6 +123,7 @@ FORMS += \
     propertymodel/textstyledlg.ui \
     widgets/controltaborderedit.ui \
     widgets/labeltexteditdlg.ui \
+    widgets/resinfodlg.ui \
     wizards/texttopanel/textpage.ui
 
 qnx: target.path = /tmp/$${TARGET}/bin

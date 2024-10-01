@@ -20,6 +20,7 @@
 #include "toolsruntime.h"
 #include "codeeditor/codeeditor.h"
 #include "codeeditor/codehighlighter.h"
+#include "widgets/resinfodlg.h"
 #include <errorsmodel.h>
 #include <errordlg.h>
 #include <QStatusBar>
@@ -327,6 +328,33 @@ void StdPanelEditor::setupMenus()
     connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
     connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
     connect(m_pCreateControl, &QAction::triggered, this, &StdPanelEditor::onInsertControl);
+
+    connect(m_Statistic, &QAction::triggered, [=]()
+    {
+        ResInfoDlg dlg(this);
+        dlg.setTitle(m_pNameLineEdit->text());
+        dlg.setType(QString("%1 (%2)")
+                        .arg(type())
+                        .arg(RsResCore::typeNameFromResType(type())));
+
+        int ctrl = 0, txt = 0;
+        QList<QGraphicsItem*> lst = panelItem->childItems();
+        for (QGraphicsItem *item : qAsConst(lst))
+        {
+            ControlItem *control = dynamic_cast<ControlItem*>(item);
+            TextItem *text = dynamic_cast<TextItem*>(item);
+
+            if (control)
+                ctrl ++;
+
+            if (text)
+                txt ++;
+        }
+
+        dlg.setFields(ctrl);
+        dlg.setLabels(txt);
+        dlg.exec();
+    });
 }
 
 void StdPanelEditor::setupEditor()
@@ -360,7 +388,6 @@ void StdPanelEditor::setupEditor()
     m_pView->setMouseTracking(true);
 
     setupNameLine();
-    m_pToolBar->addSeparator();
     m_pSave = addAction(QIcon(":/img/saveHS.png"), tr("Сохранить"), QKeySequence::Save);
     m_pToolBar->addSeparator();
     initUndoRedo(m_pToolBar);
@@ -450,14 +477,12 @@ void StdPanelEditor::setupNameLine()
     QFont font("TerminalVector", 10);
     font.setFixedPitch(true);
 
-    QFontMetrics metrics(font);
-    int namewidth = metrics.width(QChar::Space) * 9;
-
     m_pNameLineEdit = new QLineEdit(this);
     m_pNameLineEdit->setReadOnly(true);
     m_pNameLineEdit->setFont(font);
-    m_pNameLineEdit->setMaximumWidth(namewidth);
-    m_pToolBar->addWidget(m_pNameLineEdit);
+    m_pNameLineEdit->setAlignment(Qt::AlignRight);
+
+    m_pMenuBar->setCornerWidget(m_pNameLineEdit);
 }
 
 void StdPanelEditor::setupCopyPaste()

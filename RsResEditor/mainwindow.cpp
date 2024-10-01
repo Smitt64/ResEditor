@@ -27,6 +27,7 @@
 #include <aboutdlg.h>
 #include <QThreadPool>
 #include <QKeySequence>
+#include <QSettings>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -196,8 +197,21 @@ void MainWindow::readySave(BaseEditorWindow *editor)
         m_pLbrObj->endSaveRes(&resBuffer);
     }
 
-    if (errorMsg.isEmpty() && !m_AutoUnloadDir.isEmpty())
-        RsResCore::inst()->saveResToXml(type, name, m_pLbrObj, m_AutoUnloadDir);
+    if (errorMsg.isEmpty())
+    {
+        QSettings *settings = ((ResApplication*)qApp)->settings();
+
+        if (!m_AutoUnloadDir.isEmpty())
+            RsResCore::inst()->saveResToXml(type, name, m_pLbrObj, m_AutoUnloadDir);
+
+        if (settings->value("AutoUnload", false).toBool())
+        {
+            QStringList lst = settings->value("AutoUnloadDirs").toStringList();
+
+            for (const QString &dir : lst)
+                RsResCore::inst()->saveResToXml(type, name, m_pLbrObj, dir);
+        }
+    }
 
     if (!errorMsg.isEmpty())
     {
