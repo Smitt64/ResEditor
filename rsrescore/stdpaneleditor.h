@@ -19,6 +19,7 @@ class QTabWidget;
 class QTemporaryDir;
 class PanelStructModel;
 class ErrorsModel;
+class ResSpellStringsDlg;
 class StdPanelEditor : public BaseEditorWindow
 {
     Q_OBJECT
@@ -51,6 +52,7 @@ private slots:
     void onViewCmd();
     void onInsertControl();
     void ViewerFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void CheckSpelling();
 
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
@@ -63,6 +65,7 @@ private:
         FICMode_ParentBeforeChild
     };
 
+    void CheckSpellingUpdateTexts(ResSpellStringsDlg *dlg);
     QAction *addAction(const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());
     QAction *addAction(QMenu *menu, const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());
     void updateSizeStatus();
@@ -99,7 +102,7 @@ private:
     QAction *m_pCutAction, *m_pCopyAction, *m_pPasteAction;
     QAction *m_pCheckAction, *m_EwViewAction, *m_ViewAction, *m_Statistic;
     QAction *m_SaveToXml;
-    QAction *m_pCreateControl;
+    QAction *m_pCreateControl, *m_pSpellCheckAction;
 
     QMenuBar *m_pMenuBar;
     QMenu *m_pEditMenu, *m_pViewMenu, *m_pResMenu, *m_pElements;

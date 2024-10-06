@@ -21,6 +21,8 @@
 #include "codeeditor/codeeditor.h"
 #include "codeeditor/codehighlighter.h"
 #include "widgets/resinfodlg.h"
+#include "spelling/resspellstringsdlg.h"
+#include "spelling/spellchecker.h"
 #include <errorsmodel.h>
 #include <errordlg.h>
 #include <QStatusBar>
@@ -318,6 +320,7 @@ void StdPanelEditor::setupMenus()
     m_pResMenu->addAction(m_pSave);
     m_SaveToXml = addAction(m_pResMenu, QIcon(":/img/XMLFileHS.png"), tr("Сохранить в XML"), QKeySequence("Ctrl+ALT+S"));
     m_pCheckAction = addAction(m_pResMenu, QIcon(":/img/CheckRes.png"), tr("Проверить"), QKeySequence("Ctrl+H"));
+    m_pSpellCheckAction = addAction(m_pResMenu, QIcon(":/img/CheckSpellingHS.png"), tr("Проверить орфографию"), QKeySequence("Alt+H"));
     m_EwViewAction = addAction(m_pResMenu, QIcon(":/img/Panel2.png"), tr("Просмотр в EW"), QKeySequence("Ctrl+F3"));
     m_ViewAction = addAction(m_pResMenu, QIcon(":/img/PanelCmd.png"), tr("Просмотр"), QKeySequence("Alt+F3"));
     m_Statistic = addAction(m_pResMenu, QIcon(":/img/Statistic.png"), tr("Информация"));
@@ -328,6 +331,7 @@ void StdPanelEditor::setupMenus()
     connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
     connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
     connect(m_pCreateControl, &QAction::triggered, this, &StdPanelEditor::onInsertControl);
+    connect(m_pSpellCheckAction, &QAction::triggered, this, &StdPanelEditor::CheckSpelling);
 
     connect(m_Statistic, &QAction::triggered, [=]()
     {
@@ -1112,4 +1116,134 @@ void StdPanelEditor::onInsertControl()
         }
         pScene->update();
     }
+}
+
+void StdPanelEditor::CheckSpelling()
+{
+    SpellChecker *spell = nullptr;
+
+    QProgressDialog dialog(tr("Загрузка словаря"), "", 0, 0, this);
+    dialog.setWindowTitle("Орфография");
+    dialog.setWindowIcon(QIcon(":/img/CheckSpellingHS.png"));
+    dialog.setCancelButton(nullptr);
+    dialog.setWindowModality(Qt::WindowModal);
+    dialog.setAutoClose(true);
+
+    dialog.open();
+    QCoreApplication::processEvents();
+    spellGetCheckerForLanguage("ru", &spell);
+    dialog.close();
+
+    if (!spell)
+    {
+        QMessageBox::warning(this, tr("Проверика орфографии"),
+                             tr("Не удалось загрузить словарь"));
+        return;
+    }
+
+    QList<CheckUserDataTuple> userData;
+
+    ResSpellStringsDlg dlg(spell, this);
+    if (!panelItem->title().isEmpty())
+    {
+        userData.append({CheckModePanel | CheckModeTitle, panelItem});
+        dlg.appendString(panelItem->title(), &userData.back());
+    }
+
+    if (!panelItem->status().isEmpty())
+    {
+        userData.append({CheckModePanel | CheckModeStatus, panelItem});
+        dlg.appendString(panelItem->status(), &userData.back());
+    }
+
+    if (!panelItem->status2().isEmpty())
+    {
+        userData.append({CheckModePanel | CheckModeStatus2, panelItem});
+        dlg.appendString(panelItem->status2(), &userData.back());
+    }
+
+    QList<QGraphicsItem*> elements = panelItem->childItems();
+    for (QGraphicsItem *item : qAsConst(elements))
+    {
+        TextItem *label = dynamic_cast<TextItem*>(item);
+        ControlItem *control = dynamic_cast<ControlItem*>(item);
+
+        if (label && !label->text().isEmpty())
+        {
+            userData.append({CheckModeLabel, label});
+            dlg.appendString(label->text(), &userData.back());
+        }
+
+        if (control)
+        {
+            if (!control->controlName().isEmpty())
+            {
+                userData.append({CheckModeLabel | CheckModeControlName, control});
+                dlg.appendString(control->controlName(), &userData.back());
+            }
+
+            if (!control->toolTip().isEmpty())
+            {
+                userData.append({CheckModeLabel | CheckModeToolTip, control});
+                dlg.appendString(control->toolTip(), &userData.back());
+            }
+        }
+    }
+
+    if (dlg.count())
+    {
+        if (dlg.exec() == QDialog::Accepted)
+            CheckSpellingUpdateTexts(&dlg);
+    }
+    else
+    {
+        QMessageBox::information(&dialog, tr("Проверика орфографии"),
+                             tr("Ошибок не обнаружено"));
+    }
+}
+
+void StdPanelEditor::CheckSpellingUpdateTexts(ResSpellStringsDlg *dlg)
+{
+    int count = dlg->count();
+    undoStack()->beginMacro(tr("Проверика орфографии"));
+    for (int i = 0; i < count; i++)
+    {
+        QString str = dlg->value(i);
+        CheckUserDataTuple *userData = (CheckUserDataTuple*)dlg->userData(i);
+
+        int mode = std::get<0>(*userData);
+        CustomRectItem *rectItem = std::get<1>(*userData);
+
+        if (mode & CheckModePanel)
+        {
+            PanelItem *item = qobject_cast<PanelItem*>(rectItem);
+
+            if (mode & CheckModeTitle)
+                item->setTitle(str);
+
+            if (mode & CheckModeStatus)
+                item->setStatus(str);
+
+            if (mode & CheckModeStatus2)
+                item->setStatus2(str);
+        }
+
+        if (mode & CheckModeLabel)
+        {
+            TextItem *item = qobject_cast<TextItem*>(rectItem);
+            item->setText(str);
+        }
+
+        if (mode & CheckModeControl)
+        {
+            ControlItem *item = qobject_cast<ControlItem*>(rectItem);
+
+            if (mode & CheckModeControlName)
+                item->setControlName(str);
+
+            if (mode & CheckModeToolTip)
+                item->setToolTip(str);
+        }
+    }
+    undoStack()->endMacro();
 }

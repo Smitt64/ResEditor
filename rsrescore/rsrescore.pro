@@ -42,6 +42,7 @@ SOURCES += \
     respanel.cpp \
     rsrescore.cpp \
     scrolitem.cpp \
+    spelling/resspellstringsdlg.cpp \
     statusbarelement.cpp \
     stdpaneleditor.cpp \
     styles/extextstyle.cpp \
@@ -95,6 +96,7 @@ HEADERS += \
     rsrescore_global.h \
     rsrescore.h \
     scrolitem.h \
+    spelling/resspellstringsdlg.h \
     statusbarelement.h \
     stdpaneleditor.h \
     styles/extextstyle.h \
