@@ -2,9 +2,11 @@
 #include "ui_textpage.h"
 #include "styles/resstyle.h"
 #include "respanel.h"
+#include "wizards/texttopanel/linescanner.h"
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QDebug>
+#include <QStack>
 #include <QRegExp>
 
 TextPage::TextPage(QWidget *parent)
@@ -49,20 +51,22 @@ bool TextPage::validatePage()
     {
         Scan_TopLeftCorn = 1 << 1,
         Scan_Header = 1 << 2,
-        Scan_StartLine = 1 << 3
+        Scan_StartLine = 1 << 3,
+        Scan_EndPanel = 1 << 4,
     };
+
     QScopedPointer<ResStyle> rst(new ResStyle());
 
     QTextDocument *doc = ui->textEdit->document();
     QTextBlock block = doc->firstBlock();
 
-    QTextCharFormat main_format;
     ResStyle::BorderChars borders;
     quint32 Opration = 0;
 
-    QString Title, Label;
-    QRect PanelRect(3, 3, 0, 0);
+    QString Title;
+    QRect PanelRect(3, 3, 0, 1);
 
+    LineScanner scanner(doc);
     while (block.isValid())
     {
         QTextCursor::MoveOperation op = QTextCursor::NoMove;
@@ -77,14 +81,15 @@ bool TextPage::validatePage()
                 for (int i = ResStyle::Border_DoubleLine; i < ResStyle::Border_Count; i ++)
                 {
                     borders = rst->borderChars((ResStyle::BorderStyle)i);
+                    scanner.setBorders(borders);
 
                     if (borders.chtopleft == ch)
                     {
                         Opration |= Scan_TopLeftCorn | Scan_Header;
-                        main_format = cursor.charFormat();
+                        scanner.setMainFormat(cursor.charFormat());
 
                         m_pPanel->setPanelStyle((ResStyle::BorderStyle)i, ResStyle::SCOM);
-                        PanelRect.setWidth(cursor.block().length() + 1);
+                        PanelRect.setWidth(cursor.block().length() - 2);
                         Title = ScanHeader(cursor, borders);
                         break;
                     }
@@ -95,52 +100,33 @@ bool TextPage::validatePage()
                 if (!(Opration & Scan_StartLine))
                 {
                     if (ch == borders.verline)
+                    {
                         Opration |= Scan_StartLine;
+
+                        if (borders.chbotleft != ch && !(Opration & Scan_EndPanel))
+                            PanelRect.setHeight(PanelRect.height() + 1);
+                    }
                 }
                 else
                 {
                     if (ch == borders.verline)
-                        Opration &= ~Scan_StartLine;
-                    else
                     {
-                        if (ch != ':' && ch != '[')
-                            Label += ch;
-                        else
-                        {
-                            int pos = -1;
-                            QString line = cursor.block().text();
-
-                            Label = Label.remove(QRegExp("[<\\[]+(\\D|\\d)+[>\\]]+")).simplified();
-                            pos = line.indexOf(Label);
-
-                            if (ch == '[')
-                                Label += "[ ]";
-                            else if (ch == ':')
-                               Label += ":";
-
-                            if (!Label.isEmpty() && pos >= 0)
-                            {
-
-                                m_pPanel->addText(Label, pos + 1, cursor.block().blockNumber(), 0);
-                            }
-
-                            Label = QString();
-                        }
+                        Opration &= ~Scan_StartLine;
+                        scanner.makeControls(m_pPanel, cursor);
+                        scanner.clear();
+                        break;
                     }
+                    else
+                        scanner.processCursor(cursor);
                 }
             }
 
             op = QTextCursor::Right;
         }
-
-        block = cursor.block();
-
-
-        //qDebug() << "block.next()" << block.text();
         block = block.next();
     }
 
-    PanelRect.setHeight(doc->lineCount() + 1);
+    //PanelRect.setHeight(doc->lineCount() + 1);
     m_pPanel->setPanelRect(PanelRect);
     m_pPanel->setPanelStrings(Title, QString(), QString());
 

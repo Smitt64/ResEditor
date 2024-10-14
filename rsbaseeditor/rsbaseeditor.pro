@@ -22,11 +22,13 @@ unix {
 
 HEADERS += \
     baseresourceeditor.h\
+    wizards/texttopanel/linescanner.h \
     wizards/texttopanel/textpage.h \
     wizards/texttopanel/texttopanelwizard.h
 
 SOURCES += \
     baseresourceeditor.cpp \
+    wizards/texttopanel/linescanner.cpp \
     wizards/texttopanel/textpage.cpp \
     wizards/texttopanel/texttopanelwizard.cpp
 
