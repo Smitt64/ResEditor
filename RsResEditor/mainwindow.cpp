@@ -35,12 +35,14 @@ MainWindow::MainWindow(QWidget *parent)
     m_LastActiveWindow(nullptr),
     m_pLbrObj(nullptr)
 {
+    ResApplication *app = (ResApplication*)qApp;
     ui->setupUi(this);
     setWindowIcon(QIcon(":/img/lbrlogo.png"));
 
     pUpdateChecker = new UpdateChecker();
     pUpdateChecker->setAutoDelete(false);
     pUpdateChecker->setProgramName("RsWorkMaintenanceTool.exe");
+    pUpdateChecker->setSettings(app->settings());
 
     m_ResListDock = new ResListDockWidget(this);
     m_PropertyDock = new PropertyDockWidget(this);

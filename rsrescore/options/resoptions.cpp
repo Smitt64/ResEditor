@@ -15,6 +15,7 @@ ResOptions::ResOptions(QSettings *settings, QWidget *parent) :
 
     //addCommandsPage();
     addLogPage("WorkRes");
+    addUpdatePage();
 }
 
 ResOptions::~ResOptions()
