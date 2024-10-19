@@ -48,6 +48,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_PropertyDock = new PropertyDockWidget(this);
     m_ToolBoxDock = new ToolBoxDockWidget(this);
 
+    m_ResListDock->setObjectName("ResListDock");
+    m_PropertyDock->setObjectName("PropertyDock");
+    m_ToolBoxDock->setObjectName("ToolBoxDock");
+
     addDockWidget(Qt::LeftDockWidgetArea, m_ResListDock);
     addDockWidget(Qt::LeftDockWidgetArea, m_ToolBoxDock);
     addDockWidget(Qt::RightDockWidgetArea, m_PropertyDock);
@@ -72,6 +76,10 @@ MainWindow::MainWindow(QWidget *parent)
     QThreadPool::globalInstance()->start(pUpdateChecker);
 
     ui->actionOpenRes->setShortcut(QKeySequence("Alt+O"));
+
+    QSettings *s = app->settings();
+    restoreGeometry(s->value("Geometry").toByteArray());
+    restoreState(s->value("State").toByteArray());
 
     connect(m_ResListKey, &QShortcut::activated, m_ResListDock, &QDockWidget::raise);
     connect(m_ToolsListKey, &QShortcut::activated, m_ToolBoxDock, &QDockWidget::raise);
@@ -471,6 +479,12 @@ void MainWindow::checkUpdateFinished(bool hasUpdates, const CheckDataList &updat
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    ResApplication *app = (ResApplication*)qApp;
+    QSettings *s = app->settings();
+
+    s->setValue("Geometry", saveGeometry());
+    s->setValue("State", saveState());
+
     pUpdateChecker->requestInterruption();
     pUpdateChecker->deleteLater();
 }
