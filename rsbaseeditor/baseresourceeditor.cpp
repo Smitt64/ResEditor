@@ -92,6 +92,8 @@ BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const 
         if (dlg.exec() == QDialog::Accepted)
         {
             ResPanel *item = dlg.makePanel();
+            item->setName(name);
+            item->setType(LbrObject::RES_PANEL);
 
             pNewEditor = new StdPanelEditor(LbrObject::RES_PANEL);
             pNewEditor->setWindowIcon(RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL));

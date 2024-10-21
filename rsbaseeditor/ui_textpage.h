@@ -27,12 +27,13 @@ public:
     {
         if (TextPage->objectName().isEmpty())
             TextPage->setObjectName(QString::fromUtf8("TextPage"));
-        TextPage->resize(642, 451);
+        TextPage->resize(800, 600);
+        TextPage->setMinimumSize(QSize(800, 600));
         verticalLayout = new QVBoxLayout(TextPage);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
         textEdit = new QTextEdit(TextPage);
         textEdit->setObjectName(QString::fromUtf8("textEdit"));
-        textEdit->setLineWrapMode(QTextEdit::NoWrap);
+        textEdit->setLineWrapMode(QTextEdit::LineWrapMode::NoWrap);
 
         verticalLayout->addWidget(textEdit);
 
@@ -45,6 +46,7 @@ public:
     void retranslateUi(QWizardPage *TextPage)
     {
         TextPage->setWindowTitle(QCoreApplication::translate("TextPage", "WizardPage", nullptr));
+        TextPage->setTitle(QCoreApplication::translate("TextPage", "\320\234\320\260\320\272\320\265\321\202 \321\201\321\202\321\200\320\260\320\275\320\270\321\206\321\213", nullptr));
     } // retranslateUi
 
 };

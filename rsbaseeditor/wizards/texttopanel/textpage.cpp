@@ -63,7 +63,7 @@ bool TextPage::validatePage()
     ResStyle::BorderChars borders;
     quint32 Opration = 0;
 
-    QString Title;
+    QString Title, Status;
     QRect PanelRect(3, 3, 0, 1);
 
     LineScanner scanner(doc);
@@ -97,6 +97,7 @@ bool TextPage::validatePage()
             }
             else
             {
+
                 if (!(Opration & Scan_StartLine))
                 {
                     if (ch == borders.verline)
@@ -105,6 +106,15 @@ bool TextPage::validatePage()
 
                         if (borders.chbotleft != ch && !(Opration & Scan_EndPanel))
                             PanelRect.setHeight(PanelRect.height() + 1);
+                    }
+                    else
+                    {
+                        if (ch == borders.chbotright)
+                        {
+                            cursor.movePosition(QTextCursor::Right);
+                            cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+                            Status = cursor.selectedText().simplified().trimmed().mid(0, 254);
+                        }
                     }
                 }
                 else
@@ -128,7 +138,7 @@ bool TextPage::validatePage()
 
     //PanelRect.setHeight(doc->lineCount() + 1);
     m_pPanel->setPanelRect(PanelRect);
-    m_pPanel->setPanelStrings(Title, QString(), QString());
+    m_pPanel->setPanelStrings(Title, Status, QString());
 
     //qDebug() << Title;
 
