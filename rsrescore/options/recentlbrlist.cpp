@@ -1,6 +1,8 @@
 #include "recentlbrlist.h"
 #include "qsettings.h"
 #include <QFileInfo>
+#include <QDir>
+#include <QFile>
 #include <QDebug>
 
 RecentLbrList::RecentLbrList(QSettings *settings) :
@@ -45,8 +47,23 @@ void RecentLbrList::updateRecentFileActions()
     {
         QFileInfo file = QFileInfo(m_files.at(i));
 
+        QDir dir(file.absolutePath());
         QAction *action = recentFileActs[i];
-        action->setText(file.fileName());
+
+        if (QFile::exists(dir.absoluteFilePath("startbnk.exe")) || QFile::exists(dir.absoluteFilePath("startbnkd.exe")))
+        {
+            if (dir.cdUp())
+            {
+                action->setText(QString("%1 в %2")
+                                .arg(file.fileName())
+                                .arg(dir.dirName()));
+            }
+            else
+                action->setText(file.fileName());
+        }
+        else
+            action->setText(file.fileName());
+
         action->setData(m_files.at(i));
         action->setToolTip(m_files.at(i));
         action->setStatusTip(m_files.at(i));

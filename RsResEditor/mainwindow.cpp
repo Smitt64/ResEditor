@@ -135,6 +135,13 @@ void MainWindow::SetupMenus()
         ui->menuFile->addAction(action);
         connect(action, SIGNAL(triggered(bool)), this, SLOT(onOpenRecent()));
     }
+
+    ui->menuFile->addSeparator();
+    QAction *exit = ui->menuFile->addAction(tr("Выход"));
+    connect(exit, &QAction::triggered, [=]()
+    {
+        qApp->quit();
+    });
 }
 
 void MainWindow::onOptions()
