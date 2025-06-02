@@ -9,16 +9,6 @@
 #include <QJsonValue>
 #include <QJsonParseError>
 
-enum
-{
-    RoleDescription = Qt::UserRole + 1,
-    RoleAction,
-    RoleGroup,
-    RoleNeedName,
-    RoleNeedLbr,
-    RoleNeedPath,
-    RoleNameLen
-};
 
 #define isSeted(item,role) item->data(role).toBool()
 
@@ -32,6 +22,7 @@ NewItemsDlg::NewItemsDlg(LbrObjectInterface *lbr, QWidget *parent) :
     ui->setupUi(this);
     ui->treeWidget->header()->setVisible(false);
 
+    setWindowIcon(QIcon::fromTheme("NewFile"));
     updateAcceptButton();
 
     connect(ui->pathButton, &QPushButton::clicked, this, &NewItemsDlg::pathButton);
@@ -194,6 +185,8 @@ void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metad
     item->setData(RoleNeedPath, metadata["needpath"].toBool());
     item->setData(RoleNeedLbr, needlbr);
     item->setData(RoleNameLen, metadata["namelen"].toInt(255));
+    item->setData(RoleIconName, metadata["icon"].toString());
+    item->setData(RoleTitle, metadata["title"].toString());
 
     list->addItem(item);
     updateListSize(list);
@@ -260,4 +253,39 @@ void NewItemsDlg::itemDoubleClicked()
 
     if (ui->buttonBox->button(QDialogButtonBox::Ok)->isEnabled())
         emit ui->buttonBox->accepted();
+}
+
+QStringList NewItemsDlg::getGroups() const
+{
+    return m_Groups.keys();
+}
+
+#define AddInfoToElement(key) element[key] = item->data(key)
+QList<GroupInfoMap> NewItemsDlg::groupInfo(const QString &name)
+{
+    if (!m_Groups.contains(name))
+        return QList<GroupInfoMap>();
+
+    QList<GroupInfoMap> lst;
+    QListWidget *listwidget = getGroup(name, false);
+
+    for (int i = 0; i < listwidget->count(); i++)
+    {
+        GroupInfoMap element;
+        QListWidgetItem *item = listwidget->item(i);
+
+        AddInfoToElement(RoleDescription);
+        AddInfoToElement(RoleGroup);
+        AddInfoToElement(RoleAction);
+        AddInfoToElement(RoleNeedName);
+        AddInfoToElement(RoleNeedPath);
+        AddInfoToElement(RoleNeedLbr);
+        AddInfoToElement(RoleNameLen);
+        AddInfoToElement(RoleIconName);
+        AddInfoToElement(RoleTitle);
+
+        lst.append(element);
+    }
+
+    return lst;
 }

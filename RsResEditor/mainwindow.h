@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QShortcut>
 #include "updatechecker.h"
+#include "SARibbon.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -21,12 +22,13 @@ class QComboBox;
 class QCloseEvent;
 class SubWindowsModel;
 class RecentLbrList;
-class MainWindow : public QMainWindow
+class SARibbonPannel;
+class MainWindow : public SARibbonMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
     virtual bool eventFilter(QObject *watched, QEvent *event) Q_DECL_OVERRIDE;
@@ -54,18 +56,32 @@ private slots:
     void onOpenRes();
     void onOpenRecent();
 
+    void UpdateFilterResTypes(bool state = false);
+
+    void closeAllSubWindows();
+    void UpdateActions();
+    void OnResListSelectionChanged();
+
 protected:
     virtual void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
 private:
+    void InitQuickAccessBar();
+    void InitButtonBar();
+    void InitLbrPanel(SARibbonCategory *category);
+    void InitLbrResourcePanel(SARibbonCategory *category);
+    void InitNewGallary(SARibbonCategory *category);
+    void InitViewBar(SARibbonCategory *category);
+
+    QAction* createAction(const QString& text, const QString& iconname);
+
     void SetActiveWindow(QMdiSubWindow *wnd);
-    void CreateWindowsCombo();
-    void CreateWindowFunctional();
     void AddEditorWindow(BaseEditorWindow *editor);
     void SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
                           const QString &name, const QString &title,
                           bool changed = false);
     void SetupMenus();
+    QMdiSubWindow *IsExistsResWindow(const QString &name, const int &type);
     Ui::MainWindow *ui;
 
     ResListDockWidget *m_ResListDock;
@@ -82,8 +98,17 @@ private:
     UpdateChecker *pUpdateChecker;
     SubWindowsModel *pWindowsModel;
 
+    QAction *m_pActionNew, *m_pActionOpen;
+    QAction *m_pImportXmlFolder, *m_ImportXml, *m_pExportXmlFolder;
+    QAction *m_pActionNewPanel, *m_pActionNewBScrol, *m_pActionDeleteRes, *m_pActionEditRes;
+
     QShortcut  *m_ResListKey, *m_ToolsListKey;
 
+    SARibbonPannel *m_pFilterRibbonPanel;
+
     QScopedPointer<RecentLbrList> m_RecentLbrList;
+
+    bool m_FlagMassCloseMode;
+    QList<int> m_WindowsToSaveOnClose;
 };
 #endif // MAINWINDOW_H

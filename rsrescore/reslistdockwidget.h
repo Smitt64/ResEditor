@@ -25,11 +25,14 @@ public:
     virtual ~ResListDockWidget();
 
     void setModel(QAbstractItemModel *model);
+    void setFilterTypes(const QList<qint16> &Types);
 
     static QMainWindow *MakeContainer();
     static void SetModel(QMainWindow *Container, QAbstractItemModel *model);
     static void ResetFilterModel(QMainWindow *Container);
-    static void SetupTypesFilter(QMainWindow *Container, QAbstractItemModel *model);
+
+    bool hasSelection();
+    void selectedResource(QString &name, int &type);
 
 private slots:
     void onDoubleClicked(const QModelIndex &index);
@@ -38,6 +41,7 @@ private slots:
 signals:
     void doubleClicked(const QString &name, const int &type);
     void deleteRequest(const QString &name, const int &type);
+    void selectionChanged();
 
 private:
     QMainWindow *m_Container;
@@ -50,8 +54,6 @@ private:
     QListView *m_FilterView;
     QWidgetAction *m_FilterViewAction;
     //ResFilterModel *m_pFiler;
-
-    QStandardItemModel *m_pTypesModel;
 };
 
 class RSRESCORE_EXPORT ResFilterModel : public QSortFilterProxyModel

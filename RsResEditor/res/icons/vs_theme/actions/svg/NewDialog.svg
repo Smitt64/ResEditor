@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <style>.icon-vs-out{fill:#f6f6f6}.icon-vs-bg{fill:#424242}.icon-vs-fg{fill:#f0eff1}.icon-vs-action-orange{fill:#c27d1a}.st0{fill:#f6f6f6}.st1{fill:#f0eff1}.st2{fill:#c27d1a}</style>
+  <path class="st0" d="M 4.255 4.563 L 16 4.563 L 16 16 L 4.255 16 L 4.255 4.563 Z" id="outline" style=""/>
+  <g id="iconBg" style="" transform="matrix(0.734033, 0, 0, 0.714786, 4.255468, 4.563429)">
+    <path class="icon-vs-out" d="M0 0h16v16H0z"/>
+    <path class="icon-vs-bg" d="M1 1v14h14V1H1zm13 13H2V4h12v10zM7 9H3V8h4v1zm0-3H3V5h4v1z"/>
+    <path class="st1" d="M9 9h3v1H9z"/>
+  </g>
+  <g id="colorImportance" style="" transform="matrix(0.734033, 0, 0, 0.714786, 4.255468, 4.563429)">
+    <path class="st2" d="M11 12h2v1h-2z"/>
+    <path class="icon-vs-action-orange" d="M8 12h2v1H8v-1zm5-7H8v2h5V5zm0 6H8V8h5v3zm-1-2H9v1h3V9z"/>
+  </g>
+  <path class="icon-vs-fg" d="M 14.532 14.57 L 5.724 14.57 L 5.724 7.423 L 14.532 7.423 L 14.532 14.57 Z M 13.798 8.137 L 10.128 8.137 L 10.128 9.567 L 13.798 9.567 L 13.798 8.137 Z M 13.798 10.282 L 10.128 10.282 L 10.128 12.426 L 13.798 12.426 L 13.798 10.282 Z M 9.394 8.137 L 6.458 8.137 L 6.458 8.852 L 9.394 8.852 L 9.394 8.137 Z M 9.394 10.282 L 6.458 10.282 L 6.458 10.997 L 9.394 10.997 L 9.394 10.282 Z M 13.798 13.141 L 12.33 13.141 L 12.33 13.856 L 13.798 13.856 L 13.798 13.141 Z M 11.596 13.141 L 10.128 13.141 L 10.128 13.856 L 11.596 13.856 L 11.596 13.141 Z" id="iconFg" style=""/>
+  <path class="icon-canvas-transparent" d="M 10.527 10.998 L -2.996 10.998 L -2.996 -1.943 L 10.527 -1.943 L 10.527 10.998 Z" id="canvas" style="fill: rgb(246, 246, 246); opacity: 0; stroke-width: 1;"/>
+  <path class="icon-vs-out" d="M 8.814 5.323 L 7.16 5.323 L 8.253 6.369 L 6.487 8.054 L 5.456 7.068 L 5.456 8.572 L 2.922 8.572 L 2.922 6.965 L 1.783 8.056 L 0.02 6.369 L 1.112 5.322 L -0.46 5.322 L -0.46 2.91 L 1.112 2.91 L 0.018 1.864 L 1.783 0.177 L 2.935 1.28 L 2.935 -0.325 L 5.456 -0.325 L 5.456 1.165 L 6.49 0.176 L 8.252 1.865 L 7.16 2.91 L 8.814 2.91 L 8.814 5.323 Z" id="path-1" style="stroke-width: 1;"/>
+  <g id="group-1" transform="matrix(0.845171, 0, 0, 0.808833, -2.996132, -1.943241)" style="">
+    <path class="icon-vs-action-orange" d="M9 6.401h-.982V3H9v3.401zm0 2.197h-.998V12H9V8.598zM5.654 4.035l-.673.672 2.387 2.387.672-.673-2.386-2.386zm3.852 3.852l-.673.673 2.387 2.387.674-.672-2.388-2.388zM4 7v.982h3.401V7H4zm5.572 0l-.002.982h3.403V7H9.572zm-4.59 3.275l.672.672L8.041 8.56l-.673-.672-2.386 2.387zm3.852-3.854l.671.673 2.389-2.387-.672-.673-2.388 2.387z"/>
+  </g>
+</svg>

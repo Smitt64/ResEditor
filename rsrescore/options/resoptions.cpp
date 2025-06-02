@@ -9,7 +9,7 @@ ResOptions::ResOptions(QSettings *settings, QWidget *parent) :
 
     m_pGeneral = new GeneralOptionsPage();
     addPage(tr("Общие"), QIcon(":/img/explorer.exe_14_103-6.png"), m_pGeneral);
-    addStylePage(QString(), "style");
+    //addStylePage(QString(), "style");
     addCodeEditorPage("CodeEditor", "theme");
     //addRslPage();
 

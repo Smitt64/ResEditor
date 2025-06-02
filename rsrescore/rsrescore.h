@@ -6,6 +6,10 @@
 #include <QIcon>
 #include <QMultiHash>
 
+#define DIR_SECTION "dir"
+#define USES_SECTION "uses"
+#define LBR_RECENTFOLDERS_CONTEXT "LbrFolders"
+
 class ResPanel;
 class LbrObjectInterface;
 class ResourceEditorInterface;
@@ -15,9 +19,11 @@ public:
     RsResCore();
     static RsResCore *inst();
 
+    static QString iconNameFromResType(const qint16 &Type);
     static QIcon iconFromResType(const qint16 &Type);
     static QString typeNameFromResType(const qint16 &Type);
     static QList<qint16> types();
+    static QList<qint16> stdTypes();
 
     ResourceEditorInterface *pluginForType(const qint16 &Type);
     ResourceEditorInterface *pluginForNewAction(const QString &guid);

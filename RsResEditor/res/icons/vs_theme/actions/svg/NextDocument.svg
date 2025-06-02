@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <style>.st0{opacity:0}.st0,.st1{fill:#f6f6f6}.st2{fill:#424242}.st3{fill:#00539c}.st4{fill:#f0eff1}</style>
+  <path class="icon-canvas-transparent" d="M 16 16 L 0 16 L 0 0 L 16 0 L 16 16 Z" id="canvas" style="fill: rgb(246, 246, 246); opacity: 0; stroke-width: 1;"/>
+  <path class="icon-vs-out" d="M 15 16 L 2 16 L 2 0 L 10.621 0 L 15 4.379 L 15 16 Z" id="outline" style="fill: rgb(246, 246, 246); stroke-width: 1;"/>
+  <path class="icon-vs-fg_x0020_2" d="M 13 14 L 4 14 L 4 2 L 9 2 L 9 6 L 13 6 L 13 14 Z M 10 5 L 10 2.207 L 12.793 5 L 10 5 Z" id="iconFg" style="fill: rgb(240, 239, 241); stroke-width: 1;"/>
+  <path class="icon-vs-bg" d="M 3 1 L 3 15 L 14 15 L 14 4.793 L 10.207 1 L 3 1 Z M 13 14 L 4 14 L 4 2 L 9 2 L 9 6 L 13 6 L 13 14 Z M 10 5 L 10 2.207 L 12.793 5 L 10 5 Z" id="iconBg" style="fill: rgb(66, 66, 66); stroke-width: 1;"/>
+  <title>Next_16x</title>
+  <title>Next_16x</title>
+  <g id="group-1" transform="matrix(0.561679, 0, 0, 0.612424, 0, 0)" style="">
+    <path class="icon-canvas-transparent" d="M0,16V0H16V16Z" style="fill: rgb(246, 246, 246); opacity: 0;"/>
+  </g>
+  <g id="group-2" transform="matrix(0.561679, 0, 0, 0.612424, 0, 0)" style="">
+    <polygon class="icon-vs-out" points="16 8.328 16 7.672 8.707 0.379 5.879 3.207 8.672 6 0 6 0 10 8.672 10 5.879 12.793 8.707 15.621 16 8.328" style="fill: rgb(246, 246, 246);"/>
+  </g>
+  <g id="group-3" transform="matrix(0.561679, 0, 0, 0.612424, 0, 0)" style="">
+    <path class="icon-vs-action-blue" d="M7.293,12.793,11.086,9H1V7H11.086L7.293,3.207,8.707,1.793,14.914,8,8.707,14.207Z" style="fill: rgb(0, 83, 156);"/>
+  </g>
+</svg>

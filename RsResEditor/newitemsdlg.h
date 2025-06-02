@@ -7,6 +7,21 @@ namespace Ui {
 class NewItemsDlg;
 }
 
+enum
+{
+    RoleDescription = Qt::UserRole + 1,
+    RoleAction,
+    RoleGroup,
+    RoleNeedName,
+    RoleNeedLbr,
+    RoleNeedPath,
+    RoleNameLen,
+    RoleIconName,
+    RoleTitle
+};
+
+using GroupInfoMap = QMap<int, QVariant>;
+
 class QListWidget;
 class QTreeWidgetItem;
 class QJsonObject;
@@ -26,9 +41,13 @@ public:
     void addFromMetaDataList(const QString &metadata);
     void addFromMetaData(const QJsonObject &metadata);
 
+    QStringList getGroups() const;
+
     QString action() const;
     QString name() const;
     QString path() const;
+
+    QList<GroupInfoMap> groupInfo(const QString &name);
 
 private slots:
     void itemUpdated(QListWidgetItem *item);

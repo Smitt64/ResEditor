@@ -62,25 +62,43 @@ RsResCore *RsResCore::inst()
     return m_Inst;
 }
 
-QIcon RsResCore::iconFromResType(const qint16 &Type)
+QString RsResCore::iconNameFromResType(const qint16 &Type)
 {
-    QIcon val;
+    QString name;
     switch(Type)
     {
     case LbrObject::RES_PANEL:
-        val = QIcon(":/img/Panel.png");
+        name = "Dialog";
         break;
     case LbrObject::RES_SCROL:
-        val = QIcon(":/img/Scrol.png");
+        name = "GridUniform";
         break;
     case LbrObject::RES_BS:
-        val = QIcon(":/img/BScrol.png");
+        name = "GridPane";
         break;
     default:
-        val = QIcon(":/img/Unknown.png");
+        name = "Question";
     }
 
-    return val;
+    return name;
+}
+
+QIcon RsResCore::iconFromResType(const qint16 &Type)
+{
+    QString name = iconNameFromResType(Type);
+    return QIcon::fromTheme(name);
+}
+
+QList<qint16> RsResCore::stdTypes()
+{
+    const static QList<qint16> _types(
+        {
+            LbrObject::RES_PANEL,
+            LbrObject::RES_SCROL,
+            LbrObject::RES_BS,
+        });
+
+    return _types;
 }
 
 QList<qint16> RsResCore::types()

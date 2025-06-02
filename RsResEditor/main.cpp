@@ -4,10 +4,27 @@
 #include <QtPlugin>
 #include <QScopedPointer>
 #include <QCommandLineParser>
+#include <QElapsedTimer>
 #include <QDir>
+#include <QIcon>
+#include <SARibbon.h>
+
+// boxy-svg.com
+
+static void InitIconTheme()
+{
+    QStringList themes = QIcon::themeSearchPaths();
+    themes.append("d:\\Work\\ResEditor\\RsResEditor\\res\\icons");
+    QIcon::setThemeSearchPaths(themes);
+
+    QIcon::setThemeName("vs_theme");
+}
 
 int main(int argc, char *argv[])
 {
+    InitIconTheme();
+    SARibbonBar::initHighDpi();
+
     QCommandLineParser parser;
     parser.setApplicationDescription("Work Lbr");
     parser.addHelpOption();
@@ -24,7 +41,7 @@ int main(int argc, char *argv[])
     parser.addOption(lbrFileOption);
     parser.addOption(resUnloadDirOption);
 
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    //QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     /*char **argvnew = (char **)malloc((argc + 2) * sizeof(char*));
     for (int i = 0; i < argc + 2; i++)
@@ -51,9 +68,11 @@ int main(int argc, char *argv[])
 
     RsResCore::inst()->init();
 
+    //QElapsedTimer cost;
+    //cost.start();
     MainWindow w;
-    w.showMaximized();
-    a.applyStyle();
+    w.show();
+    //a.applyStyle();
 
     if (parser.isSet(lbrFileOption))
         w.open(parser.value(lbrFileOption));

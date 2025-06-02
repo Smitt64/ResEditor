@@ -127,7 +127,6 @@ ResListDockWidget::ResListDockWidget(QWidget *parent) :
 {
     m_Container = MakeContainer();
     m_List = m_Container->findChild<QTreeView*>("pList");
-    m_pTypesModel = m_Container->findChild<QStandardItemModel*>("pTypesModel");
     m_pNameFilter = m_Container->findChild<QLineEdit*>("pNameFilter");
 
     setWidget(m_Container);
@@ -147,6 +146,46 @@ void ResListDockWidget::setModel(QAbstractItemModel *model)
     SetModel(m_Container, model);
 
     m_List->header()->hideSection(2);
+
+    connect(m_List->selectionModel(), &QItemSelectionModel::selectionChanged, this, [=](const QItemSelection &selected, const QItemSelection &deselected)
+    {
+        Q_UNUSED(selected)
+        Q_UNUSED(deselected)
+        emit selectionChanged();
+    });
+}
+
+void ResListDockWidget::setFilterTypes(const QList<qint16> &Types)
+{
+    QVariant var = m_Container->property("m_pFiler");
+    ResFilterModel *m_pFiler = nullptr;
+
+    if (var.isValid())
+        m_pFiler = var.value<ResFilterModel*>();
+
+    if (!m_pFiler)
+        return;
+
+    m_pFiler->setFilterTypes(Types);
+}
+
+void ResListDockWidget::selectedResource(QString &name, int &type)
+{
+    QVariant var = m_Container->property("m_pFiler");
+    ResFilterModel *m_pFiler = nullptr;
+
+    if (var.isValid())
+        m_pFiler = var.value<ResFilterModel*>();
+
+    if (!m_pFiler)
+        return;
+
+    if (!m_List->selectionModel()->hasSelection())
+        return;
+
+    QModelIndex source = m_pFiler->mapToSource(m_List->selectionModel()->currentIndex());
+    ResFilterModel *model = qobject_cast<ResFilterModel*>(m_pFiler);
+    model->getResNameAndType(source, name, type);
 }
 
 void ResListDockWidget::onDoubleClicked(const QModelIndex &index)
@@ -156,6 +195,9 @@ void ResListDockWidget::onDoubleClicked(const QModelIndex &index)
 
     if (var.isValid())
         m_pFiler = var.value<ResFilterModel*>();
+
+    if (!m_pFiler)
+        return;
 
     QModelIndex source = m_pFiler->mapToSource(index);
     ResFilterModel *model = qobject_cast<ResFilterModel*>(m_pFiler);
@@ -174,6 +216,9 @@ void ResListDockWidget::onCustomContextMenuRequested(const QPoint &pos)
     if (var.isValid())
         m_pFiler = var.value<ResFilterModel*>();
 
+    if (!m_pFiler)
+        return;
+
     QModelIndex index = m_pFiler->mapToSource(m_List->indexAt(pos));
 
     if (index.isValid())
@@ -185,9 +230,9 @@ void ResListDockWidget::onCustomContextMenuRequested(const QPoint &pos)
         QString name;
         model->getResNameAndType(index, name, type);
 
-        QIcon editicon = RsResCore::iconFromResType(type);
+        QIcon editicon = QIcon::fromTheme("EditDocument");
         QAction *edit = contextMenu.addAction(editicon, tr("Редактировать ресурс [%1]").arg(name));
-        QAction *del = contextMenu.addAction(QIcon(":/img/Delete.png"), tr("Удалить ресурс [%1]").arg(name));
+        QAction *del = contextMenu.addAction(QIcon::fromTheme("DeleteTag"), tr("Удалить ресурс [%1]").arg(name));
 
         contextMenu.setDefaultAction(edit);
         QAction *action = contextMenu.exec(m_List->mapToGlobal(pos));
@@ -196,38 +241,6 @@ void ResListDockWidget::onCustomContextMenuRequested(const QPoint &pos)
             emit deleteRequest(name, type);
         else if (action == edit)
             emit doubleClicked(name, type);
-    }
-}
-
-void ResListDockWidget::SetupTypesFilter(QMainWindow *Container, QAbstractItemModel *model)
-{
-    if (!model)
-        return;
-
-    QStandardItemModel *pTypesModel = Container->findChild<QStandardItemModel*>("pTypesModel");
-
-    pTypesModel->clear();
-    const QList<qint16> types = RsResCore::types();
-
-    for (int i = 0; i < types.size(); i++)
-    {
-        for (int j = 0; j < model->rowCount(); j++)
-        {
-            QVariant val = model->data(model->index(j, ResFilterModel::fldType));
-
-            if (val.toInt() == types[i])
-            {
-                QStandardItem *item = new QStandardItem();
-                item->setText(RsResCore::typeNameFromResType(types[i]));
-                item->setCheckable(true);
-                item->setCheckState(Qt::Checked);
-                item->setIcon(RsResCore::iconFromResType(types[i]));
-                item->setData(types[i]);
-
-                pTypesModel->appendRow(item);
-                break;
-            }
-        }
     }
 }
 
@@ -257,7 +270,6 @@ void ResListDockWidget::SetModel(QMainWindow *Container, QAbstractItemModel *mod
         return;
 
     ResetFilterModel(Container);
-    SetupTypesFilter(Container, model);
 
     QVariant var = Container->property("m_pFiler");
     QVariant comp = Container->property("m_pCompleter");
@@ -282,6 +294,11 @@ void ResListDockWidget::SetModel(QMainWindow *Container, QAbstractItemModel *mod
     }
 }
 
+bool ResListDockWidget::hasSelection()
+{
+    return m_List->selectionModel()->hasSelection();
+}
+
 QMainWindow *ResListDockWidget::MakeContainer()
 {
     QMainWindow *Container = new QMainWindow();
@@ -293,59 +310,20 @@ QMainWindow *ResListDockWidget::MakeContainer()
     QToolBar *pToolBar = new QToolBar(Container);
     QLineEdit *pNameFilter = new QLineEdit(Container);
     pNameFilter->setObjectName("pNameFilter");
-
-    QToolButton *pFilterBtn = new QToolButton(Container);
-    QMenu *pFilterMenu = new QMenu(pFilterBtn);
-    pFilterBtn->setMenu(pFilterMenu);
-    pFilterBtn->setPopupMode(QToolButton::MenuButtonPopup);
-
-    pNameFilter->setPlaceholderText(tr("Введите текст для поиска..."));
+    pNameFilter->setPlaceholderText(tr("Текст для поиска..."));
     pNameFilter->setClearButtonEnabled(true);
-    pFilterBtn->setIcon(QIcon(":/img/Filter.png"));
-    pFilterBtn->setIconSize(QSize(16,16));
-
-    QStandardItemModel *pTypesModel = new QStandardItemModel(Container);
-    pTypesModel->setObjectName("pTypesModel");
-
-    QListView *FilterView = new QListView(Container);
-    QWidgetAction *FilterViewAction = new QWidgetAction(Container);
-    FilterViewAction->setDefaultWidget(FilterView);
-    pFilterMenu->addAction(FilterViewAction);
-    FilterView->setModel(pTypesModel);
-    FilterView->setMaximumWidth(150);
 
     pToolBar->setMovable(false);
     pToolBar->addWidget(pNameFilter);
-    pToolBar->addWidget(pFilterBtn);
     pToolBar->setIconSize(QSize(16,16));
 
     Container->setCentralWidget(pList);
     Container->addToolBar(pToolBar);
 
-    connect(pTypesModel, &QStandardItemModel::itemChanged, [=](QStandardItem *item)
-    {
-        QList<qint16> Types;
-        for (int i = 0; i < pTypesModel->rowCount(); i++)
-        {
-            QStandardItem *elem = pTypesModel->item(i, 0);
-
-            if (elem->checkState() == Qt::Checked)
-                Types.append(elem->data().toInt());
-        }
-
-        QVariant var = Container->property("m_pFiler");
-        ResFilterModel *m_pFiler = nullptr;
-
-        if (var.isValid())
-            m_pFiler = var.value<ResFilterModel*>();
-
-        m_pFiler->setFilterTypes(Types);
-    });
-
-    QCompleter *pCompleter = new QCompleter(Container);
+    /*QCompleter *pCompleter = new QCompleter(Container);
     pCompleter->setCaseSensitivity(Qt::CaseInsensitive);
     Container->setProperty("m_pCompleter", QVariant::fromValue(pCompleter));
-    pNameFilter->setCompleter(pCompleter);
+    pNameFilter->setCompleter(pCompleter);*/
 
     return Container;
 }
