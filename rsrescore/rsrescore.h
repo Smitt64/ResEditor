@@ -13,6 +13,8 @@
 class ResPanel;
 class LbrObjectInterface;
 class ResourceEditorInterface;
+class SARibbonContextCategory;
+class SARibbonBar;
 class RSRESCORE_EXPORT RsResCore
 {
 public:
@@ -38,6 +40,8 @@ public:
                       LbrObjectInterface *lbr,
                       const QString &dirtemplate,
                       const QString &encode = QString("UTF-8"));
+
+    QList<SARibbonContextCategory*> contextCategoryes(SARibbonBar *ribbon);
 
 private:
     void loadPlugins();

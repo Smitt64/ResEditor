@@ -311,6 +311,45 @@ void PanelItem::setIsRightText(const bool &val)
         pushUndoPropertyData("isRightText", val);
 }
 
+bool PanelItem::isExcludeNavigation() const
+{
+    return m_PanelExclude & ExcludeNavigation;
+}
+
+void PanelItem::setExcludeNavigation(const bool &val)
+{
+    PanelItem::PanelExcludeFlags flags = m_PanelExclude;
+    flags.setFlag(ExcludeNavigation, val);
+
+    setPanelExclude(flags);
+}
+
+bool PanelItem::isExcludeAutoNum() const
+{
+    return m_PanelExclude & ExcludeAutoNum;
+}
+
+void PanelItem::setExcludeAutoNum(const bool &val)
+{
+    PanelItem::PanelExcludeFlags flags = m_PanelExclude;
+    flags.setFlag(ExcludeAutoNum, val);
+
+    setPanelExclude(flags);
+}
+
+bool PanelItem::isExcludeShadow() const
+{
+    return m_PanelExclude & ExcludeShadow;
+}
+
+void PanelItem::setExcludeShadow(const bool &val)
+{
+    PanelItem::PanelExcludeFlags flags = m_PanelExclude;
+    flags.setFlag(ExcludeShadow, val);
+
+    setPanelExclude(flags);
+}
+
 PanelItem::PanelExcludeFlags PanelItem::panelExclude() const
 {
     return m_PanelExclude;

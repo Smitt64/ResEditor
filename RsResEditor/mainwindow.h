@@ -23,6 +23,8 @@ class QCloseEvent;
 class SubWindowsModel;
 class RecentLbrList;
 class SARibbonPannel;
+class ProxyAction;
+class UndoActionWidget;
 class MainWindow : public SARibbonMainWindow
 {
     Q_OBJECT
@@ -72,8 +74,17 @@ private:
     void InitLbrResourcePanel(SARibbonCategory *category);
     void InitNewGallary(SARibbonCategory *category);
     void InitViewBar(SARibbonCategory *category);
+    void InitContextCategory();
 
-    QAction* createAction(const QString& text, const QString& iconname);
+    void setupAction(QAction *act, const QString& text, const QString& iconname);
+
+    template<class T = QAction>
+    T* createAction(const QString& text, const QString& iconname)
+    {
+        T *action = new T(this);
+        setupAction(action, text, iconname);
+        return action;
+    }
 
     void SetActiveWindow(QMdiSubWindow *wnd);
     void AddEditorWindow(BaseEditorWindow *editor);
@@ -98,11 +109,16 @@ private:
     UpdateChecker *pUpdateChecker;
     SubWindowsModel *pWindowsModel;
 
-    QAction *m_pActionNew, *m_pActionOpen;
+    QAction *m_pActionNew, *m_pActionOpen, *m_pActionSave;
     QAction *m_pImportXmlFolder, *m_ImportXml, *m_pExportXmlFolder;
     QAction *m_pActionNewPanel, *m_pActionNewBScrol, *m_pActionDeleteRes, *m_pActionEditRes;
 
-    QShortcut  *m_ResListKey, *m_ToolsListKey;
+    QMenu *m_pUndoRedoMenu;
+    //QToolButton *m_pRedoButton;
+    UndoActionWidget *m_pUndoActionWidget;
+    ProxyAction *m_pActionUndo, *m_pActionRedo;
+
+    QShortcut *m_ResListKey, *m_ToolsListKey;
 
     SARibbonPannel *m_pFilterRibbonPanel;
 

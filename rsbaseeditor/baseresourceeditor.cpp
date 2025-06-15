@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QTextStream>
+#include "SARibbon.h"
 //Q_IMPORT_PLUGIN(BaseResourceEditor)
 
 BaseResourceEditor::BaseResourceEditor() :
@@ -158,9 +159,7 @@ BaseEditorWindow *BaseResourceEditor::editor(const qint16 &Type, const QString &
 void BaseResourceEditor::SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type, const QString &name, const QString &title)
 {
     wnd->setWindowTitle(QString("%1 [%2]: %3")
-                        .arg(RsResCore::inst()->typeNameFromResType(Type))
-                        .arg(name)
-                        .arg(title));
+                        .arg(RsResCore::inst()->typeNameFromResType(Type), name, title));
 }
 
 BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(const QString &filename,
@@ -188,4 +187,13 @@ BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(const QString &file
     }
 
     return pNewEditor;
+}
+
+QList<SARibbonContextCategory*> BaseResourceEditor::contextCategoryes(SARibbonBar *ribbon)
+{
+    SARibbonContextCategory *rescat = ribbon->addContextCategory(tr("Ресурс"), QColor(0xBFFFBF), 0);
+    SARibbonContextCategory *controlcat = ribbon->addContextCategory(tr("Элемент"), QColor(0xC7FFFF), 0);
+    //SARibbonContextCategory *rescat = ribbon()->addContextCategory(tr("Ресурс"), QColor(0xBFFFBF), 0);
+
+    return { rescat, controlcat };
 }

@@ -4,6 +4,7 @@
 #include "qmetaobject.h"
 #include "rsrescore.h"
 #include "toolbox/toolboxmodel.h"
+#include "SARibbon.h"
 #include <QUndoStack>
 #include <QToolBar>
 #include <QToolButton>
@@ -43,7 +44,8 @@ private:
 
 BaseEditorWindow::BaseEditorWindow(QWidget *parent)
     : QMainWindow{parent},
-    m_pLbr(nullptr)
+    m_pLbr(nullptr),
+    m_pRibbon(nullptr)
 {
     m_pUndoStack = new QUndoStack(this);
     m_ToolBoxModel = new ToolBoxModel(this);
@@ -53,16 +55,26 @@ BaseEditorWindow::BaseEditorWindow(QWidget *parent)
 
 BaseEditorWindow::~BaseEditorWindow()
 {
+    clearRibbonTabs();
+    /*if (m_pRibbon)
+    {
+        QList<SARibbonContextCategory*> lst = contextCategoryes();
 
+        for (auto item : qAsConst(lst))
+        {
+            m_pRibbon->hideContextCategory(item);
+            m_pRibbon->destroyContextCategory(item);
+        }
+    }*/
 }
 
-void BaseEditorWindow::initUndoRedo(QToolBar *toolbar)
+void BaseEditorWindow::initUndoRedo()
 {
     m_pUndoMenu = new QMenu(this);
-    m_pRedoActionBtn = new QToolButton(this);
+    /*m_pRedoActionBtn = new QToolButton(this);
     m_pRedoActionBtn->setMenu(m_pUndoMenu);
     m_pRedoActionBtn->setPopupMode(QToolButton::DelayedPopup);
-    m_pRedoActionBtn->setIcon(QIcon(":/img/Redo.png"));
+    m_pRedoActionBtn->setIcon(QIcon(":/img/Redo.png"));*/
 
     m_pUndoAction = m_pUndoStack->createUndoAction(this, tr("Отменить"));
     m_pUndoAction->setToolTip(m_pUndoAction->text());
@@ -75,7 +87,7 @@ void BaseEditorWindow::initUndoRedo(QToolBar *toolbar)
     //m_pRedoAction->setShortcut(QKeySequence::Redo);
     m_pRedoAction->setToolTip(m_pRedoAction->text());
 
-    toolbar->addAction(m_pUndoAction);
+    /*toolbar->addAction(m_pUndoAction);
     toolbar->addWidget(m_pRedoActionBtn);
 
     m_pUndoViewMenuAction = new UndoActionWidget(m_pUndoStack, this);
@@ -85,14 +97,14 @@ void BaseEditorWindow::initUndoRedo(QToolBar *toolbar)
     m_pRedoActionBtn->setToolTip(tr("Повторить"));
     m_pRedoActionBtn->setShortcut(QKeySequence::Redo);
 
-    AddShortcutToToolTip(m_pRedoActionBtn);
+    AddShortcutToToolTip(m_pRedoActionBtn);*/
 
     connect(m_pUndoStack, &QUndoStack::indexChanged, [=](const int index) -> void
     {
         emit modifyChanged(index != m_UndoIndexUnchanged);
         //emit modifyChanged(!m_pUndoStack->isClean());
     });
-    connect(m_pRedoActionBtn, &QToolButton::clicked, m_pRedoAction, &QAction::trigger);
+    //connect(m_pRedoActionBtn, &QToolButton::clicked, m_pRedoAction, &QAction::trigger);
 }
 
 bool BaseEditorWindow::isChanged() const
@@ -136,6 +148,11 @@ QAction *BaseEditorWindow::undoAction()
 QAction *BaseEditorWindow::redoAction()
 {
     return m_pRedoAction;
+}
+
+QToolButton *BaseEditorWindow::redoActionBtn()
+{
+    return m_pRedoActionBtn;
 }
 
 QString BaseEditorWindow::name() const
@@ -231,4 +248,56 @@ void BaseEditorWindow::setLbrObject(LbrObjectInterface *obj)
 LbrObjectInterface *BaseEditorWindow::lbr()
 {
     return m_pLbr;
+}
+
+void BaseEditorWindow::setRibbonBar(SARibbonBar *ribbon)
+{
+    m_pRibbon = ribbon;
+    initRibbonPanels();
+}
+
+SARibbonBar *BaseEditorWindow::ribbon()
+{
+    return m_pRibbon;
+}
+
+SARibbonContextCategory *BaseEditorWindow::findCategoryByName(const QString &name)
+{
+    QList<SARibbonContextCategory*> lst = m_pRibbon->contextCategoryList();
+
+    for (auto item : std::as_const(lst))
+    {
+        if (item->contextTitle() == name)
+            return item;
+    }
+
+    return nullptr;
+}
+
+void BaseEditorWindow::initRibbonPanels()
+{
+
+}
+
+void BaseEditorWindow::updateRibbonTabs()
+{
+
+}
+
+void BaseEditorWindow::clearRibbonTabs()
+{
+
+}
+
+QAction* BaseEditorWindow::createAction(const QString& text, const QString& iconname, const QKeySequence &key)
+{
+    QAction* act = new QAction(this);
+    act->setText(text);
+    act->setIcon(QIcon::fromTheme(iconname));
+    act->setObjectName(text);
+
+    if (!key.isEmpty())
+        act->setShortcut(key);
+
+    return act;
 }

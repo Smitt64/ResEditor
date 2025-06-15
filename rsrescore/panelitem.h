@@ -19,6 +19,9 @@ class PanelItem : public ContainerItem
     Q_PROPERTY(QString status2 READ status2 WRITE setStatus2 NOTIFY status2Changed)
     Q_PROPERTY(bool isCentered READ isCentered WRITE setIsCentered NOTIFY isCenteredChanged)
     Q_PROPERTY(bool isRightText READ isRightText WRITE setIsRightText NOTIFY isRightTextChanged)
+    Q_PROPERTY(bool isExcludeNavigation READ isExcludeNavigation WRITE setExcludeNavigation NOTIFY panelExcludeChanged)
+    Q_PROPERTY(bool isExcludeAutoNum READ isExcludeAutoNum WRITE setExcludeAutoNum NOTIFY panelExcludeChanged)
+    Q_PROPERTY(bool isExcludeShadow READ isExcludeShadow WRITE setExcludeShadow NOTIFY panelExcludeChanged)
     Q_PROPERTY(PanelExcludeFlags panelExclude READ panelExclude WRITE setPanelExclude NOTIFY panelExcludeChanged)
     Q_PROPERTY(QString comment READ comment WRITE setComment NOTIFY commentChanged)
     Q_PROPERTY(quint16 helpPage READ helpPage WRITE setHelpPage NOTIFY helpPageChanged)
@@ -62,6 +65,15 @@ public:
     const bool &isRightText() const;
     void setIsRightText(const bool &val);
 
+    bool isExcludeNavigation() const;
+    void setExcludeNavigation(const bool &val);
+
+    bool isExcludeAutoNum() const;
+    void setExcludeAutoNum(const bool &val);
+
+    bool isExcludeShadow() const;
+    void setExcludeShadow(const bool &val);
+
     PanelExcludeFlags panelExclude() const;
     void setPanelExclude(const PanelItem::PanelExcludeFlags &val);
 
@@ -82,6 +94,7 @@ signals:
     void commentChanged();
     void panelExcludeChanged();
     void helpPageChanged();
+    void excludeNavigationChanged();
 
     void structChanged();
 

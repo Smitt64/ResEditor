@@ -20,6 +20,7 @@ public:
     virtual bool newItemsActionAvalible(const QString &guid) Q_DECL_FINAL;
     virtual BaseEditorWindow *newItemsAction(const QString &guid, const QString &name, const QString &path, QWidget *parent) Q_DECL_FINAL;
 
+    QList<SARibbonContextCategory*> contextCategoryes(SARibbonBar *ribbon) Q_DECL_FINAL;
 private:
     void SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
                           const QString &name, const QString &title);

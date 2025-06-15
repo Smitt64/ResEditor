@@ -312,6 +312,22 @@ void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel)
     }
 }
 
+QList<SARibbonContextCategory*> RsResCore::contextCategoryes(SARibbonBar *ribbon)
+{
+    using CategoryList = QList<SARibbonContextCategory*>;
+    CategoryList result;
+
+    for (ResourceEditorInterface *item : std::as_const(m_Plugins))
+    {
+        auto lst = item->contextCategoryes(ribbon);
+
+        if (!lst.isEmpty())
+            result.append(lst);
+    }
+
+    return result;
+}
+
 static QString strippedActionText(QString s)
 {
     s.remove(QString::fromLatin1("..."));

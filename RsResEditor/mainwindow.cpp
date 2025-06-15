@@ -9,6 +9,7 @@
 #include "propertymodel/propertydockwidget.h"
 #include "toolbox/toolboxdockwidget.h"
 #include "rsrescore.h"
+#include "proxyaction.h"
 #include "updatecheckermessagebox.h"
 #include "subwindowsmodel.h"
 #include "windowslistdlg.h"
@@ -28,7 +29,47 @@
 #include <QThreadPool>
 #include <QKeySequence>
 #include <QSettings>
+#include <QUndoView>
 #include "savefilesdlg.h"
+
+class UndoActionWidget : public QWidgetAction
+{
+public:
+    UndoActionWidget(QObject *parent) :
+        QWidgetAction(parent),
+        m_pPtr(nullptr),
+        m_pUndoStack(nullptr)
+    {
+    }
+
+    virtual ~UndoActionWidget()
+    {
+
+    }
+
+    void setUndoStack(QUndoStack *pStack)
+    {
+        m_pUndoStack = pStack;
+
+        if (m_pPtr)
+            m_pPtr->setStack(m_pUndoStack);
+    }
+
+protected:
+    virtual QWidget *createWidget(QWidget *parent)
+    {
+        m_pPtr = new QUndoView(parent);
+
+        if (m_pUndoStack)
+            m_pPtr->setStack(m_pUndoStack);
+
+        return m_pPtr;
+    }
+
+private:
+    QUndoView *m_pPtr;
+    QUndoStack *m_pUndoStack;
+};
 
 MainWindow::MainWindow(QWidget *parent)
     : SARibbonMainWindow(parent)
@@ -74,6 +115,7 @@ MainWindow::MainWindow(QWidget *parent)
     InitLbrResourcePanel(mainPage);
     //InitNewGallary(mainPage);
     InitViewBar(viewPage);
+    InitContextCategory();
 
     pUpdateChecker = new UpdateChecker();
     pUpdateChecker->setAutoDelete(false);
@@ -111,6 +153,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_ResListDock, &ResListDockWidget::deleteRequest, this, &MainWindow::OnDeleteRequest);
 
     connect(m_ResListDock, &ResListDockWidget::selectionChanged, this, &MainWindow::OnResListSelectionChanged);
+    connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
     /*connect(pUpdateChecker, &UpdateChecker::checkFinished, this, &MainWindow::checkUpdateFinished);
     connect(m_ResListDock, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
     connect(m_ResListDock, &ResListDockWidget::deleteRequest, this, &MainWindow::OnDeleteRequest);
@@ -128,6 +171,11 @@ MainWindow::~MainWindow()
     //delete ui;
 }
 
+void MainWindow::InitContextCategory()
+{
+    (void)RsResCore::inst()->contextCategoryes(ribbonBar());
+}
+
 void MainWindow::InitQuickAccessBar()
 {
     ResApplication *app = (ResApplication*)qApp;
@@ -141,15 +189,24 @@ void MainWindow::InitQuickAccessBar()
     quickAccessBar->addAction(actionNew);
     quickAccessBar->addSeparator();
 
-    QAction* actionUndo = createAction(tr("Отменить"), "Undo");
-    actionUndo->setShortcut(QKeySequence("Ctrl+z"));
-    actionUndo->setShortcutContext(Qt::ApplicationShortcut);
-    quickAccessBar->addAction(actionUndo);
+    m_pActionSave = createAction(tr("Сохранить"), "Save");
+    m_pActionSave->setShortcut(QKeySequence::Save);
+    m_pActionSave->setShortcutContext(Qt::ApplicationShortcut);
+    quickAccessBar->addAction(m_pActionSave);
+    quickAccessBar->addSeparator();
 
-    QAction* actionRedo = createAction(tr("Повторить"), "redo");
-    actionRedo->setShortcut(QKeySequence("Ctrl+y"));
-    actionRedo->setShortcutContext(Qt::ApplicationShortcut);
-    quickAccessBar->addAction(actionRedo);
+    m_pActionUndo = createAction<ProxyAction>(tr("Отменить"), "Undo");
+    quickAccessBar->addAction(m_pActionUndo);
+
+    m_pActionRedo = createAction<ProxyAction>(tr("Повторить"), "Redo");
+    m_pUndoRedoMenu = new QMenu(tr("Повторить"), this);
+    m_pUndoRedoMenu->setIcon(QIcon::fromTheme("Redo"));
+
+    m_pUndoActionWidget = new UndoActionWidget(this);
+    m_pUndoRedoMenu->addAction(m_pActionRedo);
+    m_pUndoRedoMenu->addAction(m_pUndoActionWidget);
+
+    quickAccessBar->addMenu(m_pUndoRedoMenu);
 
     QList<QAction*> actions = m_RecentLbrList->actions();
 
@@ -360,19 +417,27 @@ void MainWindow::InitViewBar(SARibbonCategory *category)
     connect(closeAllWindow, SIGNAL(triggered(bool)), this, SLOT(closeAllSubWindows()));
 }
 
-QAction* MainWindow::createAction(const QString& text, const QString& iconname)
+void MainWindow::setupAction(QAction* act, const QString& text, const QString& iconname)
 {
-    QAction* act = new QAction(this);
     act->setText(text);
     act->setIcon(QIcon::fromTheme(iconname));
     act->setObjectName(text);
-    return act;
 }
 
 void MainWindow::UpdateActions()
 {
     bool EnableIfOpenLbr = (m_pLbrObj != nullptr);
     bool EnableIfOpenLbrSelRes = (m_pLbrObj != nullptr && m_ResListDock->hasSelection());
+    bool EnableIfResModifyed = false;
+    bool EnableIfResOpened = false;
+
+    QMdiSubWindow *mdiwnd = m_Mdi->currentSubWindow();
+    if (mdiwnd)
+    {
+        BaseEditorWindow *wnd = dynamic_cast<BaseEditorWindow*>(mdiwnd->widget());
+        EnableIfResModifyed = wnd && wnd->isChanged();
+        EnableIfResOpened = wnd != nullptr;
+    }
 
     m_pImportXmlFolder->setEnabled(EnableIfOpenLbr);
     m_ImportXml->setEnabled(EnableIfOpenLbr);
@@ -382,6 +447,9 @@ void MainWindow::UpdateActions()
     m_pActionNewBScrol->setEnabled(EnableIfOpenLbr);
     m_pActionDeleteRes->setEnabled(EnableIfOpenLbrSelRes);
     m_pActionEditRes->setEnabled(EnableIfOpenLbrSelRes);
+
+    m_pUndoRedoMenu->setEnabled(EnableIfResOpened);
+    m_pActionSave->setEnabled(EnableIfResModifyed);
 }
 
 void MainWindow::onAbout()
@@ -458,6 +526,8 @@ void MainWindow::doubleResClicked(const QString &name, const int &type)
 
 void MainWindow::AddEditorWindow(BaseEditorWindow *editor)
 {
+    editor->setRibbonBar(ribbonBar());
+
     QMdiSubWindow *wnd = m_Mdi->addSubWindow(editor, Qt::SubWindow);
     SetupEditorTitle(editor, editor->type(), editor->name(), editor->title());
     wnd->setAttribute(Qt::WA_DeleteOnClose);
@@ -473,6 +543,16 @@ void MainWindow::AddEditorWindow(BaseEditorWindow *editor)
 
     QModelIndex index = pWindowsModel->addWindow(wnd);
     pWindowsComboBox->setCurrentIndex(index.row());
+
+    /*QList<SARibbonContextCategory*> CatList = editor->contextCategoryes();
+
+    for (auto category : std::as_const(CatList))
+    {
+        ribbonBar()->addContextCategory(category);
+        //ribbonBar()->showContextCategory(category);
+    }*/
+
+    connect(editor, &BaseEditorWindow::modifyChanged, this, &MainWindow::UpdateActions);
 }
 
 void MainWindow::readySave(BaseEditorWindow *editor)
@@ -516,7 +596,7 @@ void MainWindow::readySave(BaseEditorWindow *editor)
         {
             QStringList lst = settings->value("AutoUnloadDirs").toStringList();
 
-            for (const QString &dir : lst)
+            for (const QString &dir : std::as_const(lst))
                 RsResCore::inst()->saveResToXml(type, name, m_pLbrObj, dir);
         }
     }
@@ -566,23 +646,52 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
 {
     if (!window)
     {
+        if (m_LastActiveWindow)
+        {
+            BaseEditorWindow *lastwnd = dynamic_cast<BaseEditorWindow*>(m_LastActiveWindow->widget());
+
+            if (lastwnd)
+                lastwnd->clearRibbonTabs();
+        }
+
+        QList<SARibbonContextCategory*> allCategoryes = ribbonBar()->contextCategoryList();
+        for (auto all : qAsConst(allCategoryes))
+        {
+            if (all->categoryCount())
+                ribbonBar()->showContextCategory(all);
+            else
+                ribbonBar()->hideContextCategory(all);
+        }
+
         m_ToolBoxDock->setModel(nullptr);
         m_PropertyDock->setPropertyModel(nullptr);
         m_PropertyDock->setStructModel(nullptr);
         m_LastActiveWindow = nullptr;
+
         return;
     }
 
     if (m_LastActiveWindow == window)
         return;
 
+    BaseEditorWindow *lastwnd = nullptr;
     BaseEditorWindow *wnd = dynamic_cast<BaseEditorWindow*>(window->widget());
+
+    if (m_LastActiveWindow)
+        lastwnd = dynamic_cast<BaseEditorWindow*>(m_LastActiveWindow->widget());
 
     if (!wnd)
     {
         m_ToolBoxDock->setModel(nullptr);
         m_PropertyDock->setPropertyModel(nullptr);
         m_PropertyDock->setStructModel(nullptr);
+
+        m_pActionUndo->setSource(nullptr);
+        m_pActionRedo->setSource(nullptr);
+        m_pUndoActionWidget->setUndoStack(nullptr);
+
+        if (lastwnd)
+            lastwnd->clearRibbonTabs();
     }
     else
     {
@@ -590,8 +699,26 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
         m_PropertyDock->setPropertyModel(wnd->propertyModel());
         m_PropertyDock->setStructModel(wnd->structModel());
 
+        m_pActionUndo->setSource(wnd->undoAction());
+        m_pActionRedo->setSource(wnd->redoAction());
+        m_pUndoActionWidget->setUndoStack(wnd->undoStack());
+
         QModelIndex index = pWindowsModel->findWindow(window);
         pWindowsComboBox->setCurrentIndex(index.row());
+
+        if (lastwnd)
+            lastwnd->clearRibbonTabs();
+
+        wnd->updateRibbonTabs();
+
+        QList<SARibbonContextCategory*> allCategoryes = ribbonBar()->contextCategoryList();
+        for (auto all : qAsConst(allCategoryes))
+        {
+            if (all->categoryCount())
+                ribbonBar()->showContextCategory(all);
+            else
+                ribbonBar()->hideContextCategory(all);
+        }
     }
 
     m_LastActiveWindow = window;
@@ -750,8 +877,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
             {
                 if (m_WindowsToSaveOnClose.contains(id))
                 {
-                    //readySave(editor);
-                    qDebug() << "readySave(editor);";
+                    readySave(editor);
                     event->accept();
                 }
                 else
@@ -774,8 +900,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                 {
                     if (dlg.saveModeResult() == SaveFilesDlg::ResultSave)
                     {
-                        //readySave(editor);
-                        qDebug() << "readySave(editor);";
+                        readySave(editor);
                         event->accept();
                     }
                     else

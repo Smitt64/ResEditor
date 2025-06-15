@@ -36,6 +36,8 @@ SOURCES += \
     propertymodel/labeltextpropertyitem.cpp \
     propertymodel/propertydockwidget.cpp \
     propertymodel/textstyledlg.cpp \
+    propertywidgetmapper.cpp \
+    proxyaction.cpp \
     resapplication.cpp \
     reslibdirmodel.cpp \
     reslistdockwidget.cpp \
@@ -88,6 +90,8 @@ HEADERS += \
     propertymodel/labeltextpropertyitem.h \
     propertymodel/propertydockwidget.h \
     propertymodel/textstyledlg.h \
+    propertywidgetmapper.h \
+    proxyaction.h \
     resapplication.h \
     reslibdirmodel.h \
     reslistdockwidget.h \

@@ -18,6 +18,8 @@ class ToolBoxModel;
 class ResBuffer;
 class QAbstractItemModel;
 class LbrObjectInterface;
+class SARibbonContextCategory;
+class SARibbonBar;
 class RSRESCORE_EXPORT BaseEditorWindow : public QMainWindow
 {
     Q_OBJECT
@@ -36,6 +38,7 @@ public:
 
     QAction *undoAction();
     QAction *redoAction();
+    QToolButton *redoActionBtn();
 
     virtual QString name() const;
     virtual QString title() const;
@@ -46,6 +49,13 @@ public:
     void setLbrObject(LbrObjectInterface *obj);
     LbrObjectInterface *lbr();
 
+    void setRibbonBar(SARibbonBar *ribbon);
+    SARibbonBar *ribbon();
+
+    SARibbonContextCategory *findCategoryByName(const QString &name);
+    virtual void updateRibbonTabs();
+    virtual void clearRibbonTabs();
+
 signals:
     void propertyModelChanged(QAbstractItemModel *model);
     void readySave(bool closeAfterSave = false);
@@ -53,10 +63,13 @@ signals:
     void titleChanged(QString);
 
 protected:
-    void initUndoRedo(QToolBar *toolbar);
+    void initUndoRedo();
     void initpropertyModelSignals(BaseScene *scene);
     virtual void loadToolBox();
+    virtual void initRibbonPanels();
     void loadToolBoxFile(const QString &fname, const GroupsMapType &outergroups = GroupsMapType());
+
+    QAction* createAction(const QString& text, const QString& iconname, const QKeySequence &key = QKeySequence());
 
 private:
     void loadToolBarElement(GroupsMapType &GroupsMap, const QJsonObject &obj);
@@ -70,6 +83,8 @@ private:
     int m_UndoIndexUnchanged;
     UndoActionWidget *m_pUndoViewMenuAction;
     LbrObjectInterface *m_pLbr;
+
+    SARibbonBar *m_pRibbon;
 };
 
 #endif // BASEEDITORWINDOW_H

@@ -23,6 +23,8 @@
 #include "widgets/resinfodlg.h"
 #include "spelling/resspellstringsdlg.h"
 #include "spelling/spellchecker.h"
+#include "SARibbon.h"
+#include "propertywidgetmapper.h"
 #include <errorsmodel.h>
 #include <errordlg.h>
 #include <QStatusBar>
@@ -263,7 +265,8 @@ StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     BaseEditorWindow(parent),
     m_pPanel(nullptr),
     panelItem(nullptr),
-    m_StatusBar(nullptr)
+    m_StatusBar(nullptr),
+    m_pPanelCategory(nullptr)
 {
     m_Type = Type;
     if (Type == LbrObject::RES_PANEL)
@@ -306,68 +309,15 @@ StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     connect(m_pClipboard, &QClipboard::dataChanged, this, &StdPanelEditor::clipboardChanged);
 }
 
-void StdPanelEditor::setupMenus()
+StdPanelEditor::~StdPanelEditor()
 {
-    m_pEditMenu->addAction(undoAction());
-    m_pEditMenu->addAction(redoAction());
-    m_pEditMenu->addSeparator();
-    m_pEditMenu->addAction(m_pCutAction);
-    m_pEditMenu->addAction(m_pCopyAction);
-    m_pEditMenu->addAction(m_pPasteAction);
-    m_pEditMenu->addSeparator();
-    m_pEditMenu->addAction(m_pDelete);
-
-    m_pResMenu->addAction(m_pSave);
-    m_SaveToXml = addAction(m_pResMenu, QIcon(":/img/XMLFileHS.png"), tr("Сохранить в XML"), QKeySequence("Ctrl+ALT+S"));
-    m_pCheckAction = addAction(m_pResMenu, QIcon(":/img/CheckRes.png"), tr("Проверить"), QKeySequence("Ctrl+H"));
-    m_pSpellCheckAction = addAction(m_pResMenu, QIcon(":/img/CheckSpellingHS.png"), tr("Проверить орфографию"), QKeySequence("Alt+H"));
-    m_EwViewAction = addAction(m_pResMenu, QIcon(":/img/Panel2.png"), tr("Просмотр в EW"), QKeySequence("Ctrl+F3"));
-    m_ViewAction = addAction(m_pResMenu, QIcon(":/img/PanelCmd.png"), tr("Просмотр"), QKeySequence("Alt+F3"));
-    m_Statistic = addAction(m_pResMenu, QIcon(":/img/Statistic.png"), tr("Информация"));
-
-    m_pCreateControl = addAction(m_pElements, QIcon(":/img/insctrl.png"), tr("Создать поле"), QKeySequence(Qt::Key_Insert));
-
-    connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
-    connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
-    connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
-    connect(m_pCreateControl, &QAction::triggered, this, &StdPanelEditor::onInsertControl);
-    connect(m_pSpellCheckAction, &QAction::triggered, this, &StdPanelEditor::CheckSpelling);
-
-    connect(m_Statistic, &QAction::triggered, [=]()
-    {
-        ResInfoDlg dlg(this);
-        dlg.setTitle(m_pNameLineEdit->text());
-        dlg.setType(QString("%1 (%2)")
-                        .arg(type())
-                        .arg(RsResCore::typeNameFromResType(type())));
-
-        int ctrl = 0, txt = 0;
-        QList<QGraphicsItem*> lst = panelItem->childItems();
-        for (QGraphicsItem *item : qAsConst(lst))
-        {
-            ControlItem *control = dynamic_cast<ControlItem*>(item);
-            TextItem *text = dynamic_cast<TextItem*>(item);
-
-            if (control)
-                ctrl ++;
-
-            if (text)
-                txt ++;
-        }
-
-        dlg.setFields(ctrl);
-        dlg.setLabels(txt);
-        dlg.exec();
-    });
+    delete m_pPanelCategory;
 }
 
 void StdPanelEditor::setupEditor()
 {
-    m_pMenuBar = new QMenuBar(this);
-    setMenuBar(m_pMenuBar);
-
-    m_pToolBar = addToolBar(tr("Основная"));
-    m_pToolBar->setIconSize(QSize(16, 16));
+    /*m_pToolBar = addToolBar(tr("Основная"));
+    m_pToolBar->setIconSize(QSize(16, 16));*/
 
     m_pView = new StdEditorView(this);
     m_pView->setupScene();
@@ -392,30 +342,21 @@ void StdPanelEditor::setupEditor()
     m_pView->setMouseTracking(true);
 
     setupNameLine();
-    m_pSave = addAction(QIcon(":/img/saveHS.png"), tr("Сохранить"), QKeySequence::Save);
-    m_pToolBar->addSeparator();
-    initUndoRedo(m_pToolBar);
-    setupCopyPaste();
+    initUndoRedo();
 
-    m_pDelete = addAction(QIcon(":/img/Delete.png"), tr("Удалить"), QKeySequence::Delete);
+    //m_pDelete = addAction(QIcon(":/img/Delete.png"), tr("Удалить"), QKeySequence::Delete);
 
-    m_pEditMenu = m_pMenuBar->addMenu(tr("&Правка"));
-    m_pViewMenu = m_pMenuBar->addMenu(tr("&Вид"));
-    m_pResMenu = m_pMenuBar->addMenu(tr("&Ресурс"));
-    m_pElements = m_pMenuBar->addMenu(tr("&Элементы"));
-    setupContrastAction();
     setupScrolAreaAction();
-    setupPropertyAction();
+    //setupPropertyAction();
 
     BaseScene *baseScene = dynamic_cast<BaseScene*>(m_pView->scene());
     if (baseScene)
         initpropertyModelSignals(baseScene);
 
-    setupMenus();
     loadToolBox();
 
-    connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
-    connect(m_pSave, &QAction::triggered, this, &StdPanelEditor::onSave);
+    //connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
+    //connect(m_pSave, &QAction::triggered, this, &StdPanelEditor::onSave);
     connect(panelItem, &PanelItem::titleChanged, [=]()
     {
         emit titleChanged(panelItem->title());
@@ -429,29 +370,9 @@ void StdPanelEditor::setupEditor()
     });
 }
 
-void StdPanelEditor::setupContrastAction()
-{
-    ResApplication *app = (ResApplication*)qApp;
-
-    m_pToolBar->addSeparator();
-
-    m_pContrst = addAction(QIcon(":/img/EditBrightContrastHS.png"), tr("Контраст"), QKeySequence("Alt+F9"));
-    m_pContrst->setCheckable(true);
-
-    connect(m_pContrst, &QAction::toggled, [&](bool toogled)
-    {
-        panelItem->setProperty(CONTRAST_PROPERTY, toogled);
-    });
-
-    app->settings()->beginGroup("StdEditor");
-    m_pContrst->setChecked(app->settings()->value("AutoContrast", true).toBool());
-    app->settings()->endGroup();
-    m_pViewMenu->addAction(m_pContrst);
-}
-
 void StdPanelEditor::setupScrolAreaAction()
 {
-    m_pContrst = addAction(QIcon(":/img/EditTableHS.png"), tr("Скролинг"), QKeySequence("Ctrl+F5"));
+    /*m_pContrst = addAction(QIcon(":/img/EditTableHS.png"), tr("Скролинг"), QKeySequence("Ctrl+F5"));
     m_pContrst->setCheckable(true);
 
     connect(m_pContrst, &QAction::toggled, [&](bool toogled)
@@ -462,10 +383,10 @@ void StdPanelEditor::setupScrolAreaAction()
     });
 
     m_pContrst->setChecked(false);
-    m_pViewMenu->addAction(m_pContrst);
+    m_pViewMenu->addAction(m_pContrst);*/
 }
 
-void StdPanelEditor::setupPropertyAction()
+/*void StdPanelEditor::setupPropertyAction()
 {
     m_pProperty = addAction(QIcon(":/img/Properties.png"), tr("Характеристики элемента"), QKeySequence::InsertParagraphSeparator);
 
@@ -474,7 +395,7 @@ void StdPanelEditor::setupPropertyAction()
         QKeyEvent event(QEvent::KeyPress, Qt::Key_Return, Qt::NoModifier);
         QApplication::sendEvent(m_pView, &event);
     });
-}
+}*/
 
 void StdPanelEditor::setupNameLine()
 {
@@ -484,26 +405,17 @@ void StdPanelEditor::setupNameLine()
     m_pNameLineEdit = new QLineEdit(this);
     m_pNameLineEdit->setReadOnly(true);
     m_pNameLineEdit->setFont(font);
-    m_pNameLineEdit->setAlignment(Qt::AlignRight);
+    m_pNameLineEdit->setObjectName("pNameLineEdit");
 
-    m_pMenuBar->setCornerWidget(m_pNameLineEdit);
+    QAction *copyAction = m_pNameLineEdit->addAction(QIcon::fromTheme("Copy"), QLineEdit::TrailingPosition);
+    connect(copyAction, &QAction::triggered, [=]()
+    {
+        QClipboard *pClipboard = QApplication::clipboard();
+        pClipboard->setText(m_pNameLineEdit->text(), QClipboard::Clipboard);
+    });
 }
 
-void StdPanelEditor::setupCopyPaste()
-{
-    m_pToolBar->addSeparator();
-    m_pCutAction = addAction(QIcon(":/img/CutHS.png"), tr("Вырезать"), QKeySequence::Cut);
-    m_pCopyAction = addAction(QIcon(":/img/CopyHS.png"), tr("Копировать"), QKeySequence::Copy);
-    m_pPasteAction = addAction(QIcon(":/img/PasteHS.png"), tr("Вставить"), QKeySequence::Paste);
-
-    clipboardChanged();
-
-    connect(m_pCopyAction, &QAction::triggered, this, &StdPanelEditor::sceneCopyItems);
-    connect(m_pPasteAction, &QAction::triggered, this, &StdPanelEditor::scenePasteItems);
-    connect(m_pCutAction, &QAction::triggered, this, &StdPanelEditor::sceneCutItems);
-}
-
-QAction *StdPanelEditor::addAction(const QIcon &icon, const QString &text, const QKeySequence &key)
+/*QAction *StdPanelEditor::addAction(const QIcon &icon, const QString &text, const QKeySequence &key)
 {
     QAction *action = m_pToolBar->addAction(icon, text);
     action->setToolTip(text);
@@ -529,7 +441,7 @@ QAction *StdPanelEditor::addAction(QMenu *menu, const QIcon &icon, const QString
     }
 
     return action;
-}
+}*/
 
 void StdPanelEditor::setPanel(ResPanel *panel, const QString &comment)
 {
@@ -1247,3 +1159,272 @@ void StdPanelEditor::CheckSpellingUpdateTexts(ResSpellStringsDlg *dlg)
     }
     undoStack()->endMacro();
 }
+
+void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
+{
+    ResApplication *app = (ResApplication*)qApp;
+    SARibbonPannel *respanel = category->addPannel(tr("Панель"));
+    //respanel->setObjectName(respanel->titleLabel()->text());
+
+    QAction *panelPropertyAction = createAction(tr("Параметры панели"), "WindowsService");
+    respanel->addLargeAction(panelPropertyAction);
+    respanel->addSeparator();
+
+    m_SaveToXml = createAction(tr("Сохранить в XML"), "XMLFile", QKeySequence("Ctrl+ALT+S"));
+    respanel->addLargeAction(m_SaveToXml);
+    connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
+    respanel->addSeparator();
+
+    connect(panelPropertyAction, &QAction::triggered, [&]()
+    {
+        panelItem->userAction(CustomRectItem::ActionKeyEnter);
+    });
+
+    respanel->addSmallWidget(m_pNameLineEdit);
+    //respanel->setMaximumWidth(48 * 4);
+    SARibbonPannel *editpanel = category->addPannel(tr("Правка"));
+
+    m_pCreateControl = createAction(tr("Создать поле"), "TextBox", QKeySequence(Qt::Key_Insert));
+    connect(m_pCreateControl, &QAction::triggered, this, &StdPanelEditor::onInsertControl);
+    editpanel->addLargeAction(m_pCreateControl);
+
+    m_pDelete = createAction(tr("Удалить элемент"), "DeleteClause", QKeySequence::Delete);
+    connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
+    editpanel->addLargeAction(m_pDelete);
+
+    QAction *editSeparator = editpanel->addSeparator();
+    editpanel->setActionRowProportionProperty(editSeparator, SARibbonPannelItem::Small);
+
+    m_pContrst = createAction(tr("Контраст"), "AcrylicBrush", QKeySequence("Alt+F9"));
+    m_pContrst->setCheckable(true);
+    connect(m_pContrst, &QAction::toggled, [&](bool toogled)
+    {
+        panelItem->setProperty(CONTRAST_PROPERTY, toogled);
+    });
+
+    app->settings()->beginGroup("StdEditor");
+    m_pContrst->setChecked(app->settings()->value("AutoContrast", true).toBool());
+    app->settings()->endGroup();
+    editpanel->addLargeAction(m_pContrst);
+    editpanel->addSeparator();
+
+    m_pCutAction = createAction(tr("Вырезать"), "Cut", QKeySequence::Cut);
+    connect(m_pCutAction, &QAction::triggered, this, &StdPanelEditor::sceneCutItems);
+    editpanel->addSmallAction(m_pCutAction);
+
+    m_pCopyAction = createAction(tr("Копировать"), "Copy", QKeySequence::Copy);
+    connect(m_pCopyAction, &QAction::triggered, this, &StdPanelEditor::sceneCopyItems);
+    editpanel->addSmallAction(m_pCopyAction);
+
+    m_pPasteAction = createAction(tr("Вставить"), "Paste", QKeySequence::Paste);
+    connect(m_pPasteAction, &QAction::triggered, this, &StdPanelEditor::scenePasteItems);
+    editpanel->addSmallAction(m_pPasteAction);
+
+    QAction *centerAction = createAction(tr("Выводить панель по центру"), "AlignCenter");
+    QAction *alignRightAction = createAction(tr("Выравнивание текста справа"), "AlignRight");
+    centerAction->setCheckable(true);
+    alignRightAction->setCheckable(true);
+    respanel->addSmallAction(centerAction);
+    respanel->addSmallAction(alignRightAction);
+
+    SARibbonPannel *checkpanel = category->addPannel(tr("Рецензирование"));
+    m_pSpellCheckAction = createAction(tr("Проверить орфографию"), "SpellingCheck", QKeySequence("Alt+H"));
+    connect(m_pSpellCheckAction, &QAction::triggered, this, &StdPanelEditor::CheckSpelling);
+    checkpanel->addLargeAction(m_pSpellCheckAction);
+
+    m_pCheckAction = createAction(tr("Проверить на ошибки"), "ValidateDocument", QKeySequence("Ctrl+H"));
+    connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
+    checkpanel->addSmallAction(m_pCheckAction);
+
+    m_EwViewAction = createAction(tr("Просмотр в EW"), "FormInstance", QKeySequence("Ctrl+F3"));
+    connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
+    checkpanel->addSmallAction(m_EwViewAction);
+
+    m_Statistic = createAction(tr("Информация"), "InformationSymbol");
+    checkpanel->addSmallAction(m_Statistic);
+
+    SARibbonPannel *borderpanel = category->addPannel(tr("Рамка"));
+    SARibbonGallery* gallery = borderpanel->addGallery();
+    MakeBorderRaibbonGallary(gallery);
+
+    SARibbonPannel *stylepanel = category->addPannel(tr("Стиль"));
+    SARibbonGallery* gallerystyle = stylepanel->addGallery();
+    MakeStyleRaibbonGallary(gallerystyle);
+
+    SARibbonPannel *excludepanel = category->addPannel(tr("Исключить"));
+
+    QAction *excludeAutoStep = createAction(tr("Автоматический обход"), "Step");
+    excludeAutoStep->setCheckable(true);
+    excludepanel->addSmallAction(excludeAutoStep);
+
+    QAction *excludeAutoNum = createAction(tr("Автоматическую нумерацию полей"), "NumericListBox");
+    excludeAutoNum->setCheckable(true);
+    excludepanel->addSmallAction(excludeAutoNum);
+
+    QAction *excludeShadow = createAction(tr("Отображение тени"), "Shader_exp");
+    excludeShadow->setCheckable(true);
+    excludepanel->addSmallAction(excludeShadow);
+
+    connect(m_Statistic, &QAction::triggered, [=]()
+    {
+        ResInfoDlg dlg(this);
+        dlg.setTitle(m_pNameLineEdit->text());
+        dlg.setType(QString("%1 (%2)")
+                        .arg(type())
+                        .arg(RsResCore::typeNameFromResType(type())));
+
+        int ctrl = 0, txt = 0;
+        QList<QGraphicsItem*> lst = panelItem->childItems();
+        for (QGraphicsItem *item : qAsConst(lst))
+        {
+            ControlItem *control = dynamic_cast<ControlItem*>(item);
+            TextItem *text = dynamic_cast<TextItem*>(item);
+
+            if (control)
+                ctrl ++;
+
+            if (text)
+                txt ++;
+        }
+
+        dlg.setFields(ctrl);
+        dlg.setLabels(txt);
+        dlg.exec();
+    });
+
+    m_RibbonMapper.reset(new PropertyWidgetMapper());
+    m_RibbonMapper->bind(panelItem, "isCentered", centerAction);
+    m_RibbonMapper->bind(panelItem, "isRightText", alignRightAction);
+
+    m_RibbonMapper->bind(panelItem, "isExcludeNavigation", excludeAutoStep);
+    m_RibbonMapper->bind(panelItem, "isExcludeAutoNum", excludeAutoNum);
+    m_RibbonMapper->bind(panelItem, "isExcludeShadow", excludeShadow);
+}
+
+void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery)
+{
+    QList<QAction*> galleryActions;
+
+    QAction *scomStyle = createAction("SCOM Основной стиль", "");
+    scomStyle->setIcon(QIcon(":/img/gallary_style/scom.png"));
+    galleryActions.append(scomStyle);
+
+    QAction *smesStyle = createAction("SMES Стиль сообщений", "");
+    smesStyle->setIcon(QIcon(":/img/gallary_style/smes.png"));
+    galleryActions.append(smesStyle);
+
+    QAction *rmesStyle = createAction("RMES Стиль аварийных сообщений", "");
+    rmesStyle->setIcon(QIcon(":/img/gallary_style/rmes.png"));
+    galleryActions.append(rmesStyle);
+
+    QAction *shlpStyle = createAction("SHLP Стиль помощи", "");
+    shlpStyle->setIcon(QIcon(":/img/gallary_style/shlp.png"));
+    galleryActions.append(shlpStyle);
+
+    QAction *smenStyle = createAction("SMEN Стиль меню", "");
+    smenStyle->setIcon(QIcon(":/img/gallary_style/smen.png"));
+    galleryActions.append(smenStyle);
+
+    QAction *sbcmStyle = createAction("SBCM Стиль с яркой рамкой", "");
+    sbcmStyle->setIcon(QIcon(":/img/gallary_style/sbcm.png"));
+    galleryActions.append(sbcmStyle);
+
+    QAction *scrlStyle = createAction("SCRL Стиль справочных скролингов", "");
+    scrlStyle->setIcon(QIcon(":/img/gallary_style/scrl.png"));
+    galleryActions.append(scrlStyle);
+
+    SARibbonGalleryGroup* group1 = gallery->addCategoryActions(tr("Стиль"), galleryActions);
+    group1->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
+    group1->setGridMinimumWidth(80);
+}
+
+void StdPanelEditor::MakeBorderRaibbonGallary(SARibbonGallery* gallery)
+{
+    QList<QAction*> galleryActions;
+
+    QAction *emptyBorder = createAction("Отсутствует", "");
+    emptyBorder->setIcon(QIcon("://img/gallary_border/empty.png"));
+    galleryActions.append(emptyBorder);
+
+    QAction *singleBorder = createAction("Одинарная", "");
+    singleBorder->setIcon(QIcon("://img/gallary_border/single.png"));
+    galleryActions.append(singleBorder);
+
+    QAction *doubleBorder = createAction("Двойная", "");
+    doubleBorder->setIcon(QIcon("://img/gallary_border/double.png"));
+    galleryActions.append(doubleBorder);
+
+    QAction *combine1Border = createAction("Комбинированная 1", "");
+    combine1Border->setIcon(QIcon("://img/gallary_border/combine1.png"));
+    galleryActions.append(combine1Border);
+
+    QAction *combine2Border = createAction("Комбинированная 2", "");
+    combine2Border->setIcon(QIcon("://img/gallary_border/combine2.png"));
+    galleryActions.append(combine2Border);
+
+    QAction *solidBorder = createAction("Сплошная", "");
+    solidBorder->setIcon(QIcon("://img/gallary_border/solid.png"));
+    galleryActions.append(solidBorder);
+
+    SARibbonGalleryGroup* group1 = gallery->addCategoryActions(tr("Рамки"), galleryActions);
+    group1->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
+    group1->setGridMinimumWidth(80);
+}
+
+void StdPanelEditor::initRibbonPanels()
+{
+    m_pPanelCategory = new SARibbonCategory(tr("Панель"), ribbon());
+    MakeResRibbonCategory(m_pPanelCategory);
+}
+
+void StdPanelEditor::updateRibbonTabs()
+{
+    SARibbonContextCategory *context = findCategoryByName(tr("Ресурс"));
+
+    if (!context)
+        return;
+
+    if (!context->isHaveCategory(m_pPanelCategory))
+        context->addCategoryPage(m_pPanelCategory);
+
+    int PanelCategory = ribbon()->categoryIndex(m_pPanelCategory);
+
+    if (ribbon()->currentIndex() != PanelCategory)
+        ribbon()->raiseCategory(m_pPanelCategory);
+}
+
+void StdPanelEditor::clearRibbonTabs()
+{
+    SARibbonContextCategory *context = findCategoryByName(tr("Ресурс"));
+
+    if (!context)
+        return;
+
+    context->takeCategory(m_pPanelCategory);
+}
+
+/*QList<SARibbonContextCategory*> StdPanelEditor::contextCategoryes()
+{
+    if (!m_ContextCategoryes.isEmpty())
+        return m_ContextCategoryes;
+
+    QVariant id = reinterpret_cast<int>(this);
+    SARibbonContextCategory *maincat = ribbon()->addContextCategory(tr("Ресурс"), QColor(0xBFFFBF), id);
+
+    QString respanname = RsResCore::inst()->typeNameFromResType(m_Type);
+
+    switch(m_Type)
+    {
+    case LbrObject::RES_PANEL:
+        respanname = tr("Панель");
+        break;
+    default:
+        respanname = tr("Скролинг");
+    }
+
+    SARibbonCategory* resCategory = maincat->addCategoryPage(respanname);
+    MakeResRibbonCategory(resCategory);
+
+    m_ContextCategoryes.append(maincat);
+    return m_ContextCategoryes;
+}*/
