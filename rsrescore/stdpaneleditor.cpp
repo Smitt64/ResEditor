@@ -73,9 +73,12 @@ public:
         BaseScene(parent),
         m_fShowCursor(false)
     {
+        QSize grSize = getGridSize();
+
         m_pCursorTimer = new QTimer(this);
         m_pCursorTimer->setInterval(500);
         m_pCursorTimer->setSingleShot(false);
+        //m_CursorPos = QPointF(grSize.width(), grSize.height());
 
         connect(m_pCursorTimer, &QTimer::timeout, [&]()
         {
@@ -134,8 +137,12 @@ protected:
             painter->save();
             painter->setCompositionMode(QPainter::RasterOp_NotDestination);
 
-            QPointF CursorPos = m_CursorPos;
-            painter->fillRect(QRectF(CursorPos, QSizeF(getGridSize().width(), getGridSize().height()/* / 2*/)), Qt::black);
+            PanelItem* panel = findFirst<PanelItem>();
+            QPointF sceneCursorPos = m_CursorPos;
+            if (panel)
+                sceneCursorPos = panel->mapToScene(m_CursorPos);
+
+            painter->fillRect(QRectF(sceneCursorPos, QSizeF(getGridSize().width(), getGridSize().height())), Qt::black);
             painter->restore();
         }
 
@@ -144,30 +151,43 @@ protected:
 
     virtual void keyPressEvent(QKeyEvent *keyEvent) Q_DECL_OVERRIDE
     {
-        QSize grSize = getGridSize();
-        auto CheckNewPos = [this, &grSize](const QPointF &point)
+        PanelItem* panel = findFirst<PanelItem>();
+        if (!panel)
         {
-            const CustomRectItem *panel = findTopLevelItem();
-            QRectF bound = panel->mapRectToScene(panel->boundingRect());
-            QRectF caret(point, QSizeF(grSize.width(), grSize.height()));
+            BaseScene::keyPressEvent(keyEvent);
+            return;
+        }
 
-            return bound.contains(caret);
-        };
+        QSize grSize = getGridSize();
+        QPointF localCursorPos = m_CursorPos;
+        QPointF savepos = localCursorPos;
 
-        QPointF savepos = m_CursorPos;
         if (keyEvent->key() == Qt::Key_Down)
-            m_CursorPos.setY(m_CursorPos.y() + grSize.height());
+            localCursorPos.setY(localCursorPos.y() + grSize.height());
 
         if (keyEvent->key() == Qt::Key_Up)
-            m_CursorPos.setY(m_CursorPos.y() - grSize.height());
+            localCursorPos.setY(localCursorPos.y() - grSize.height());
 
         if (keyEvent->key() == Qt::Key_Right)
-            m_CursorPos.setX(m_CursorPos.x() + grSize.width());
+            localCursorPos.setX(localCursorPos.x() + grSize.width());
 
         if (keyEvent->key() == Qt::Key_Left)
-            m_CursorPos.setX(m_CursorPos.x() - grSize.width());
+            localCursorPos.setX(localCursorPos.x() - grSize.width());
 
-        if (!CheckNewPos(m_CursorPos))
+        QRectF panelRect = panel->boundingRect();
+        QRectF availableRect = panelRect;
+
+        if (panel->borderStyle() != ResStyle::Border_NoLine)
+        {
+            availableRect = panelRect.adjusted(grSize.width(), grSize.height(),
+                                               -grSize.width(), -grSize.height());
+        }
+
+        QRectF cursorRect(localCursorPos, QSizeF(grSize.width(), grSize.height()));
+
+        if (availableRect.contains(cursorRect))
+            m_CursorPos = localCursorPos;
+        else
             m_CursorPos = savepos;
 
         BaseScene::keyPressEvent(keyEvent);
@@ -180,23 +200,32 @@ protected:
         if (mouseEvent->button() != Qt::LeftButton)
             return;
 
-        CustomRectItem* panelItem = findTopLevelItem();
+        PanelItem* panelItem = findFirst<PanelItem>();
         if (!panelItem)
             return;
 
         QSize gridSize = getGridSize();
         QPointF scenePos = mouseEvent->scenePos();
+        QPointF localPos = panelItem->mapFromScene(scenePos);
 
-        qreal xV = floor(scenePos.x() / gridSize.width()) * gridSize.width();
-        qreal yV = floor(scenePos.y() / gridSize.height()) * gridSize.height();
+        qreal xV = floor(localPos.x() / gridSize.width()) * gridSize.width();
+        qreal yV = floor(localPos.y() / gridSize.height()) * gridSize.height();
         QPointF gridPos(xV, yV);
 
         QRectF cellRect(gridPos, gridSize);
-        if (!cellRect.contains(scenePos))
+        if (!cellRect.contains(localPos))
             return;
 
-        QRectF panelSceneBound = panelItem->mapRectToScene(panelItem->boundingRect());
-        if (!panelSceneBound.contains(cellRect))
+        QRectF panelBound = panelItem->boundingRect();
+        QRectF availableBound = panelBound;
+
+        if (panelItem->borderStyle() != ResStyle::Border_NoLine)
+        {
+            availableBound = panelBound.adjusted(gridSize.width(), gridSize.height(),
+                                                 -gridSize.width(), -gridSize.height());
+        }
+
+        if (!availableBound.contains(cellRect))
             return;
 
         bool positionBlocked = false;
@@ -208,7 +237,9 @@ protected:
                 continue;
 
             QRectF itemRect = item->mapRectToScene(item->boundingRect());
-            if (itemRect.intersects(cellRect)) {
+            QRectF sceneCellRect = panelItem->mapToScene(cellRect).boundingRect();
+            if (itemRect.intersects(sceneCellRect))
+            {
                 positionBlocked = true;
                 break;
             }
@@ -216,7 +247,7 @@ protected:
 
         if (!positionBlocked)
         {
-            m_CursorPos = gridPos;
+            m_CursorPos = gridPos; // Сохраняем в локальных координатах panelItem
             update();
         }
     }
@@ -625,7 +656,7 @@ void StdPanelEditor::scenePasteItems()
 
         QJsonObject rootObj;
         QJsonArray items;
-        QPointF offset = topItem->mapFromScene(pScene->cursorPos());
+        QPointF offset = pScene->cursorPos();//topItem->mapFromScene(pScene->cursorPos());
         int yOffset = 0;
         while (!stream.atEnd())
         {
@@ -657,7 +688,7 @@ void StdPanelEditor::scenePasteItems()
     }
     else if (mimeData->hasFormat(MIMETYPE_TOOLBOX))
     {
-        QPointF offset = topItem->mapFromScene(pScene->cursorPos());
+        QPointF offset = pScene->cursorPos()//topItem->mapFromScene(pScene->cursorPos());
         UndoItemAdd *pUndo = new UndoItemAdd(pScene);
         pUndo->setData(mimeData->data(MIMETYPE_TOOLBOX));
         pUndo->setOffset(topItem->realCoordToEw(offset));
@@ -969,7 +1000,7 @@ void StdPanelEditor::onInsertControl()
     if (!pPanel)
         return;
 
-    CursorPos = pPanel->mapFromScene(CursorPos);
+    //CursorPos = pPanel->mapFromScene(CursorPos);
 
     bool found = false;
     QSize grid = pScene->getGridSize();

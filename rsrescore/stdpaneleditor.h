@@ -70,7 +70,7 @@ private slots:
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
     void addCodeWindow(const QString &title, const QString &text);
-    virtual void initRibbonPanels();
+    virtual void initRibbonPanels() Q_DECL_OVERRIDE;
 
 private:
     enum FillItemsChildMode
