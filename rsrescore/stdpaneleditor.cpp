@@ -105,6 +105,22 @@ public:
             panel->updateChildControlsOrder();
     }
 
+    void setCursorPosition(const QPointF &scenePos)
+    {
+        PanelItem* panel = findFirst<PanelItem>();
+        if (!panel)
+            return;
+
+        QPointF localPos = panel->mapFromScene(scenePos);
+        QSize gridSize = getGridSize();
+
+        qreal xV = floor(localPos.x() / gridSize.width()) * gridSize.width();
+        qreal yV = floor(localPos.y() / gridSize.height()) * gridSize.height();
+
+        m_CursorPos = QPointF(xV, yV);
+        update();
+    }
+
 protected:
     virtual void drawBackground (QPainter* painter, const QRectF &rect) Q_DECL_OVERRIDE
     {
@@ -465,6 +481,83 @@ QAction *StdPanelEditor::addAction(QMenu *menu, const QIcon &icon, const QString
     return action;
 }*/
 
+void StdPanelEditor::setCursorToFirstFreeCell()
+{
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+    if (!pScene || !panelItem)
+        return;
+
+    QSize gridSize = pScene->getGridSize();
+    QRectF panelRect = panelItem->boundingRect();
+
+    // Определяем доступную область в зависимости от наличия границы
+    QRectF availableRect = panelRect;
+    if (panelItem->borderStyle() != ResStyle::Border_NoLine) {
+        availableRect = panelRect.adjusted(gridSize.width(), gridSize.height(),
+                                           -gridSize.width(), -gridSize.height());
+    }
+
+    // Получаем все дочерние элементы панели
+    QList<QGraphicsItem*> childItems = panelItem->childItems();
+
+    // Вместо QSet<QRectF> используем QList для хранения занятых ячеек
+    QList<QRectF> occupiedCells;
+
+    // Собираем занятые ячейки
+    for (QGraphicsItem* item : childItems) {
+        if (dynamic_cast<ScrolAreaRectItem*>(item) || !item->isVisible())
+            continue;
+
+        CustomRectItem* rectItem = dynamic_cast<CustomRectItem*>(item);
+        if (rectItem) {
+            QRectF itemRect = rectItem->boundingRect();
+            itemRect.moveTo(rectItem->pos());
+
+            // Преобразуем в координаты сетки
+            qreal startX = floor(itemRect.x() / gridSize.width()) * gridSize.width();
+            qreal startY = floor(itemRect.y() / gridSize.height()) * gridSize.height();
+            qreal endX = ceil((itemRect.x() + itemRect.width()) / gridSize.width()) * gridSize.width();
+            qreal endY = ceil((itemRect.y() + itemRect.height()) / gridSize.height()) * gridSize.height();
+
+            // Добавляем все занятые ячейки
+            for (qreal y = startY; y < endY; y += gridSize.height()) {
+                for (qreal x = startX; x < endX; x += gridSize.width()) {
+                    occupiedCells.append(QRectF(x, y, gridSize.width(), gridSize.height()));
+                }
+            }
+        }
+    }
+
+    // Ищем первую свободную ячейку
+    for (qreal y = availableRect.y(); y < availableRect.y() + availableRect.height(); y += gridSize.height()) {
+        for (qreal x = availableRect.x(); x < availableRect.x() + availableRect.width(); x += gridSize.width()) {
+            QRectF cellRect(x, y, gridSize.width(), gridSize.height());
+
+            // Проверяем, что ячейка полностью внутри доступной области
+            if (!availableRect.contains(cellRect))
+                continue;
+
+            // Проверяем, что ячейка не занята
+            bool isOccupied = false;
+            for (const QRectF& occupiedCell : occupiedCells) {
+                if (occupiedCell.intersects(cellRect)) {
+                    isOccupied = true;
+                    break;
+                }
+            }
+
+            if (!isOccupied) {
+                // Нашли свободную ячейку, устанавливаем курсор
+                pScene->setCursorPosition(panelItem->mapToScene(QPointF(x, y)));
+                return;
+            }
+        }
+    }
+
+    // Если не нашли свободную ячейку, устанавливаем курсор в начало доступной области
+    pScene->setCursorPosition(panelItem->mapToScene(availableRect.topLeft()));
+}
+
 void StdPanelEditor::setPanel(ResPanel *panel, const QString &comment)
 {
     m_pPanel = panel;
@@ -474,6 +567,8 @@ void StdPanelEditor::setPanel(ResPanel *panel, const QString &comment)
 
     m_pNameLineEdit->setText(m_pPanel->name());
     m_pStructModel->structChanged();
+
+    setCursorToFirstFreeCell();
 
     emit titleChanged(m_pPanel->title());
 }
@@ -688,7 +783,7 @@ void StdPanelEditor::scenePasteItems()
     }
     else if (mimeData->hasFormat(MIMETYPE_TOOLBOX))
     {
-        QPointF offset = pScene->cursorPos()//topItem->mapFromScene(pScene->cursorPos());
+        QPointF offset = pScene->cursorPos();//topItem->mapFromScene(pScene->cursorPos());
         UndoItemAdd *pUndo = new UndoItemAdd(pScene);
         pUndo->setData(mimeData->data(MIMETYPE_TOOLBOX));
         pUndo->setOffset(topItem->realCoordToEw(offset));

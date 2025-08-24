@@ -79,6 +79,7 @@ private:
         FICMode_ParentBeforeChild
     };
 
+    void setCursorToFirstFreeCell();
     void CheckSpellingUpdateTexts(ResSpellStringsDlg *dlg);
     /*QAction *addAction(const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());
     QAction *addAction(QMenu *menu, const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());*/
