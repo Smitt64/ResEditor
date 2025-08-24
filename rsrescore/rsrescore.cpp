@@ -6,19 +6,69 @@
 #include "qapplication.h"
 #include "lbrobject.h"
 #include "controlitem.h"
+#include "qxmlstream.h"
+#include "errorsmodel.h"
 #include "textitem.h"
 #include "panelitem.h"
 #include "scrolitem.h"
 #include "respanel.h"
 #include "propertymodel/ewtextstylepropertytreeitem.h"
 #include "styles/extextstyle.h"
+#include "xmlvalidator.h"
 #include <QPluginLoader>
 #include <QFontDatabase>
 #include <QToolButton>
 #include <QDomDocument>
 #include <QDir>
+#include <stdexcept>
+#include <QXmlSchema>
+#include <QXmlSchemaValidator>
+#include <QXmlStreamReader>
+#include <QAbstractMessageHandler>
 
 Q_IMPORT_PLUGIN(BaseResourceEditor)
+
+class XmlValidatorErrorString : public QAbstractMessageHandler
+{
+public:
+    XmlValidatorErrorString() : QAbstractMessageHandler() {}
+
+    ErrorsModel *errors = nullptr;
+
+protected:
+    void handleMessage(QtMsgType type, const QString &description, const QUrl &identifier = QUrl(), const QSourceLocation &sourceLocation = QSourceLocation()) Q_DECL_FINAL
+    {
+        if (!errors)
+            return;
+
+        QString location = tr(" в строке %1, столбец %2,")
+            .arg(sourceLocation.line()).arg(sourceLocation.column());
+
+        QString msg = tr("XSD message:");
+
+        if (!location.isEmpty())
+            msg += location;
+
+        msg += " " + description;
+
+        switch (type)
+        {
+        case QtDebugMsg:
+        case QtInfoMsg:
+            errors->addMessage(msg);
+            break;
+        case QtWarningMsg:
+            errors->appendError(msg, ErrorsModel::TypeWarning);
+            break;
+        case QtCriticalMsg:
+        case QtFatalMsg:
+            errors->appendError(msg);
+            break;
+        default:
+            break;
+        }
+    }
+};
 
 RsResCore *RsResCore::m_Inst = nullptr;
 
@@ -278,26 +328,38 @@ QString RsResCore::saveResToXml(const qint16 &Type,
         result = resPanel.saveXml(encode);
         stream << result;
 
-        //addCodeWindow(tr("XML"), result);
         f.close();
     }
 
     return result;
 }
 
-void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel)
+bool RsResCore::validateResXmlWithXsd(QIODevice *xmlDevice, ErrorsModel* errorMessage)
+{
+    XmlValidator validator;
+    validator.setSchemaFileName(":/res/reslib.xsd");
+    return validator.validateXmlWithXsd(xmlDevice, errorMessage);
+}
+
+void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel) throw(std::runtime_error, std::logic_error)
 {
     static const QStringList RootTags =
     {
         "panel",
-        "bscrol"
+        "bscrol",
+        "scrol",
+        "lscrol"
     };
+
+    if (!validateResXmlWithXsd(device))
+        throw std::runtime_error("XML validation failed against XSD schema");
+
+    device->seek(0);
 
     QDomDocument doc;
     doc.setContent(device);
 
     QDomElement root = doc.documentElement();
-
     if (root.tagName() == "reslib")
     {
         QDomNode reslibnode = root.firstChild();

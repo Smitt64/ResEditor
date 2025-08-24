@@ -7,6 +7,7 @@
 #include <QPoint>
 #include "rscoreheader.h"
 #include "styles/resstyle.h"
+#include "rsrescore_global.h"
 
 #define TYPEF 0x0F
 #define DUMMF 0x10
@@ -81,8 +82,10 @@ typedef QVector<FieldStruct> FieldStructList;
 
 class ResBuffer;
 class QDomElement;
+class QXmlStreamWriter;
+class QXmlStreamReader;
 class ErrorsModel;
-class ResPanel : public QObject/*, public RsResInterface*/
+class RSRESCORE_EXPORT ResPanel : public QObject/*, public RsResInterface*/
 {
     Q_OBJECT
     friend class RsResCore;
@@ -94,8 +97,12 @@ public:
     virtual int load(ResBuffer *data);
     virtual int save(ResBuffer *data);
     virtual QString saveXml(const QString &encode = QString("UTF-8"));
+    virtual bool saveToXml(QXmlStreamWriter &writer) const;
     virtual int loadXmlNode(const QDomElement &reslib);
+    virtual int loadXmlStream(QXmlStreamReader &reader);
     //virtual int loadProc(ResLib *res) Q_DECL_FINAL;
+
+    static qint16 getResourceTypeFromName(const QString& resTypeName);
 
     QPoint pos() const;
     QSize size() const;
@@ -123,6 +130,8 @@ public:
 
     FieldStructList::iterator fieldBegin();
     FieldStructList::iterator fieldEnd();
+
+    QString getResType() const;
 
     void setName(const QString &val);
     void setComment(const QString &val);
@@ -192,6 +201,12 @@ private:
     bool __CheckCrossField(FieldR *f1, FieldR *f2);
     bool __CheckCrossFields(int curr);
     int checkScrolRect(int sx, int sy, int sh, int sl, ErrorsModel *errors);
+
+    void writePanelAttributes(QXmlStreamWriter &writer) const;
+    void writeBorders(QXmlStreamWriter &writer) const;
+    void writeTexts(QXmlStreamWriter &writer) const;
+    void writeFields(QXmlStreamWriter &writer) const;
+    QString escapeXml(const QString &text) const;
 
     QString m_Status, m_StatusRD, m_Title, m_Name, m_Comment;
     qint16 m_Type;

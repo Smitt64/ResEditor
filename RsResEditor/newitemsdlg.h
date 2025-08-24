@@ -36,6 +36,7 @@ public:
     ~NewItemsDlg();
 
     void buildStandartNewItems();
+    void filterByAction(const QString& action);
 
     QListWidget *getGroup(const QString &name, bool addIfNotExists);
     void addFromMetaDataList(const QString &metadata);
@@ -49,11 +50,20 @@ public:
 
     QList<GroupInfoMap> groupInfo(const QString &name);
 
+    const QStringList &ribbonScrols() const;
+    const QStringList &ribbonPannels() const;
+
+    GroupInfoMap fillGroupInfoFromListItem(QListWidgetItem* item);
+    GroupInfoMap getInfoForItem(const QString &guid);
+
 private slots:
     void itemUpdated(QListWidgetItem *item);
     void pathButton();
     void updateAcceptButton();
     void itemDoubleClicked();
+
+protected:
+    virtual void showEvent(QShowEvent* event) Q_DECL_OVERRIDE;
 
 private:
     void updateListSize(QListWidget *list);
@@ -65,7 +75,9 @@ private:
 
     LbrObjectInterface *m_pLbrObj;
 
+    QStringList m_RibbonScrols, m_RibbonPannels;
     QHash<QString, QTreeWidgetItem*> m_Groups;
+    QHash<QString, GroupInfoMap> m_Templates;
 };
 
 #endif // NEWITEMSDLG_H

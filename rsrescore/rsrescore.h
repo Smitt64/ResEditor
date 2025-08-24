@@ -5,6 +5,7 @@
 #include "rsrescore_global.h"
 #include <QIcon>
 #include <QMultiHash>
+#include <stdexcept>
 
 #define DIR_SECTION "dir"
 #define USES_SECTION "uses"
@@ -15,6 +16,9 @@ class LbrObjectInterface;
 class ResourceEditorInterface;
 class SARibbonContextCategory;
 class SARibbonBar;
+class ErrorsModel;
+class QXmlSchema;
+class QAbstractMessageHandler;
 class RSRESCORE_EXPORT RsResCore
 {
 public:
@@ -32,7 +36,11 @@ public:
     QStringList newItemsMetaList() const;
     void init();
 
-    void loadFromXml(QIODevice *device, ResPanel **panel);
+    void loadFromXml(QIODevice *device, ResPanel **panel) throw(std::runtime_error, std::logic_error);
+
+    bool getResXmlXsd(QXmlSchema **schema, QAbstractMessageHandler **handler, ErrorsModel *errorMessage = nullptr);
+    bool validateResXmlWithXsd(QIODevice *xmlDevice, ErrorsModel *errorMessage = nullptr);
+
     const char *resTypePrefix(int tp);
 
     QString saveResToXml(const qint16 &Type,

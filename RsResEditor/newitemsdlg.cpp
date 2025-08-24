@@ -9,7 +9,6 @@
 #include <QJsonValue>
 #include <QJsonParseError>
 
-
 #define isSeted(item,role) item->data(role).toBool()
 
 NewItemsDlg::NewItemsDlg(LbrObjectInterface *lbr, QWidget *parent) :
@@ -154,18 +153,52 @@ void NewItemsDlg::addFromMetaDataList(const QString &metadata)
 
     QJsonObject root = doc.object();
     QJsonArray items = root["items"].toArray();
+    QJsonObject ribbon = root["ribbon"].toObject();
 
     for (const auto &value : qAsConst(items))
     {
         QJsonObject obj = value.toObject();
         addFromMetaData(obj);
     }
+
+    QJsonArray panels = ribbon["panels"].toArray();
+    for (const auto &value : qAsConst(panels))
+        m_RibbonPannels.append(value.toString());
+
+    QJsonArray scrols = ribbon["scrols"].toArray();
+    for (const auto &value : qAsConst(scrols))
+        m_RibbonScrols.append(value.toString());
 }
 
 void NewItemsDlg::addFromMetaData(const QJsonObject &metadata)
 {
     QListWidget *group = getGroup(metadata["group"].toString(), true);
     addItemToGroupList(group, metadata);
+}
+
+GroupInfoMap NewItemsDlg::fillGroupInfoFromListItem(QListWidgetItem* item)
+{
+    GroupInfoMap infoMap;
+
+    if (!item)
+        return infoMap;
+
+    infoMap[RoleDescription] = item->data(RoleDescription);
+    infoMap[RoleGroup] = item->data(RoleGroup);
+    infoMap[RoleAction] = item->data(RoleAction);
+    infoMap[RoleNeedName] = item->data(RoleNeedName);
+    infoMap[RoleNeedPath] = item->data(RoleNeedPath);
+    infoMap[RoleNeedLbr] = item->data(RoleNeedLbr);
+    infoMap[RoleNameLen] = item->data(RoleNameLen);
+    infoMap[RoleIconName] = item->data(RoleIconName);
+    infoMap[RoleTitle] = item->data(RoleTitle);
+
+    return infoMap;
+}
+
+GroupInfoMap NewItemsDlg::getInfoForItem(const QString &guid)
+{
+    return m_Templates[guid];
 }
 
 void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metadata)
@@ -187,6 +220,9 @@ void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metad
     item->setData(RoleNameLen, metadata["namelen"].toInt(255));
     item->setData(RoleIconName, metadata["icon"].toString());
     item->setData(RoleTitle, metadata["title"].toString());
+
+    GroupInfoMap infoMap = fillGroupInfoFromListItem(item);
+    m_Templates.insert(item->data(RoleAction).toString(), infoMap);
 
     list->addItem(item);
     updateListSize(list);
@@ -260,6 +296,16 @@ QStringList NewItemsDlg::getGroups() const
     return m_Groups.keys();
 }
 
+const QStringList &NewItemsDlg::ribbonScrols() const
+{
+    return m_RibbonScrols;
+}
+
+const QStringList &NewItemsDlg::ribbonPannels() const
+{
+    return m_RibbonPannels;
+}
+
 #define AddInfoToElement(key) element[key] = item->data(key)
 QList<GroupInfoMap> NewItemsDlg::groupInfo(const QString &name)
 {
@@ -288,4 +334,52 @@ QList<GroupInfoMap> NewItemsDlg::groupInfo(const QString &name)
     }
 
     return lst;
+}
+
+void NewItemsDlg::filterByAction(const QString& action)
+{
+    for (int i = 0; i < ui->treeWidget->topLevelItemCount(); ++i)
+    {
+        QTreeWidgetItem* groupItem = ui->treeWidget->topLevelItem(i);
+        groupItem->setHidden(true);
+
+        if (groupItem->childCount() > 0)
+        {
+            QListWidget* list = qobject_cast<QListWidget*>(ui->treeWidget->itemWidget(groupItem->child(0), 0));
+
+            if (list)
+            {
+                for (int j = 0; j < list->count(); ++j)
+                {
+                    QListWidgetItem* item = list->item(j);
+                    bool matches = item->data(RoleAction).toString() == action;
+                    item->setHidden(!matches);
+
+                    if (matches)
+                    {
+                        groupItem->setHidden(false);
+
+                        list->setCurrentItem(item);
+                        itemUpdated(item);
+                    }
+                }
+            }
+        }
+    }
+
+    ui->treeWidget->expandAll();
+}
+
+void NewItemsDlg::showEvent(QShowEvent* event)
+{
+    QDialog::showEvent(event);
+
+    if (ui->nameEdit->isEnabled())
+        ui->nameEdit->setFocus();
+    else
+    {
+        QWidget* nextFocus = ui->nameEdit->nextInFocusChain();
+        if (nextFocus && nextFocus->isEnabled())
+            nextFocus->setFocus();
+    }
 }

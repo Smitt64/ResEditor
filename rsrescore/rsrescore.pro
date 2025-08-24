@@ -1,4 +1,4 @@
-QT += widgets uitools xml
+QT += widgets uitools xml xmlpatterns
 
 TEMPLATE = lib
 DEFINES += RSRESCORE_LIBRARY
@@ -40,8 +40,10 @@ SOURCES += \
     proxyaction.cpp \
     resapplication.cpp \
     reslibdirmodel.cpp \
+    reslibwriter.cpp \
     reslistdockwidget.cpp \
     respanel.cpp \
+    resxmlreader.cpp \
     rsrescore.cpp \
     scrolitem.cpp \
     spelling/resspellstringsdlg.cpp \
@@ -94,8 +96,10 @@ HEADERS += \
     proxyaction.h \
     resapplication.h \
     reslibdirmodel.h \
+    reslibwriter.h \
     reslistdockwidget.h \
     respanel.h \
+    resxmlreader.h \
     rscoreheader.h \
     rsrescore_global.h \
     rsrescore.h \
@@ -181,3 +185,5 @@ else:unix: LIBS += -L$$OUT_PWD/../ToolsRuntimeProj/ToolsRuntime/ -lToolsRuntime
 
 INCLUDEPATH += $$PWD/../ToolsRuntimeProj/ToolsRuntime $$PWD/../ToolsRuntimeProj/ToolsRuntime/optionsdlg $$PWD/../ToolsRuntimeProj/ToolsRuntime/widgets
 DEPENDPATH += $$PWD/../ToolsRuntimeProj/ToolsRuntime
+
+OTHER_FILES += com.rs.lbr.worklbr.xml

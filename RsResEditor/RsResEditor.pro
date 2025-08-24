@@ -19,6 +19,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     newitemsdlg.cpp \
+    resxmlloader.cpp \
     savefilesdlg.cpp \
     selectresourcedlg.cpp \
     subwindowsmodel.cpp \
@@ -27,6 +28,7 @@ SOURCES += \
 HEADERS += \
     mainwindow.h \
     newitemsdlg.h \
+    resxmlloader.h \
     savefilesdlg.h \
     selectresourcedlg.h \
     subwindowsmodel.h \

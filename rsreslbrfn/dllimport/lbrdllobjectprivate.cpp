@@ -76,19 +76,39 @@ bool LbrDllObjectPrivate::loadLib()
     }
     catch(QString &e)
     {
-        qDebug() << e;
+        //qDebug() << e;
+        m_LastError = e;
         return false;
     }
 
     return true;
 }
 
-bool LbrDllObjectPrivate::open(const QString &filename)
+bool LbrDllObjectPrivate::close()
+{
+    bool hr = true;
+    int stat = _ResClose(m_ResFile);
+    if (stat)
+    {
+        setLastErrorFromStat(stat);
+        hr = false;
+    }
+
+    return hr;
+}
+
+bool LbrDllObjectPrivate::open(const QString &filename, const bool &isnew)
 {
     bool hr = true;
     m_ResFile = (void*)malloc(sizeof(ResFile));
 
-    int stat = _OpenLib(m_ResFile, filename.toLocal8Bit().data(), RO_MODIFY | RO_TRN);
+    int flags = RO_TRN;
+    if (!isnew)
+        flags |= RO_MODIFY;
+    else
+        flags |= RO_CREATE;
+
+    int stat = _OpenLib(m_ResFile, filename.toLocal8Bit().data(), flags);
     if (!stat)
     {
         m_pDirModel.reset(new LbrResListModel());
@@ -104,7 +124,7 @@ bool LbrDllObjectPrivate::open(const QString &filename)
     }
     else
     {
-        qDebug() << _ResError(stat);
+        setLastErrorFromStat(stat);
         hr = false;
     }
     return hr;
@@ -252,7 +272,7 @@ bool LbrDllObjectPrivate::beginSaveRes(const QString &name, const int &type, Res
 
     if (stat)
     {
-        qDebug() << "beginSaveRes: " << resError(stat);
+        setLastErrorFromStat(stat);
         free(strm1);
         return false;
     }
@@ -283,7 +303,7 @@ bool LbrDllObjectPrivate::endSaveRes(ResBuffer **buffer)
 
         if (stat)
         {
-            qDebug() << "endSaveRes error: " << resError(stat);
+            setLastErrorFromStat(stat);
             abort = true;
         }
     }
@@ -291,9 +311,7 @@ bool LbrDllObjectPrivate::endSaveRes(ResBuffer **buffer)
     stat = _LibCloseStream(strm1, abort);
 
     if (stat)
-    {
-        qDebug() << "_LibCloseStream error: " << resError(stat);
-    }
+        setLastErrorFromStat(stat);
     else
     {
         ModeleDirlement elem;
@@ -321,4 +339,9 @@ QString LbrDllObjectPrivate::resError(int stat)
 {
     char *err = _ResError(stat);
     return m_OemCodec->toUnicode(err);
+}
+
+void LbrDllObjectPrivate::setLastErrorFromStat(int stat)
+{
+    m_LastError = resError(stat);
 }

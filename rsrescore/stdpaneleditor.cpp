@@ -176,57 +176,48 @@ protected:
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent) Q_DECL_OVERRIDE
     {
         BaseScene::mousePressEvent(mouseEvent);
+
         if (mouseEvent->button() != Qt::LeftButton)
             return;
 
-        CustomRectItem *panelItem = findTopLevelItem();
+        CustomRectItem* panelItem = findTopLevelItem();
         if (!panelItem)
             return;
 
         QSize gridSize = getGridSize();
         QPointF scenePos = mouseEvent->scenePos();
-        qreal xV = round(scenePos.x() / gridSize.width()) * gridSize.width();
-        qreal yV = round(scenePos.y() / gridSize.height())* gridSize.height();
 
-        QList<QRectF> mouseRects =
-        {
-            QRectF(QPoint(xV, yV - gridSize.height()), gridSize), // Up rect
-            QRectF(QPoint(xV, yV + gridSize.height()), gridSize), // Bottom rect
-            QRectF(QPoint(xV - gridSize.width(), yV), gridSize),  // Left rect
-            QRectF(QPoint(xV + gridSize.width(), yV), gridSize)   // Right rect
-        };
+        qreal xV = floor(scenePos.x() / gridSize.width()) * gridSize.width();
+        qreal yV = floor(scenePos.y() / gridSize.height()) * gridSize.height();
+        QPointF gridPos(xV, yV);
 
-        QPointF nPos = QPointF(xV, yV);
-        for (QRectF rect : mouseRects)
-        {
-            rect.adjusted(-1, -1, -1, -1);
-            if (rect.contains(scenePos))
-                nPos = rect.topLeft();
-        }
+        QRectF cellRect(gridPos, gridSize);
+        if (!cellRect.contains(scenePos))
+            return;
 
         QRectF panelSceneBound = panelItem->mapRectToScene(panelItem->boundingRect());
-        if (panelSceneBound.contains(mouseEvent->scenePos()))
+        if (!panelSceneBound.contains(cellRect))
+            return;
+
+        bool positionBlocked = false;
+        QList<QGraphicsItem*> itemsAtPos = items(scenePos);
+
+        for (QGraphicsItem* item : qAsConst(itemsAtPos))
         {
-            bool hasBounds = false;
-            QList<QGraphicsItem*> panelItems = items();
+            if (item == panelItem || dynamic_cast<ScrolAreaRectItem*>(item) || !item->isVisible())
+                continue;
 
-            for (QGraphicsItem *tmpItem : qAsConst(panelItems))
-            {
-                ScrolAreaRectItem *area = dynamic_cast<ScrolAreaRectItem*>(tmpItem);
-
-                if (tmpItem == panelItem || area || !tmpItem->isVisible())
-                    continue;
-
-                QRectF itemSceneBound = tmpItem->mapRectToScene(tmpItem->boundingRect());
-                if (itemSceneBound.contains(mouseEvent->scenePos()))
-                {
-                    hasBounds = true;
-                    break;
-                }
+            QRectF itemRect = item->mapRectToScene(item->boundingRect());
+            if (itemRect.intersects(cellRect)) {
+                positionBlocked = true;
+                break;
             }
+        }
 
-            if (!hasBounds)
-                m_CursorPos = nPos;
+        if (!positionBlocked)
+        {
+            m_CursorPos = gridPos;
+            update();
         }
     }
 
@@ -1244,12 +1235,12 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     checkpanel->addSmallAction(m_Statistic);
 
     SARibbonPannel *borderpanel = category->addPannel(tr("Рамка"));
-    SARibbonGallery* gallery = borderpanel->addGallery();
-    MakeBorderRaibbonGallary(gallery);
+    m_pBorderStyleGallery = borderpanel->addGallery();
+    MakeBorderRaibbonGallary(m_pBorderStyleGallery);
 
     SARibbonPannel *stylepanel = category->addPannel(tr("Стиль"));
-    SARibbonGallery* gallerystyle = stylepanel->addGallery();
-    MakeStyleRaibbonGallary(gallerystyle);
+    m_pPanelStyleGallery = stylepanel->addGallery();
+    MakeStyleRaibbonGallary(m_pPanelStyleGallery);
 
     SARibbonPannel *excludepanel = category->addPannel(tr("Исключить"));
 
@@ -1307,35 +1298,46 @@ void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery)
 
     QAction *scomStyle = createAction("SCOM Основной стиль", "");
     scomStyle->setIcon(QIcon(":/img/gallary_style/scom.png"));
+    scomStyle->setData(ResStyle::SCOM);
     galleryActions.append(scomStyle);
 
     QAction *smesStyle = createAction("SMES Стиль сообщений", "");
     smesStyle->setIcon(QIcon(":/img/gallary_style/smes.png"));
+    smesStyle->setData(ResStyle::SMES);
     galleryActions.append(smesStyle);
 
     QAction *rmesStyle = createAction("RMES Стиль аварийных сообщений", "");
     rmesStyle->setIcon(QIcon(":/img/gallary_style/rmes.png"));
+    rmesStyle->setData(ResStyle::RMES);
     galleryActions.append(rmesStyle);
 
     QAction *shlpStyle = createAction("SHLP Стиль помощи", "");
     shlpStyle->setIcon(QIcon(":/img/gallary_style/shlp.png"));
+    shlpStyle->setData(ResStyle::SHLP);
     galleryActions.append(shlpStyle);
 
     QAction *smenStyle = createAction("SMEN Стиль меню", "");
     smenStyle->setIcon(QIcon(":/img/gallary_style/smen.png"));
+    smenStyle->setData(ResStyle::SMEN);
     galleryActions.append(smenStyle);
 
     QAction *sbcmStyle = createAction("SBCM Стиль с яркой рамкой", "");
     sbcmStyle->setIcon(QIcon(":/img/gallary_style/sbcm.png"));
+    sbcmStyle->setData(ResStyle::SBCM);
     galleryActions.append(sbcmStyle);
 
     QAction *scrlStyle = createAction("SCRL Стиль справочных скролингов", "");
     scrlStyle->setIcon(QIcon(":/img/gallary_style/scrl.png"));
+    scrlStyle->setData(ResStyle::SCRL);
     galleryActions.append(scrlStyle);
 
-    SARibbonGalleryGroup* group1 = gallery->addCategoryActions(tr("Стиль"), galleryActions);
-    group1->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
-    group1->setGridMinimumWidth(80);
+    m_pStyleGroup1 = gallery->addCategoryActions(tr("Стиль"), galleryActions);
+    m_pStyleGroup1->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
+    m_pStyleGroup1->setGridMinimumWidth(80);
+
+    ApplyPanelStyleToGallary();
+
+    connect(m_pStyleGroup1, &SARibbonGalleryGroup::triggered, this, &StdPanelEditor::OnPanelStyleSelected);
 }
 
 void StdPanelEditor::MakeBorderRaibbonGallary(SARibbonGallery* gallery)
@@ -1344,37 +1346,102 @@ void StdPanelEditor::MakeBorderRaibbonGallary(SARibbonGallery* gallery)
 
     QAction *emptyBorder = createAction("Отсутствует", "");
     emptyBorder->setIcon(QIcon("://img/gallary_border/empty.png"));
+    emptyBorder->setData(ResStyle::Border_NoLine);
     galleryActions.append(emptyBorder);
 
     QAction *singleBorder = createAction("Одинарная", "");
     singleBorder->setIcon(QIcon("://img/gallary_border/single.png"));
+    singleBorder->setData(ResStyle::Border_SingleLine);
     galleryActions.append(singleBorder);
 
     QAction *doubleBorder = createAction("Двойная", "");
     doubleBorder->setIcon(QIcon("://img/gallary_border/double.png"));
+    doubleBorder->setData(ResStyle::Border_DoubleLine);
     galleryActions.append(doubleBorder);
 
     QAction *combine1Border = createAction("Комбинированная 1", "");
     combine1Border->setIcon(QIcon("://img/gallary_border/combine1.png"));
+    combine1Border->setData(ResStyle::Border_Combine1);
     galleryActions.append(combine1Border);
 
     QAction *combine2Border = createAction("Комбинированная 2", "");
     combine2Border->setIcon(QIcon("://img/gallary_border/combine2.png"));
+    combine2Border->setData(ResStyle::Border_Combine2);
     galleryActions.append(combine2Border);
 
     QAction *solidBorder = createAction("Сплошная", "");
     solidBorder->setIcon(QIcon("://img/gallary_border/solid.png"));
+    solidBorder->setData(ResStyle::Border_Solid);
     galleryActions.append(solidBorder);
 
-    SARibbonGalleryGroup* group1 = gallery->addCategoryActions(tr("Рамки"), galleryActions);
-    group1->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
-    group1->setGridMinimumWidth(80);
+    m_pBorderGroup1 = gallery->addCategoryActions(tr("Рамки"), galleryActions);
+    m_pBorderGroup1->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
+    m_pBorderGroup1->setGridMinimumWidth(80);
+
+    ApplyBorderStyleToGallary();
+
+    connect(m_pBorderGroup1, &SARibbonGalleryGroup::triggered, this, &StdPanelEditor::OnBorderStyleSelected);
+}
+
+void StdPanelEditor::OnBorderStyleSelected(QAction *pAction)
+{
+    int borderStyle = pAction->data().toInt();
+    panelItem->setBorderStyle((ResStyle::BorderStyle)borderStyle);
+}
+
+void StdPanelEditor::OnPanelStyleSelected(QAction *pAction)
+{
+    int panelStyle = pAction->data().toInt();
+    panelItem->setPanelStyle((ResStyle::PanelStyle)panelStyle);
 }
 
 void StdPanelEditor::initRibbonPanels()
 {
     m_pPanelCategory = new SARibbonCategory(tr("Панель"), ribbon());
+    m_pPanelCategory->setObjectName(name());
     MakeResRibbonCategory(m_pPanelCategory);
+}
+
+void StdPanelEditor::ApplyBorderStyleToGallary()
+{
+    int select = -1;
+    int borderStyle = panelItem->borderStyle();
+
+    SARibbonGalleryGroupModel *model = m_pBorderGroup1->groupModel();
+    for (int i = 0; i < model->rowCount(QModelIndex()); i++)
+    {
+        SARibbonGalleryItem *item = model->at(i);
+
+        if (item->action()->data().toInt() == borderStyle)
+        {
+            select = i;
+            break;
+        }
+    }
+
+    m_pBorderGroup1->setCurrentIndex(m_pBorderGroup1->model()->index(select, 0));
+    m_pBorderStyleGallery->currentViewGroup()->setCurrentIndex(m_pBorderStyleGallery->currentViewGroup()->model()->index(select, 0));
+}
+
+void StdPanelEditor::ApplyPanelStyleToGallary()
+{
+    int select = -1;
+    int panelStyle = panelItem->panelStyle();
+
+    SARibbonGalleryGroupModel *model = m_pStyleGroup1->groupModel();
+    for (int i = 0; i < model->rowCount(QModelIndex()); i++)
+    {
+        SARibbonGalleryItem *item = model->at(i);
+
+        if (item->action()->data().toInt() == panelStyle)
+        {
+            select = i;
+            break;
+        }
+    }
+
+    m_pStyleGroup1->setCurrentIndex(m_pStyleGroup1->model()->index(select, 0));
+    m_pPanelStyleGallery->currentViewGroup()->setCurrentIndex(m_pPanelStyleGallery->currentViewGroup()->model()->index(select, 0));
 }
 
 void StdPanelEditor::updateRibbonTabs()
@@ -1384,13 +1451,19 @@ void StdPanelEditor::updateRibbonTabs()
     if (!context)
         return;
 
+    QList<SARibbonCategory*> oldCategories = context->categoryList();
+    for (SARibbonCategory *cat : qAsConst(oldCategories))
+        context->takeCategory(cat);
+
+    /*QList<SARibbonCategory*> oldCats = context->categoryList();
+    for (SARibbonCategory* cat : qAsConst(oldCats))
+        context->takeCategory(cat);  // Удаляем из контекста, но не из памяти*/
+
     if (!context->isHaveCategory(m_pPanelCategory))
         context->addCategoryPage(m_pPanelCategory);
 
-    int PanelCategory = ribbon()->categoryIndex(m_pPanelCategory);
-
-    if (ribbon()->currentIndex() != PanelCategory)
-        ribbon()->raiseCategory(m_pPanelCategory);
+    ribbon()->showContextCategory(context);
+    ribbon()->showCategory(m_pPanelCategory);
 }
 
 void StdPanelEditor::clearRibbonTabs()
@@ -1400,7 +1473,22 @@ void StdPanelEditor::clearRibbonTabs()
     if (!context)
         return;
 
-    context->takeCategory(m_pPanelCategory);
+    ribbon()->removeCategory(m_pPanelCategory);
+    ribbon()->hideCategory(m_pPanelCategory);
+
+    bool hasVisible = false;
+    QList<SARibbonCategory*> oldCategories = context->categoryList();
+    for (SARibbonCategory *cat : qAsConst(oldCategories))
+    {
+        if (ribbon()->isCategoryVisible(cat))
+        {
+            hasVisible = true;
+            break;
+        }
+    }
+
+    if (!hasVisible)
+        ribbon()->hideContextCategory(context);
 }
 
 /*QList<SARibbonContextCategory*> StdPanelEditor::contextCategoryes()

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <style>.icon-canvas-transparent{opacity:0;fill:#f6f6f6}.icon-vs-out{fill:#f6f6f6}.icon-folder{fill:#dcb67a}.icon-vs-fg{fill:#f0eff1}</style>
+  <path class="icon-canvas-transparent" d="M0 .001h16v16H0v-16z" id="canvas"/>
+  <path class="icon-vs-out" d="M1.5 1.001h8.11l1 2h2.886c.827 0 1.5.673 1.5 1.5v8c0 .827-.673 1.5-1.5 1.5H1.5c-.827 0-1.5-.673-1.5-1.5v-10c0-.827.673-1.5 1.5-1.5z" id="outline"/>
+  <path class="icon-folder" d="M13.496 4H9.992l-1-2H1.5c-.275 0-.5.225-.5.501v10a.5.5 0 0 0 .5.499h11.996a.501.501 0 0 0 .504-.499v-8A.504.504 0 0 0 13.496 4zM13 8H2V3h6.374l1 2H13v3z" id="iconBg"/>
+  <path class="icon-vs-fg" d="M2 8V3h6l1.374 2H13v3z" id="iconFg"/>
+  <path class="icon-canvas-transparent" d="M 15.979 4.117 L 15.979 15.973 L 3.786 15.973 L 3.786 4.117 L 15.979 4.117 Z" id="path-1" style="stroke-width: 1;"/>
+  <path class="icon-vs-out" d="M 8.2 4.769 L 10.355 6.864 L 9.371 7.822 L 11.787 7.822 C 14.099 7.822 15.979 9.65 15.979 11.898 C 15.979 14.144 14.099 15.973 11.787 15.973 L 11.025 15.973 L 11.025 13.008 L 11.787 13.008 C 12.417 13.008 12.93 12.51 12.93 11.898 C 12.93 11.285 12.417 10.786 11.787 10.786 L 9.371 10.786 L 10.355 11.744 L 8.2 13.839 L 3.786 9.547 L 3.786 9.061 L 8.2 4.769 Z" id="path-2" style="stroke-width: 1;"/>
+  <path class="icon-vs-action-blue" d="M 8.2 5.816 L 9.278 6.864 L 7.531 8.563 L 11.787 8.563 C 13.677 8.563 15.216 10.06 15.216 11.898 C 15.216 13.736 13.677 15.232 11.787 15.232 L 11.787 13.75 C 12.837 13.75 13.693 12.919 13.693 11.898 C 13.693 10.876 12.837 10.045 11.787 10.045 L 7.531 10.045 L 9.278 11.744 L 8.2 12.792 L 4.613 9.304 L 8.2 5.816 Z" id="path-3" style="fill: rgb(0, 83, 156); stroke-width: 1;"/>
+</svg>

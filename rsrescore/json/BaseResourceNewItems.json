@@ -46,5 +46,15 @@
             "namelen": 8,
             "validator": "StdPanNameValidator"
         }
-    ]
+    ],
+
+    "ribbon": {
+        "panels": [
+            "{57f88805-7474-42fb-bc00-24a90cd5e85d}",
+            "{c01bd070-a483-482c-9a30-2946a4317b71}"
+        ],
+        "scrols": [
+            "{80384143-d159-4264-95c8-19e8a2cf7b70}"
+        ]
+    }
 }

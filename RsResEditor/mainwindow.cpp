@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "lbrobject.h"
 #include "newitemsdlg.h"
+#include "respanel.h"
+#include "resxmlloader.h"
 #include "ui_mainwindow.h"
 #include "reslistdockwidget.h"
 #include "resbuffer.h"
@@ -9,6 +11,8 @@
 #include "propertymodel/propertydockwidget.h"
 #include "toolbox/toolboxdockwidget.h"
 #include "rsrescore.h"
+#include "errorsmodel.h"
+#include <errordlg.h>
 #include "proxyaction.h"
 #include "updatecheckermessagebox.h"
 #include "subwindowsmodel.h"
@@ -30,7 +34,15 @@
 #include <QKeySequence>
 #include <QSettings>
 #include <QUndoView>
+#include <QUuid>
+#include <QProgressDialog>
+#include <QDirIterator>
+#include <QGridLayout>
+#include <QtConcurrent/QtConcurrent>
+#include <QFuture>
 #include "savefilesdlg.h"
+#include "reslibwriter.h"
+#include "xmlvalidator.h"
 
 class UndoActionWidget : public QWidgetAction
 {
@@ -154,6 +166,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(m_ResListDock, &ResListDockWidget::selectionChanged, this, &MainWindow::OnResListSelectionChanged);
     connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
+    connect(ribbon, &SARibbonBar::currentRibbonTabChanged, this, &MainWindow::OnCurrentRibbonTabChanged);
     /*connect(pUpdateChecker, &UpdateChecker::checkFinished, this, &MainWindow::checkUpdateFinished);
     connect(m_ResListDock, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
     connect(m_ResListDock, &ResListDockWidget::deleteRequest, this, &MainWindow::OnDeleteRequest);
@@ -269,15 +282,23 @@ void MainWindow::InitLbrPanel(SARibbonCategory *category)
 
     libPannel->addSeparator();
     m_ImportXml = createAction(tr("Импорт XML файла"), "ImportXml");
-    libPannel->addSmallAction(m_ImportXml);
+    libPannel->addLargeAction(m_ImportXml);
 
     m_pImportXmlFolder = createAction(tr("Импорт из каталога"), "ImportCatalogPart");
     libPannel->addSmallAction(m_pImportXmlFolder);
 
-    m_pExportXmlFolder = createAction(tr("Экспорт в XML файл"), "ExportXml");
+    m_pExportXmlFile = createAction(tr("Экспорт в XML файл"), "ExportXml");
+    libPannel->addSmallAction(m_pExportXmlFile);
+
+    m_pExportXmlFolder = createAction(tr("Экспорт в каталог"), "ExportFolder");
     libPannel->addSmallAction(m_pExportXmlFolder);
 
+    connect(m_pActionNew, &QAction::triggered, this, &MainWindow::onNewLbr);
     connect(m_pActionOpen, &QAction::triggered, this, &MainWindow::onOpen);
+    connect(m_ImportXml, &QAction::triggered, this, &MainWindow::OnImportXmlFile);
+    connect(m_pImportXmlFolder, &QAction::triggered, this, &MainWindow::OnImportXmlDir);
+    connect(m_pExportXmlFile, &QAction::triggered, this, &MainWindow::OnExportXml);
+    connect(m_pExportXmlFolder, &QAction::triggered, this, &MainWindow::OnExportXmlDir);
 }
 
 void MainWindow::InitLbrResourcePanel(SARibbonCategory *category)
@@ -285,11 +306,83 @@ void MainWindow::InitLbrResourcePanel(SARibbonCategory *category)
     SARibbonPannel* resPannel = new SARibbonPannel(tr("Ресурс"));
     category->addPannel(resPannel);
 
-    m_pActionNewPanel = createAction(tr("Создать PANEL"), "NewDialog");
-    resPannel->addLargeAction(m_pActionNewPanel);
+    LbrObjectInterface *tmpLbrInterface = nullptr;
+    CreateLbrObject(&tmpLbrInterface, this);
 
-    m_pActionNewBScrol = createAction(tr("Создать BSCROL"), "NewTable");
-    resPannel->addLargeAction(m_pActionNewBScrol);
+    QScopedPointer<LbrObjectInterface> ptr(tmpLbrInterface);
+    NewItemsDlg dlg(tmpLbrInterface);
+    dlg.buildStandartNewItems();
+
+    QStringList panels = dlg.ribbonPannels();
+    if (!panels.isEmpty())
+    {
+        if (panels.size() > 1)
+        {
+            QMenu *panelmenu = new QMenu(this);
+            panelmenu->setIcon(QIcon::fromTheme("NewDialog"));
+            panelmenu->setTitle(tr("Создать PANEL"));
+
+            for (const QString &guid : panels)
+            {
+                GroupInfoMap info = dlg.getInfoForItem(guid);
+
+                QAction *action = panelmenu->addAction(info[RoleTitle].toString());
+                action->setData(guid);
+
+                if (guid == panels.at(0))
+                {
+                    panelmenu->setDefaultAction(action);
+                    panelmenu->setActiveAction(action);
+                }
+
+                //connect(action, &QAction::triggered, this, &MainWindow::OnNewResAction);
+            }
+
+            m_pActionNewPanel = resPannel->addLargeMenu(panelmenu, QToolButton::MenuButtonPopup);
+            m_pActionNewPanel->setData(panels[0]);
+            connect(resPannel, &SARibbonPannel::actionTriggered, this, &MainWindow::OnNewResActionEx);
+        }
+        else
+        {
+            m_pActionNewPanel = createAction(tr("Создать PANEL"), "NewDialog");
+            m_pActionNewPanel->setData(panels[0]);
+            resPannel->addLargeAction(m_pActionNewPanel);
+            //connect(m_pActionNewPanel, &QAction::triggered, this, &MainWindow::OnNewResAction);
+        }
+    }
+
+    QStringList scrols = dlg.ribbonScrols();
+    if (!scrols.isEmpty())
+    {
+        if (scrols.size() > 1)
+        {
+            QMenu *panelmenu = new QMenu(this);
+            panelmenu->setIcon(QIcon::fromTheme("NewTable"));
+            panelmenu->setTitle(tr("Создать BSCROL"));
+
+            for (const QString &guid : scrols)
+            {
+                GroupInfoMap info = dlg.getInfoForItem(guid);
+
+                QAction *action = panelmenu->addAction(info[RoleTitle].toString());
+                action->setData(guid);
+
+                if (guid == scrols.at(0))
+                {
+                    panelmenu->setDefaultAction(action);
+                    panelmenu->setActiveAction(action);
+                }
+
+                //connect(action, &QAction::triggered, this, &MainWindow::OnNewResAction);
+            }
+        }
+        else
+        {
+            m_pActionNewBScrol = createAction(tr("Создать BSCROL"), "NewTable");
+            m_pActionNewBScrol->setData(scrols[0]);
+            resPannel->addLargeAction(m_pActionNewBScrol);
+        }
+    }
 
     m_pActionEditRes = createAction(tr("Редактировать"), "EditDocument");
     resPannel->addMediumAction(m_pActionEditRes);
@@ -442,6 +535,7 @@ void MainWindow::UpdateActions()
     m_pImportXmlFolder->setEnabled(EnableIfOpenLbr);
     m_ImportXml->setEnabled(EnableIfOpenLbr);
     m_pExportXmlFolder->setEnabled(EnableIfOpenLbr);
+    m_pExportXmlFile->setEnabled(EnableIfOpenLbr);
 
     m_pActionNewPanel->setEnabled(EnableIfOpenLbr);
     m_pActionNewBScrol->setEnabled(EnableIfOpenLbr);
@@ -672,7 +766,10 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
     }
 
     if (m_LastActiveWindow == window)
+    {
+        //m_LastActiveWindow->clearRibbonTabs();
         return;
+    }
 
     BaseEditorWindow *lastwnd = nullptr;
     BaseEditorWindow *wnd = dynamic_cast<BaseEditorWindow*>(window->widget());
@@ -692,6 +789,8 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
 
         if (lastwnd)
             lastwnd->clearRibbonTabs();
+
+        m_LastActiveWindow = nullptr;
     }
     else
     {
@@ -706,22 +805,36 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
         QModelIndex index = pWindowsModel->findWindow(window);
         pWindowsComboBox->setCurrentIndex(index.row());
 
+        m_LastRibbonTabName.lock();
+
+        ribbonBar()->setUpdatesEnabled(false);
         if (lastwnd)
+        {
             lastwnd->clearRibbonTabs();
+        }
 
         wnd->updateRibbonTabs();
+
+        if (!m_LastRibbonTabName.get().isEmpty())
+            ribbonBar()->raiseCategory(ribbonBar()->categoryByName(m_LastRibbonTabName));
 
         QList<SARibbonContextCategory*> allCategoryes = ribbonBar()->contextCategoryList();
         for (auto all : qAsConst(allCategoryes))
         {
             if (all->categoryCount())
+            {
                 ribbonBar()->showContextCategory(all);
+                qDebug() << ribbonBar()->categoryPages();
+            }
             else
                 ribbonBar()->hideContextCategory(all);
         }
-    }
+        ribbonBar()->setUpdatesEnabled(true);
 
-    m_LastActiveWindow = window;
+        m_LastActiveWindow = window;
+
+        m_LastRibbonTabName.unlock();
+    }
 }
 
 void MainWindow::onNew()
@@ -737,10 +850,10 @@ void MainWindow::onNew()
 
         if (interface)
         {
-            BaseEditorWindow *editor = interface->newItemsAction(guid, name, path);
+            ResourceEditorResult resulst = interface->newItemsAction(guid, name, path);
 
-            if (editor)
-                AddEditorWindow(editor);
+            if (resulst.wnd)
+                AddEditorWindow(resulst.wnd);
         }
     }
 }
@@ -766,6 +879,8 @@ void MainWindow::open(const QString &filename)
             UpdateFilterResTypes();
             UpdateActions();
         }
+        else
+            QMessageBox::critical(this, tr("Ошибка!"), tr("Ошибка открытия файла: ") + m_pLbrObj->lastError());
     }
 }
 
@@ -777,6 +892,60 @@ void MainWindow::onOpenRecent()
         return;
 
     open(action->data().toString());
+}
+
+void MainWindow::onNewLbr()
+{
+    static const QString guid = "{c7e4dbe9-cd8e-4eaf-bcd3-975f9fb6ba1e}";
+    ResApplication *app = (ResApplication*)qApp;
+    QSettings *Settings = app->settings();
+
+    QList<QUrl> urls;
+    QStringList dirs;
+    int size = Settings->beginReadArray(LBR_RECENTFOLDERS_CONTEXT);
+    for (int i = 0; i < size; i++)
+    {
+        Settings->setArrayIndex(i);
+
+        QString dir = Settings->value(DIR_SECTION).toString();
+        urls.append(QUrl::fromLocalFile(dir));
+        dirs.append(dir);
+    }
+    Settings->endArray();
+
+    QFileDialog dlg(this);
+    dlg.setWindowTitle(tr("Создание библиотеки"));
+    dlg.setWindowIcon(QIcon::fromTheme("NewLibrary"));
+    dlg.setFileMode(QFileDialog::AnyFile);
+    dlg.setAcceptMode(QFileDialog::AcceptSave);
+    dlg.setNameFilter(tr("Библиотека ресурсов (*.lbr)"));
+    dlg.setOption(QFileDialog::DontUseNativeDialog, true);
+    dlg.setSidebarUrls(urls);
+
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        QString filename = dlg.selectedFiles().at(0);
+
+        QFileInfo fi(filename);
+        if (fi.completeSuffix().isEmpty())
+            filename = fi.fileName() + ".lbr";
+        else
+            filename = fi.fileName();
+
+        // {c7e4dbe9-cd8e-4eaf-bcd3-975f9fb6ba1e}
+        ResourceEditorInterface *interface = RsResCore::inst()->pluginForNewAction(guid);
+
+        if (!interface)
+            return;
+
+        ResourceEditorResult result = interface->newItemsAction(guid, filename, fi.path());
+
+        if (result.succeed)
+        {
+            QDir d(fi.path());
+            open(d.absoluteFilePath(filename));
+        }
+    }
 }
 
 void MainWindow::onOpen()
@@ -968,6 +1137,15 @@ void MainWindow::checkUpdateFinished(bool hasUpdates, const CheckDataList &updat
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    bool canceled = false;
+    closeAllSubWindows(&canceled);
+
+    if (canceled)
+    {
+        event->ignore();
+        return;
+    }
+
     ResApplication *app = (ResApplication*)qApp;
     QSettings *s = app->settings();
 
@@ -1057,7 +1235,7 @@ void MainWindow::UpdateFilterResTypes(bool state)
     m_ResListDock->setFilterTypes(FilterTypes);
 }
 
-void MainWindow::closeAllSubWindows()
+void MainWindow::closeAllSubWindows(bool *canceled)
 {
     QList<FileInfo> files;
     QList<QMdiSubWindow*> windows = m_Mdi->subWindowList();
@@ -1101,6 +1279,11 @@ void MainWindow::closeAllSubWindows()
         {
             if (dlg.saveModeResult() == SaveFilesDlg::ResultDiscard)
                 m_Mdi->closeAllSubWindows();
+            else
+            {
+                if (canceled)
+                    *canceled = true;
+            }
         }
     }
     else
@@ -1125,4 +1308,433 @@ QMdiSubWindow *MainWindow::IsExistsResWindow(const QString &name, const int &typ
     }
 
     return nullptr;
+}
+
+void MainWindow::OnCurrentRibbonTabChanged(int index)
+{
+    SARibbonCategory *categ = ribbonBar()->categoryByIndex(index);
+
+    if (categ)
+        m_LastRibbonTabName = categ->categoryName();
+}
+
+void MainWindow::OnNewResAction()
+{
+    OnNewResActionEx(qobject_cast<QAction*>(sender()));
+}
+
+void MainWindow::OnNewResActionEx(QAction *action)
+{
+    QString guid = action->data().toString();
+    QUuid uuid = QUuid::fromString(guid);
+
+    if (m_pActionNewPanel == action || m_pActionNewBScrol == action || !uuid.isNull())
+    {
+        NewItemsDlg dlg(m_pLbrObj, this);
+        dlg.buildStandartNewItems();
+        dlg.filterByAction(guid);
+
+        if (dlg.exec() == QDialog::Accepted)
+        {
+            QString guid = dlg.action();
+            QString name = dlg.name();
+            QString path = dlg.path();
+            ResourceEditorInterface *interface = RsResCore::inst()->pluginForNewAction(guid);
+
+            if (interface)
+            {
+                ResourceEditorResult resulst = interface->newItemsAction(guid, name, path);
+
+                if (resulst.wnd)
+                    AddEditorWindow(resulst.wnd);
+            }
+        }
+    }
+}
+
+bool MainWindow::processSingleImportXmlFile(const QString& filePath, ErrorsModel* errorsModel)
+{
+    QFileInfo fileInfo(filePath);
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        if (errorsModel)
+            errorsModel->appendError(tr("Не удалось открыть файл <b>%1</b>").arg(filePath), ErrorsModel::TypeError);
+        return false;
+    }
+
+    ResXmlLoader loader(m_pLbrObj, errorsModel);
+    loader.readXml(&file);
+
+    /*bool success = false;
+
+    try
+    {
+        ResPanel* panel = nullptr;
+        RsResCore::inst()->loadFromXml(&file, &panel);
+
+        if (panel)
+        {
+            bool exists = false;
+            bool deleted = true;
+            if (m_pLbrObj->isResExists(panel->name(), panel->type()))
+            {
+                exists = true;
+                if (!m_pLbrObj->deleteResource(panel->name(), panel->type()))
+                {
+                    deleted = false;
+                    if (errorsModel)
+                        errorsModel->appendError(tr("Не удалось перезаписать ресурс <b>%1</b>").arg(panel->name()));
+                }
+            }
+
+            if (deleted)
+            {
+                QString errorMsg;
+                ResBuffer *resBuffer = nullptr;
+
+                if (m_pLbrObj->beginSaveRes(panel->name(), panel->type(), &resBuffer))
+                {
+                    if (!panel->save(resBuffer))
+                    {
+                        if (errorsModel)
+                        {
+                            if (!exists)
+                                errorsModel->appendMessage(tr("Файл <b>%1</b> успешно загружен").arg(fileInfo.fileName()));
+                            else
+                                errorsModel->appendMessage(tr("Файл <b>%1</b> успешно перезаписан").arg(fileInfo.fileName()));
+                        }
+
+                        success = true;
+                        delete panel;
+                        m_pLbrObj->endSaveRes(&resBuffer);
+                    }
+                    else
+                    {
+                        if (errorsModel)
+                            errorsModel->appendError(tr("Не удалось загрузить файл <b>%1</b>").arg(fileInfo.fileName()));
+                    }
+                }
+                else
+                {
+                    if (errorsModel)
+                        errorsModel->appendError(tr("Не удалось загрузить файл <b>%1</b>").arg(fileInfo.fileName()));
+                }
+            }
+        }
+        else
+        {
+            if (errorsModel)
+                errorsModel->appendError(tr("Файл <b>%1</b> не содержит поддерживаемых ресурсов").arg(fileInfo.fileName()));
+        }
+    }
+    catch (const std::exception& e)
+    {
+        if (errorsModel)
+            errorsModel->appendError(tr("Ошибка в %1: %2").arg(fileInfo.fileName(), e.what()));
+    }*/
+
+    file.close();
+
+    return true;
+}
+
+void MainWindow::processImportXmlWithProgress(const QStringList& filePaths, ErrorsModel* errorsModel,
+                                              QWidget* parent, const QString& dialogTitle,
+                                              const QString& dialogLabel)
+{
+    QProgressDialog* progressDialog = new QProgressDialog(dialogLabel, tr("Отмена"), 0, filePaths.size(), parent);
+    progressDialog->setWindowTitle(dialogTitle);
+    progressDialog->setWindowModality(Qt::WindowModal);
+    progressDialog->setMinimumDuration(500);
+    progressDialog->setValue(0);
+    progressDialog->setMinimumWidth(400);
+
+    for (int i = 0; i < filePaths.size(); ++i)
+    {
+        if (progressDialog->wasCanceled())
+            break;
+
+        QFileInfo fi(filePaths[i]);
+        progressDialog->setValue(i);
+        progressDialog->setLabelText(tr("Обработка файла %1 из %2: %3")
+                                         .arg(i + 1)
+                                         .arg(filePaths.size())
+                                         .arg(fi.fileName()));
+
+        processSingleImportXmlFile(filePaths[i], errorsModel);
+        QApplication::processEvents();
+    }
+
+    progressDialog->setValue(filePaths.size());
+}
+
+void MainWindow::OnImportXmlFile()
+{
+    QStringList filePaths = QFileDialog::getOpenFileNames(this,
+        tr("Выберите XML файлы для загрузки"), QString(),
+        tr("XML файлы (*.xml);"));
+
+    if (filePaths.isEmpty())
+        return;
+
+    ErrorsModel errors;
+    processImportXmlWithProgress(filePaths, &errors, this,
+        tr("Загрузка файлов"), tr("Загрузка XML файлов..."));
+
+    ErrorDlg dlg(ErrorDlg::ModeInformation, this);
+    dlg.setErrors(&errors);
+    dlg.exec();
+}
+
+void MainWindow::OnImportXmlDir()
+{
+    QFileDialog dlg(this);
+    dlg.setWindowTitle(tr("Выберите каталог с XML файлами"));
+    dlg.setOption(QFileDialog::DontUseNativeDialog, true);
+    dlg.setFileMode(QFileDialog::Directory);
+    dlg.setOption(QFileDialog::ShowDirsOnly, true);
+
+    QCheckBox* recursiveCheckbox = new QCheckBox(tr("Искать XML файлы в подкаталогах"), &dlg);
+    recursiveCheckbox->setChecked(true);
+
+    QGridLayout* layout = qobject_cast<QGridLayout*>(dlg.layout());
+    if (layout)
+    {
+        int rowCount = layout->rowCount();
+        layout->addWidget(recursiveCheckbox, rowCount, 0, 1, -1);
+    }
+
+    QString directoryPath;
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        QStringList selectedDirs = dlg.selectedFiles();
+        if (!selectedDirs.isEmpty())
+            directoryPath = selectedDirs.first();
+    }
+
+    if (!directoryPath.isEmpty())
+    {
+        QDirIterator::IteratorFlags iteratorFlags =
+            recursiveCheckbox->isChecked() ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags;
+
+        QStringList xmlFiles;
+        QDirIterator it(directoryPath, QStringList() << "*.xml", QDir::Files | QDir::Readable, iteratorFlags);
+
+        while (it.hasNext())
+            xmlFiles.append(it.next());
+
+        if (xmlFiles.isEmpty())
+        {
+            QMessageBox::information(this, tr("Информация"), tr("В каталоге не найдено XML файлов"));
+            return;
+        }
+        else
+        {
+            ErrorsModel errors;
+            processImportXmlWithProgress(xmlFiles, &errors, this,
+                                         tr("Загрузка файлов"), tr("Загрузка XML файлов..."));
+
+            ErrorDlg dlg(ErrorDlg::ModeInformation, this);
+            dlg.setErrors(&errors);
+            dlg.exec();
+        }
+    }
+}
+
+void MainWindow::OnExportXml()
+{
+    QFileInfo fi(m_pLbrObj->fileName());
+    QString filename = QFileDialog::getSaveFileName(this, tr("Сохранение библиотеки в файл"), fi.baseName() + ".xml", tr("XML файлы (*.xml);"));
+
+    if (filename.isEmpty())
+        return;
+
+    ErrorsModel errors;
+    ResLibWriter writer;
+
+    if (!writer.begin(filename))
+    {
+        errors.addError(tr("Ошибка выгрузки библиотеки в файл %1. %2").arg(filename, writer.errorString()));
+
+        ErrorDlg dlg(ErrorDlg::ModeInformation, this);
+        dlg.setErrors(&errors);
+        dlg.exec();
+        return;
+    }
+
+    QAbstractItemModel *ResModel = m_pLbrObj->list();
+
+    QProgressDialog progress(this);
+    progress.setWindowTitle(tr("Обработка ресурсов"));
+    progress.setLabelText(tr("Обработка ресурсов"));
+    progress.setMaximum(ResModel->rowCount());
+    progress.show();
+
+    for (int i = 0; i < ResModel->rowCount(); i++ )
+    {
+        if (progress.wasCanceled())
+            break;
+
+        QString name = ResModel->data(ResModel->index(i, 0)).toString();
+        qint16 type = ResModel->data(ResModel->index(i, 1)).toInt();
+
+        progress.setLabelText(tr("Обработка ресурса %1 из %2")
+                                  .arg(i + 1, 4)
+                                  .arg(ResModel->rowCount(), 4));
+
+        QApplication::processEvents();
+        ResBuffer *buffer = nullptr;
+
+        m_pLbrObj->getResource(name, type, &buffer);
+
+        ResPanel panel;
+        if (panel.load(buffer))
+            errors.addError(tr("Ошибка загрузка ресурса <b>%1 [%2]</b>").arg(RsResCore::inst()->typeNameFromResType(type), name));
+        else
+        {
+            if (panel.saveToXml(writer.writer()))
+                errors.addMessage(tr("Ресурс <b>%1 [%2]</b> успешно сохранен").arg(RsResCore::inst()->typeNameFromResType(type), name));
+            else
+                errors.addError(tr("Не удалось сохранить ресурс <b>%1 [%2]</b>").arg(RsResCore::inst()->typeNameFromResType(type), name));
+        }
+
+        progress.setValue(i + 1);
+        QApplication::processEvents();
+
+        delete buffer;
+    }
+
+    writer.end();
+
+    if (QMessageBox::question(this, tr("Проверка файла"), tr("Проверить файл по xsd схеме?")))
+    {
+        progress.show();
+        progress.setLabelText(tr("Проверка файла по xsd схеме"));
+        progress.setRange(0, 0);
+        progress.setCancelButton(nullptr);
+
+        QFuture<bool> future = QtConcurrent::run([&errors,filename]()
+        {
+            QFile libxml(filename);
+            if (libxml.open(QIODevice::ReadOnly))
+            {
+                bool res = RsResCore::inst()->validateResXmlWithXsd(&libxml, &errors);
+                libxml.close();
+                return res;
+            }
+
+            return false;
+        });
+
+        while (!future.isFinished())
+        {
+            QApplication::processEvents(QEventLoop::AllEvents, 100);
+            QThread::msleep(25);
+        }
+
+        if (future.result() && !future.isCanceled())
+            errors.addMessage(tr("Валидация по xsd прошла успешно"));
+    }
+
+    ErrorDlg dlg(ErrorDlg::ModeInformation, this);
+    dlg.setErrors(&errors);
+    dlg.exec();
+}
+
+void MainWindow::OnExportXmlDir()
+{
+    QFileInfo fi(m_pLbrObj->fileName());
+
+    QFileDialog dlg(this);
+    dlg.setWindowTitle(tr("Сохранение библиотеки в каталог"));
+    dlg.setOption(QFileDialog::DontUseNativeDialog, true);
+    dlg.setFileMode(QFileDialog::Directory);
+    dlg.setOption(QFileDialog::ShowDirsOnly, true);
+
+    QCheckBox* xsdCheckbox = new QCheckBox(tr("Проверять XML файлы по XSD схеме"), &dlg);
+    xsdCheckbox->setChecked(true);
+
+    QGridLayout* layout = qobject_cast<QGridLayout*>(dlg.layout());
+    if (layout)
+    {
+        int rowCount = layout->rowCount();
+        layout->addWidget(xsdCheckbox, rowCount, 0, 1, -1);
+    }
+
+    QString directoryPath;
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        QStringList selectedDirs = dlg.selectedFiles();
+        if (!selectedDirs.isEmpty())
+            directoryPath = selectedDirs.first();
+    }
+
+    QDir dir(directoryPath);
+    if (directoryPath.isEmpty())
+        return;
+
+    ErrorsModel errors;
+    QAbstractItemModel *ResModel = m_pLbrObj->list();
+
+    QProgressDialog progress(this);
+    progress.setWindowTitle(tr("Обработка ресурсов"));
+    progress.setLabelText(tr("Обработка ресурсов"));
+    progress.setMaximum(ResModel->rowCount());
+    progress.show();
+
+    XmlValidator validator;
+    validator.setSchemaFileName(":/res/reslib.xsd");
+    for (int i = 0; i < ResModel->rowCount(); i++ )
+    {
+        if (progress.wasCanceled())
+            break;
+
+        QString name = ResModel->data(ResModel->index(i, 0)).toString();
+        qint16 type = ResModel->data(ResModel->index(i, 1)).toInt();
+
+        progress.setLabelText(tr("Обработка ресурса %1 из %2")
+                                  .arg(i + 1, 4)
+                                  .arg(ResModel->rowCount(), 4));
+
+        QApplication::processEvents();
+        ResBuffer *buffer = nullptr;
+
+        m_pLbrObj->getResource(name, type, &buffer);
+
+        ResPanel panel;
+        if (panel.load(buffer))
+            errors.addError(tr("Ошибка загрузка ресурса <b>%1 [%2]</b>").arg(RsResCore::inst()->typeNameFromResType(type), name));
+        else
+        {
+            const char *preffix = RsResCore::inst()->resTypePrefix(type);
+            QString filename = QString("%1_%2.xml").arg(name).arg(preffix);
+            QFile f(dir.absoluteFilePath(filename));
+            if (f.open(QIODevice::ReadWrite))
+            {
+                QTextStream stream(&f);
+                stream.setCodec("UTF-8");
+
+                QString result = panel.saveXml("UTF-8");
+                stream << result;
+
+                errors.addMessage(tr("Ресурс <b>%1 [%2]</b> успешно сохранен в файл <b>%3</b>")
+                                      .arg(RsResCore::inst()->typeNameFromResType(type), name, filename));
+
+                f.seek(0);
+                if (xsdCheckbox->isChecked())
+                    validator.validateXmlWithXsd(&f, &errors);
+
+                f.close();
+            }
+            else
+                errors.addError(tr("Не удалось сохранить ресурс <b>%1 [%2]</b>").arg(RsResCore::inst()->typeNameFromResType(type), name));
+        }
+
+        delete buffer;
+
+        progress.setValue(i + 1);
+        QApplication::processEvents();
+    }
 }

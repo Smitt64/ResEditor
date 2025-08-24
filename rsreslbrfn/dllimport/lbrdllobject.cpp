@@ -11,7 +11,8 @@ LbrDllObject::LbrDllObject(QObject *parent)
 
 LbrDllObject::~LbrDllObject()
 {
-
+    //Q_D(LbrDllObject);
+    //d->close();
 }
 
 bool LbrDllObject::open(const QString &filename)
@@ -28,9 +29,24 @@ bool LbrDllObject::open(const QString &filename)
     return hr;
 }
 
+bool LbrDllObject::close()
+{
+    Q_D(LbrDllObject);
+    return d->close();
+}
+
 bool LbrDllObject::create(const QString &filename)
 {
-    return false;
+    Q_D(LbrDllObject);
+    bool hr = d->loadLib();
+
+    if (hr)
+        hr = d->open(filename, true);
+
+    if (hr)
+        d->m_FileName = filename;
+
+    return hr;
 }
 
 QAbstractItemModel *LbrDllObject::list()

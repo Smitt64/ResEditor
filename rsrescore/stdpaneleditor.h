@@ -23,6 +23,7 @@ class ResSpellStringsDlg;
 class PropertyWidgetMapper;
 class SARibbonCategory;
 class SARibbonGallery;
+class SARibbonGalleryGroup;
 class StdPanelEditor : public BaseEditorWindow
 {
     Q_OBJECT
@@ -63,6 +64,9 @@ private slots:
     void ViewerFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void CheckSpelling();
 
+    void OnBorderStyleSelected(QAction *pAction);
+    void OnPanelStyleSelected(QAction *pAction);
+
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
     void addCodeWindow(const QString &title, const QString &text);
@@ -95,6 +99,9 @@ private:
     void MakeBorderRaibbonGallary(SARibbonGallery* gallery);
     void MakeStyleRaibbonGallary(SARibbonGallery* gallery);
 
+    void ApplyBorderStyleToGallary();
+    void ApplyPanelStyleToGallary();
+
     BaseEditorView *m_pView;
     QTabWidget *m_TabContainer;
 
@@ -121,6 +128,10 @@ private:
 
     QScopedPointer<QTemporaryDir> m_ViewerDir;
     SARibbonCategory* m_pPanelCategory;
+    SARibbonGallery* m_pBorderStyleGallery;
+    SARibbonGallery* m_pPanelStyleGallery;
+    SARibbonGalleryGroup* m_pBorderGroup1;
+    SARibbonGalleryGroup* m_pStyleGroup1;
 
     QScopedPointer<PropertyWidgetMapper> m_RibbonMapper;
 };

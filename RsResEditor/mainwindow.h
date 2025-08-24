@@ -5,11 +5,14 @@
 #include <QShortcut>
 #include "updatechecker.h"
 #include "SARibbon.h"
+#include <VarLocker.hpp>
+#include <variant>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
+class ErrorsModel;
 class ResLib;
 class LbrObjectInterface;
 class QMdiArea;
@@ -43,6 +46,7 @@ private slots:
     void doubleResClicked(const QString &name, const int &type);
     void subWindowActivated(QMdiSubWindow *window);
     void onNew();
+    void onNewLbr();
     void onOpen();
     void onAbout();
     void OnDeleteRequest(const QString &name, const int &type);
@@ -60,9 +64,18 @@ private slots:
 
     void UpdateFilterResTypes(bool state = false);
 
-    void closeAllSubWindows();
+    void closeAllSubWindows(bool *canceled = nullptr);
     void UpdateActions();
     void OnResListSelectionChanged();
+    void OnCurrentRibbonTabChanged(int index);
+
+    void OnNewResAction();
+    void OnNewResActionEx(QAction *action);
+    void OnImportXmlFile();
+    void OnImportXmlDir();
+
+    void OnExportXml();
+    void OnExportXmlDir();
 
 protected:
     virtual void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -85,6 +98,11 @@ private:
         setupAction(action, text, iconname);
         return action;
     }
+
+    bool processSingleImportXmlFile(const QString& filePath, ErrorsModel* errorsModel);
+    void processImportXmlWithProgress(const QStringList& filePaths, ErrorsModel* errorsModel,
+                                      QWidget* parent, const QString& dialogTitle,
+                                      const QString& dialogLabel);
 
     void SetActiveWindow(QMdiSubWindow *wnd);
     void AddEditorWindow(BaseEditorWindow *editor);
@@ -110,8 +128,10 @@ private:
     SubWindowsModel *pWindowsModel;
 
     QAction *m_pActionNew, *m_pActionOpen, *m_pActionSave;
-    QAction *m_pImportXmlFolder, *m_ImportXml, *m_pExportXmlFolder;
+    QAction *m_pImportXmlFolder, *m_ImportXml, *m_pExportXmlFolder, *m_pExportXmlFile;
     QAction *m_pActionNewPanel, *m_pActionNewBScrol, *m_pActionDeleteRes, *m_pActionEditRes;
+
+    //QObject *m_pActionNewPanel;
 
     QMenu *m_pUndoRedoMenu;
     //QToolButton *m_pRedoButton;
@@ -126,5 +146,7 @@ private:
 
     bool m_FlagMassCloseMode;
     QList<int> m_WindowsToSaveOnClose;
+
+    VarLocker<QString> m_LastRibbonTabName;
 };
 #endif // MAINWINDOW_H

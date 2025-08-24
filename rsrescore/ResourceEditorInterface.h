@@ -4,6 +4,13 @@
 #include "rsrescore_global.h"
 #include <QtPlugin>
 
+class BaseEditorWindow;
+typedef struct
+{
+    BaseEditorWindow *wnd;
+    bool succeed;
+}ResourceEditorResult;
+
 class ResLib;
 class LbrObjectInterface;
 class BaseEditorWindow;
@@ -19,7 +26,7 @@ public:
 
     virtual QString newItemsMetaList() = 0;
     virtual bool newItemsActionAvalible(const QString &guid) = 0;
-    virtual BaseEditorWindow *newItemsAction(const QString &guid, const QString &name, const QString &path, QWidget *parent = nullptr) = 0;
+    virtual ResourceEditorResult newItemsAction(const QString &guid, const QString &name, const QString &path, QWidget *parent = nullptr) = 0;
 
     virtual QList<SARibbonContextCategory*> contextCategoryes(SARibbonBar *ribbon) = 0;
 };

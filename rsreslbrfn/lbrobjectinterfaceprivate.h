@@ -12,6 +12,7 @@ public:
 
     LbrObjectInterface *q_ptr;
     QTextCodec *m_p866;
+    QString m_LastError;
 };
 
 #endif // LBROBJECTINTERFACEPRIVATE_H

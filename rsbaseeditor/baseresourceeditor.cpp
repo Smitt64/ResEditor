@@ -57,8 +57,9 @@ bool BaseResourceEditor::newItemsActionAvalible(const QString &guid)
     return actions.contains(guid);
 }
 
-BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const QString &name, const QString &path, QWidget *parent)
+ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, const QString &name, const QString &path, QWidget *parent)
 {
+    ResourceEditorResult result;
     BaseEditorWindow *pNewEditor = nullptr;
 
     if (guid == "{c7e4dbe9-cd8e-4eaf-bcd3-975f9fb6ba1e}")
@@ -76,7 +77,7 @@ BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const 
         if (fi.completeSuffix().isEmpty())
             filename += ".lbr";
 
-        tmp->create(filename);
+        result.succeed = tmp->create(filename);
     }
     else if (guid == "{57f88805-7474-42fb-bc00-24a90cd5e85d}")
     {
@@ -113,7 +114,10 @@ BaseEditorWindow *BaseResourceEditor::newItemsAction(const QString &guid, const 
                                             name,
                                             LbrObject::RES_BS);
     }
-    return pNewEditor;
+
+    result.wnd = pNewEditor;
+
+    return result;
 }
 
 BaseEditorWindow *BaseResourceEditor::editor(const qint16 &Type, const QString &name, LbrObjectInterface *pLbrObj)
@@ -168,23 +172,27 @@ BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(const QString &file
 {
     BaseEditorWindow *pNewEditor = nullptr;
 
-    ResPanel *testPan = nullptr;
-    QFile resxml(filename);
-    if (!resxml.open(QIODevice::ReadOnly))
-        return nullptr;
-
-    RsResCore::inst()->loadFromXml(&resxml, &testPan);
-    if (testPan)
+    try
     {
-        pNewEditor = new StdPanelEditor(type);
-        pNewEditor->setWindowIcon(RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL));
-        pNewEditor->setupEditor();
+        ResPanel *testPan = nullptr;
+        QFile resxml(filename);
+        if (!resxml.open(QIODevice::ReadOnly))
+            return nullptr;
 
-        testPan->setName(name);
-        testPan->setType(type);
-        qobject_cast<StdPanelEditor*>(pNewEditor)->setPanel(testPan);
-        SetupEditorTitle(pNewEditor, type, name, testPan->title());
+        RsResCore::inst()->loadFromXml(&resxml, &testPan);
+        if (testPan)
+        {
+            pNewEditor = new StdPanelEditor(type);
+            pNewEditor->setWindowIcon(RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL));
+            pNewEditor->setupEditor();
+
+            testPan->setName(name);
+            testPan->setType(type);
+            qobject_cast<StdPanelEditor*>(pNewEditor)->setPanel(testPan);
+            SetupEditorTitle(pNewEditor, type, name, testPan->title());
+        }
     }
+    catch(...) {}
 
     return pNewEditor;
 }

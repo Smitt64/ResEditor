@@ -18,7 +18,6 @@ LbrObjectInterface::LbrObjectInterface(LbrObjectInterfacePrivate *dd, QObject *p
 
 LbrObjectInterface::~LbrObjectInterface()
 {
-
 }
 
 void LbrObjectInterface::createResBuffer(const QString &name, const int &type, QByteArray *data, ResBuffer **buffer)
@@ -35,6 +34,18 @@ void LbrObjectInterface::createResBuffer(const QString &name, const int &type, R
 QString LbrObjectInterface::fileName() const
 {
     return QString();
+}
+
+void LbrObjectInterface::setLastError(const QString &err)
+{
+    Q_D(LbrObjectInterface);
+    d->m_LastError = err;
+}
+
+const QString &LbrObjectInterface::lastError() const
+{
+    Q_D(const LbrObjectInterface);
+    return d->m_LastError;
 }
 
 QString LbrObjectInterface::getResTypeName(const int &type)
