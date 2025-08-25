@@ -173,6 +173,15 @@ qint16 BaseEditorWindow::type() const
 void BaseEditorWindow::initpropertyModelSignals(BaseScene *scene)
 {
     connect(scene, &BaseScene::propertyModelChanged, this, &BaseEditorWindow::propertyModelChanged);
+    connect(scene, &BaseScene::propertyModelChanged, this, &BaseEditorWindow::OnPropertyModelChanged);
+}
+
+void BaseEditorWindow::OnPropertyModelChanged(QAbstractItemModel *model)
+{
+    ribbon()->setUpdatesEnabled(false);
+    clearRibbonTabs();
+    updateRibbonTabs();
+    ribbon()->setUpdatesEnabled(true);
 }
 
 void BaseEditorWindow::loadToolBarElement(GroupsMapType &GroupsMap, const QJsonObject &obj)

@@ -4,6 +4,7 @@
 #include "baseeditorwindow.h"
 #include <QProcess>
 
+class QActionGroup;
 class ResPanel;
 class PanelItem;
 class BaseEditorView;
@@ -85,8 +86,6 @@ private:
     QAction *addAction(QMenu *menu, const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());*/
     void updateSizeStatus();
     void setupNameLine();
-    void setupScrolAreaAction();
-    //void setupPropertyAction();
     void showCheckError(int stat, ErrorsModel *model);
 
     void fillResPanel(ResPanel *resPanel);
@@ -99,6 +98,8 @@ private:
     void MakeResRibbonCategory(SARibbonCategory* category);
     void MakeBorderRaibbonGallary(SARibbonGallery* gallery);
     void MakeStyleRaibbonGallary(SARibbonGallery* gallery);
+
+    void MakeControlRibbonCategory(SARibbonCategory* category);
 
     void ApplyBorderStyleToGallary();
     void ApplyPanelStyleToGallary();
@@ -122,19 +123,24 @@ private:
     QAction *m_SaveToXml;
     QAction *m_pCreateControl, *m_pSpellCheckAction;
 
+    QAction *m_pFieldProperty, *m_pFdmAction, *m_pAsTextAction;
+
     //QToolBar *m_pToolBar;
     QClipboard *m_pClipboard;
 
     PanelStructModel *m_pStructModel;
 
     QScopedPointer<QTemporaryDir> m_ViewerDir;
-    SARibbonCategory* m_pPanelCategory;
+    SARibbonCategory* m_pPanelCategory, *m_pControlCategory;
     SARibbonGallery* m_pBorderStyleGallery;
     SARibbonGallery* m_pPanelStyleGallery;
     SARibbonGalleryGroup* m_pBorderGroup1;
     SARibbonGalleryGroup* m_pStyleGroup1;
 
+    QActionGroup *m_pFieledTypeGroup, *m_pDataTypeGroup;
+
     QScopedPointer<PropertyWidgetMapper> m_RibbonMapper;
+    QScopedPointer<PropertyWidgetMapper> m_RibbonControlMapper;
 };
 
 #endif // STDPANELEDITOR_H

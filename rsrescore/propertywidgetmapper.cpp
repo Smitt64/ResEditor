@@ -36,6 +36,28 @@ void ObjectMapper::setChecked()
     if (action)
         action->setChecked(value.toBool());
 }
+
+void ObjectMapper::setActionGroupChecked()
+{
+    Q_D(ObjectMapper);
+    QActionGroup *actionGroup = qobject_cast<QActionGroup*>(d->reciever);
+
+    if (!actionGroup)
+        return;
+
+    QList<QAction*> actions = actionGroup->actions();
+    QVariant value = d->object->property(d->property);
+
+    for (QAction* action : qAsConst(actions))
+    {
+        if (action->data() == value)
+        {
+            action->setChecked(true);
+            break;
+        }
+    }
+}
+
 // -----------------------------------------------------------------------
 
 class PropertyWidgetMapperPrivate
@@ -130,12 +152,56 @@ bool PropertyWidgetMapper::bind(QObject *source, const char *property, QAction *
     }
 }
 
-bool PropertyWidgetMapper::bind(QObject *source, const char *property, QWidget *widget, const char *widgetProperty)
+bool PropertyWidgetMapper::bind(QObject *source, const char *property, QActionGroup *actionGroup)
+{
+    Q_D(PropertyWidgetMapper);
+    if (!source || !property || !actionGroup)
+        return false;
+
+    const QMetaObject *meta = source->metaObject();
+    int propIndex = meta->indexOfProperty(property);
+    if (propIndex == -1)
+    {
+        qWarning() << "Property" << property << "not found in" << source;
+        return false;
+    }
+
+    QMetaProperty sourceProp = meta->property(propIndex);
+
+    // Получаем список действий в группе
+    QList<QAction*> actions = actionGroup->actions();
+
+    // Устанавливаем начальное значение из свойства
+    QVariant currentValue = sourceProp.read(source);
+    for (QAction* action : actions)
+    {
+        if (action->data() == currentValue)
+        {
+            action->setChecked(true);
+            break;
+        }
+    }
+
+    // Обновляем свойство при изменении выбранного действия
+    connect(actionGroup, &QActionGroup::triggered, [=](QAction* action)
+    {
+        if (action->isChecked())
+            sourceProp.write(source, action->data());
+    });
+
+    QObject *mapobj = d->addMap(property, source, actionGroup);
+    QString signalName = QString("2%1").arg(sourceProp.notifySignal().methodSignature().data());
+    connect(source, signalName.toLocal8Bit().data(), mapobj, SLOT(setActionGroupChecked()));
+
+    return true;
+}
+
+/*bool PropertyWidgetMapper::bind(QObject *source, const char *property, QWidget *widget, const char *widgetProperty)
 {
     if (!source || !property || !widget)
         return false;
 
-    /*const QMetaObject *meta = source->metaObject();
+    const QMetaObject *meta = source->metaObject();
     int propIndex = meta->indexOfProperty(property);
     if (propIndex == -1)
     {
@@ -186,9 +252,9 @@ bool PropertyWidgetMapper::bind(QObject *source, const char *property, QWidget *
     }
 
     // Устанавливаем начальное значение
-    targetProp.write(widget, sourceProp.read(source));*/
+    targetProp.write(widget, sourceProp.read(source));
     return true;
-}
+}*/
 
 QMetaProperty PropertyWidgetMapper::findTargetProperty(QObject *target, const QByteArray &preferredName) const
 {

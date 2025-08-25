@@ -31,6 +31,11 @@ BaseScene::BaseScene(QObject *parent)
     });
 }
 
+BaseScene::~BaseScene()
+{
+    disconnect(SIGNAL(selectionChanged()));
+}
+
 void BaseScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
     m_pStyle->drawSceneBackground(painter, rect);

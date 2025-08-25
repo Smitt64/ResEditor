@@ -18,6 +18,7 @@ class RSRESCORE_EXPORT BaseScene : public QGraphicsScene
 public:
     typedef QMap<CustomRectItem*, QPointF> CustomRectItemPoints;
     explicit BaseScene(QObject *parent = nullptr);
+    virtual ~BaseScene();
     virtual QSize getGridSize() const;
 
     ResStyle *style();

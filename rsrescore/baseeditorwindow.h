@@ -62,6 +62,9 @@ signals:
     void modifyChanged(bool changed);
     void titleChanged(QString);
 
+protected slots:
+    virtual void OnPropertyModelChanged(QAbstractItemModel *model);
+
 protected:
     void initUndoRedo();
     void initpropertyModelSignals(BaseScene *scene);
@@ -69,7 +72,7 @@ protected:
     virtual void initRibbonPanels();
     void loadToolBoxFile(const QString &fname, const GroupsMapType &outergroups = GroupsMapType());
 
-    QAction* createAction(const QString& text, const QString& iconname, const QKeySequence &key = QKeySequence());
+    QAction* createAction(const QString& text, const QString& iconname = QString(), const QKeySequence &key = QKeySequence());
 
 private:
     void loadToolBarElement(GroupsMapType &GroupsMap, const QJsonObject &obj);

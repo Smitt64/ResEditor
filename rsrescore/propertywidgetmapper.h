@@ -15,6 +15,7 @@ public:
 
 public slots:
     void setChecked();
+    void setActionGroupChecked();
 
 private:
     ObjectMapperPrivate * const d_ptr;
@@ -22,6 +23,7 @@ private:
 };
 
 class QAction;
+class QActionGroup;
 class PropertyWidgetMapperPrivate;
 class PropertyWidgetMapper : public QObject
 {
@@ -33,8 +35,11 @@ public:
     // Привязка Q_PROPERTY к QAction (например, checked)
     bool bind(QObject *source, const char *property, QAction *action);
 
+    // Привязка Q_PROPERTY к QActionGroup (значение берется из data() действий)
+    bool bind(QObject *source, const char *property, QActionGroup *actionGroup);
+
     // Привязка Q_PROPERTY к QWidget (если widgetProperty == nullptr, ищем USER-свойство)
-    bool bind(QObject *source, const char *property, QWidget *widget, const char *widgetProperty = nullptr);
+    //bool bind(QObject *source, const char *property, QWidget *widget, const char *widgetProperty = nullptr);
 
 private slots:
     void setChecked();

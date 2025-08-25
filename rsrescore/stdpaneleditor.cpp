@@ -2,6 +2,7 @@
 #include "baseeditorview.h"
 #include "controlpropertysdlg.h"
 #include "panelitem.h"
+#include "qmetaobject.h"
 #include "resapplication.h"
 #include "respanel.h"
 #include "rsrescore.h"
@@ -61,6 +62,7 @@
 #include "propertymodel.h"
 #include <QTextCodec>
 #include <QProgressDialog>
+#include <QActionGroup>
 
 #define SHADOW_CODE 9617
 
@@ -350,6 +352,10 @@ StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
 StdPanelEditor::~StdPanelEditor()
 {
     delete m_pPanelCategory;
+    delete m_pControlCategory;
+
+    m_pPanelCategory = nullptr;
+    m_pControlCategory = nullptr;
 }
 
 void StdPanelEditor::setupEditor()
@@ -382,11 +388,6 @@ void StdPanelEditor::setupEditor()
     setupNameLine();
     initUndoRedo();
 
-    //m_pDelete = addAction(QIcon(":/img/Delete.png"), tr("Удалить"), QKeySequence::Delete);
-
-    setupScrolAreaAction();
-    //setupPropertyAction();
-
     BaseScene *baseScene = dynamic_cast<BaseScene*>(m_pView->scene());
     if (baseScene)
         initpropertyModelSignals(baseScene);
@@ -407,33 +408,6 @@ void StdPanelEditor::setupEditor()
         w ->deleteLater();
     });
 }
-
-void StdPanelEditor::setupScrolAreaAction()
-{
-    /*m_pContrst = addAction(QIcon(":/img/EditTableHS.png"), tr("Скролинг"), QKeySequence("Ctrl+F5"));
-    m_pContrst->setCheckable(true);
-
-    connect(m_pContrst, &QAction::toggled, [&](bool toogled)
-    {
-        panelItem->setProperty(SCROLAREA_PROPERTY, toogled);
-        QMetaObject::invokeMethod(panelItem, "showScrolArea", Q_ARG(bool, toogled));
-        //panelItem->metaObject()->invokeMethod()
-    });
-
-    m_pContrst->setChecked(false);
-    m_pViewMenu->addAction(m_pContrst);*/
-}
-
-/*void StdPanelEditor::setupPropertyAction()
-{
-    m_pProperty = addAction(QIcon(":/img/Properties.png"), tr("Характеристики элемента"), QKeySequence::InsertParagraphSeparator);
-
-    connect(m_pProperty, &QAction::triggered, [&]()
-    {
-        QKeyEvent event(QEvent::KeyPress, Qt::Key_Return, Qt::NoModifier);
-        QApplication::sendEvent(m_pView, &event);
-    });
-}*/
 
 void StdPanelEditor::setupNameLine()
 {
@@ -492,7 +466,8 @@ void StdPanelEditor::setCursorToFirstFreeCell()
 
     // Определяем доступную область в зависимости от наличия границы
     QRectF availableRect = panelRect;
-    if (panelItem->borderStyle() != ResStyle::Border_NoLine) {
+    if (panelItem->borderStyle() != ResStyle::Border_NoLine)
+    {
         availableRect = panelRect.adjusted(gridSize.width(), gridSize.height(),
                                            -gridSize.width(), -gridSize.height());
     }
@@ -504,12 +479,14 @@ void StdPanelEditor::setCursorToFirstFreeCell()
     QList<QRectF> occupiedCells;
 
     // Собираем занятые ячейки
-    for (QGraphicsItem* item : childItems) {
+    for (QGraphicsItem* item : childItems)
+    {
         if (dynamic_cast<ScrolAreaRectItem*>(item) || !item->isVisible())
             continue;
 
         CustomRectItem* rectItem = dynamic_cast<CustomRectItem*>(item);
-        if (rectItem) {
+        if (rectItem)
+        {
             QRectF itemRect = rectItem->boundingRect();
             itemRect.moveTo(rectItem->pos());
 
@@ -520,17 +497,19 @@ void StdPanelEditor::setCursorToFirstFreeCell()
             qreal endY = ceil((itemRect.y() + itemRect.height()) / gridSize.height()) * gridSize.height();
 
             // Добавляем все занятые ячейки
-            for (qreal y = startY; y < endY; y += gridSize.height()) {
-                for (qreal x = startX; x < endX; x += gridSize.width()) {
+            for (qreal y = startY; y < endY; y += gridSize.height())
+            {
+                for (qreal x = startX; x < endX; x += gridSize.width())
                     occupiedCells.append(QRectF(x, y, gridSize.width(), gridSize.height()));
-                }
             }
         }
     }
 
     // Ищем первую свободную ячейку
-    for (qreal y = availableRect.y(); y < availableRect.y() + availableRect.height(); y += gridSize.height()) {
-        for (qreal x = availableRect.x(); x < availableRect.x() + availableRect.width(); x += gridSize.width()) {
+    for (qreal y = availableRect.y(); y < availableRect.y() + availableRect.height(); y += gridSize.height())
+    {
+        for (qreal x = availableRect.x(); x < availableRect.x() + availableRect.width(); x += gridSize.width())
+        {
             QRectF cellRect(x, y, gridSize.width(), gridSize.height());
 
             // Проверяем, что ячейка полностью внутри доступной области
@@ -539,14 +518,17 @@ void StdPanelEditor::setCursorToFirstFreeCell()
 
             // Проверяем, что ячейка не занята
             bool isOccupied = false;
-            for (const QRectF& occupiedCell : occupiedCells) {
-                if (occupiedCell.intersects(cellRect)) {
+            for (const QRectF& occupiedCell : occupiedCells)
+            {
+                if (occupiedCell.intersects(cellRect))
+                {
                     isOccupied = true;
                     break;
                 }
             }
 
-            if (!isOccupied) {
+            if (!isOccupied)
+            {
                 // Нашли свободную ячейку, устанавливаем курсор
                 pScene->setCursorPosition(panelItem->mapToScene(QPointF(x, y)));
                 return;
@@ -1277,6 +1259,55 @@ void StdPanelEditor::CheckSpellingUpdateTexts(ResSpellStringsDlg *dlg)
     undoStack()->endMacro();
 }
 
+void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
+{
+    ResApplication *app = (ResApplication*)qApp;
+    SARibbonPannel *fieldpanel = category->addPannel(tr("Параметры поля"));
+    SARibbonPannel *fieldtypepanel = category->addPannel(tr("Тип поля"));
+    SARibbonPannel *datatypepanel = category->addPannel(tr("Тип значения"));
+
+    m_pFieldProperty = createAction(tr("Параметры поля"), "FieldProperties");
+    fieldpanel->addLargeAction(m_pFieldProperty);
+
+    m_pFdmAction = createAction(tr("Признак FDM"), "TimeLineLock");
+    m_pFdmAction->setCheckable(true);
+    fieldpanel->addMediumAction(m_pFdmAction);
+
+    m_pAsTextAction = createAction(tr("Признак текста"), "TextBlock");
+    m_pAsTextAction->setCheckable(true);
+    fieldpanel->addMediumAction(m_pAsTextAction);
+
+    m_pFieledTypeGroup = new QActionGroup(this);
+    m_pFieledTypeGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
+
+    m_pDataTypeGroup = new QActionGroup(this);
+    m_pDataTypeGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
+
+    QMetaEnum FieldTypeEnum = QMetaEnum::fromType<ControlItem::FieldType>();
+    for (int i = 0; i < FieldTypeEnum.keyCount(); i++)
+    {
+        int value = FieldTypeEnum.value(i);
+        QAction *ftype = createAction(FieldTypeEnum.valueToKey(value));
+        ftype->setCheckable(true);
+        ftype->setData(value);
+
+        fieldtypepanel->addSmallAction(ftype);
+        m_pFieledTypeGroup->addAction(ftype);
+    }
+
+    QMetaEnum DataTypeEnum = QMetaEnum::fromType<ControlItem::DataType>();
+    for (int i = 0; i < DataTypeEnum.keyCount(); i++)
+    {
+        int value = DataTypeEnum.value(i);
+        QAction *ftype = createAction(DataTypeEnum.valueToKey(value));
+        ftype->setCheckable(true);
+        ftype->setData(value);
+
+        datatypepanel->addSmallAction(ftype);
+        m_pDataTypeGroup->addAction(ftype);
+    }
+}
+
 void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
 {
     ResApplication *app = (ResApplication*)qApp;
@@ -1526,6 +1557,10 @@ void StdPanelEditor::initRibbonPanels()
     m_pPanelCategory = new SARibbonCategory(tr("Панель"), ribbon());
     m_pPanelCategory->setObjectName(name());
     MakeResRibbonCategory(m_pPanelCategory);
+
+    m_pControlCategory = new SARibbonCategory(tr("Поле"), ribbon());
+    m_pControlCategory->setObjectName(name() + "_control");
+    MakeControlRibbonCategory(m_pControlCategory);
 }
 
 void StdPanelEditor::ApplyBorderStyleToGallary()
@@ -1581,15 +1616,33 @@ void StdPanelEditor::updateRibbonTabs()
     for (SARibbonCategory *cat : qAsConst(oldCategories))
         context->takeCategory(cat);
 
-    /*QList<SARibbonCategory*> oldCats = context->categoryList();
-    for (SARibbonCategory* cat : qAsConst(oldCats))
-        context->takeCategory(cat);  // Удаляем из контекста, но не из памяти*/
+    if (m_pPanelCategory)
+    {
+        if (!context->isHaveCategory(m_pPanelCategory))
+            context->addCategoryPage(m_pPanelCategory);
+    }
 
-    if (!context->isHaveCategory(m_pPanelCategory))
-        context->addCategoryPage(m_pPanelCategory);
+    bool HasControls = false;
+    QList<QGraphicsItem*> sel = m_pView->scene()->selectedItems();
+    for (QGraphicsItem *item : qAsConst(sel))
+    {
+        ControlItem *control = dynamic_cast<ControlItem*>(item);
+
+        if (control)
+            HasControls = true;
+    }
+
+    if (HasControls && m_pControlCategory)
+    {
+        if (!context->isHaveCategory(m_pControlCategory))
+            context->addCategoryPage(m_pControlCategory);
+    }
 
     ribbon()->showContextCategory(context);
     ribbon()->showCategory(m_pPanelCategory);
+
+    if (HasControls && m_pControlCategory)
+        ribbon()->showCategory(m_pControlCategory);
 }
 
 void StdPanelEditor::clearRibbonTabs()
@@ -1599,8 +1652,17 @@ void StdPanelEditor::clearRibbonTabs()
     if (!context)
         return;
 
-    ribbon()->removeCategory(m_pPanelCategory);
-    ribbon()->hideCategory(m_pPanelCategory);
+    if (m_pPanelCategory)
+    {
+        ribbon()->removeCategory(m_pPanelCategory);
+        ribbon()->hideCategory(m_pPanelCategory);
+    }
+
+    if (m_pControlCategory)
+    {
+        ribbon()->removeCategory(m_pControlCategory);
+        ribbon()->hideCategory(m_pControlCategory);
+    }
 
     bool hasVisible = false;
     QList<SARibbonCategory*> oldCategories = context->categoryList();
@@ -1616,29 +1678,3 @@ void StdPanelEditor::clearRibbonTabs()
     if (!hasVisible)
         ribbon()->hideContextCategory(context);
 }
-
-/*QList<SARibbonContextCategory*> StdPanelEditor::contextCategoryes()
-{
-    if (!m_ContextCategoryes.isEmpty())
-        return m_ContextCategoryes;
-
-    QVariant id = reinterpret_cast<int>(this);
-    SARibbonContextCategory *maincat = ribbon()->addContextCategory(tr("Ресурс"), QColor(0xBFFFBF), id);
-
-    QString respanname = RsResCore::inst()->typeNameFromResType(m_Type);
-
-    switch(m_Type)
-    {
-    case LbrObject::RES_PANEL:
-        respanname = tr("Панель");
-        break;
-    default:
-        respanname = tr("Скролинг");
-    }
-
-    SARibbonCategory* resCategory = maincat->addCategoryPage(respanname);
-    MakeResRibbonCategory(resCategory);
-
-    m_ContextCategoryes.append(maincat);
-    return m_ContextCategoryes;
-}*/
