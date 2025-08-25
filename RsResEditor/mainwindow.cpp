@@ -242,6 +242,7 @@ void MainWindow::InitQuickAccessBar()
     }
 
     connect(actionNew, &QAction::triggered, this, &MainWindow::onNew);
+    connect(m_pActionSave, &QAction::triggered, this, &MainWindow::onSave);
 }
 
 void MainWindow::InitButtonBar()
@@ -252,6 +253,8 @@ void MainWindow::InitButtonBar()
 
     pWindowsComboBox = new QComboBox(this);
     pWindowsComboBox->setMinimumWidth(250);
+    pWindowsComboBox->setFrame(false);
+    pWindowsComboBox->setFocusPolicy(Qt::NoFocus);
     wbar->addWidget(pWindowsComboBox);
     wbar->addSeparator();
 
@@ -647,6 +650,21 @@ void MainWindow::AddEditorWindow(BaseEditorWindow *editor)
     }*/
 
     connect(editor, &BaseEditorWindow::modifyChanged, this, &MainWindow::UpdateActions);
+}
+
+void MainWindow::onSave()
+{
+    QMdiSubWindow *wnd = m_Mdi->currentSubWindow();
+
+    if (!wnd)
+        return;
+
+    BaseEditorWindow *editor = qobject_cast<BaseEditorWindow*>(wnd->widget());
+
+    if (!editor)
+        return;
+
+    readySave(editor);
 }
 
 void MainWindow::readySave(BaseEditorWindow *editor)
@@ -1158,10 +1176,10 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::subWindowIndexChanged(const int &index)
 {
-    /*QMdiSubWindow *wnd = pWindowsModel->window(pWindowsModel->index(index, 0));
+    QMdiSubWindow *wnd = pWindowsModel->window(pWindowsModel->index(index, 0));
 
     if (wnd)
-        SetActiveWindow(wnd);*/
+        SetActiveWindow(wnd);
 }
 
 void MainWindow::SetActiveWindow(QMdiSubWindow *wnd)

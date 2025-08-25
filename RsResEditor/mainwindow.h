@@ -48,6 +48,7 @@ private slots:
     void onNew();
     void onNewLbr();
     void onOpen();
+    void onSave();
     void onAbout();
     void OnDeleteRequest(const QString &name, const int &type);
     void readySave(bool closeAfterSave);

@@ -68,6 +68,8 @@ void CustomRectItem::init()
              QGraphicsItem::ItemIsFocusable);
     setInputMethodHints(Qt::ImhHiddenText);
     setAcceptDrops(false);
+    setAcceptHoverEvents(true);
+    setCursor(Qt::ArrowCursor);
 
     m_AvailableCorners.setFlag(TOP_LEFT);
     m_AvailableCorners.setFlag(TOP);
@@ -643,6 +645,10 @@ bool CustomRectItem::mousePosOnHandles(QPointF pos)
 {
     bool resizable = false;
     int rem4Index = 8;// +(qRound(this->rotation()) / 45);
+
+    // Сохраняем предыдущее значение m_ResizeCorner
+    ResizeCorners previousCorner = m_ResizeCorner;
+
     if (mapToScene(m_ResizeHandles[(0 + rem4Index) % 8]).containsPoint(pos, Qt::WindingFill))
     {
         m_ResizeCorner = TOP_LEFT;
@@ -683,6 +689,16 @@ bool CustomRectItem::mousePosOnHandles(QPointF pos)
         m_ResizeCorner = LEFT;
         resizable = true;
     }
+    else
+    {
+        m_ResizeCorner = ALL_NO_ROTATE; // Сбрасываем, если не на метке
+        resizable = false;
+    }
+
+    // Если угол изменился и мы на метке, обновляем курсор
+    if (resizable && previousCorner != m_ResizeCorner)
+        updateCursor();
+
     return resizable;
 }
 
@@ -1432,11 +1448,80 @@ void CustomRectItem::recalcByGridChanges()
     setSize(sz);
 
     QList<QGraphicsItem*> childs = childItems();
-    for (QGraphicsItem *item : childs)
+    for (QGraphicsItem *item : qAsConst(childs))
     {
         CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
 
         if (rectItem)
             rectItem->recalcByGridChanges();
     }
+}
+
+void CustomRectItem::updateCursor()
+{
+    switch (m_ResizeCorner)
+    {
+    case TOP_LEFT:
+    case BOTTOM_RIGHT:
+        setCursor(Qt::SizeFDiagCursor);
+        break;
+    case TOP_RIGHT:
+    case BOTTOM_LEFT:
+        setCursor(Qt::SizeBDiagCursor);
+        break;
+    case TOP:
+    case BOTTOM:
+        setCursor(Qt::SizeVerCursor);
+        break;
+    case LEFT:
+    case RIGHT:
+        setCursor(Qt::SizeHorCursor);
+        break;
+    default:
+        setCursor(Qt::ArrowCursor);
+        break;
+    }
+}
+
+void CustomRectItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
+{
+    QPointF scenePos = mapToScene(event->pos());
+    bool onHandle = mousePosOnHandles(scenePos);
+
+    if (onHandle)
+    {
+        switch (m_ResizeCorner)
+        {
+        case TOP_LEFT:
+        case BOTTOM_RIGHT:
+            setCursor(Qt::SizeFDiagCursor);
+            break;
+        case TOP_RIGHT:
+        case BOTTOM_LEFT:
+            setCursor(Qt::SizeBDiagCursor);
+            break;
+        case TOP:
+        case BOTTOM:
+            setCursor(Qt::SizeVerCursor);
+            break;
+        case LEFT:
+        case RIGHT:
+            setCursor(Qt::SizeHorCursor);
+            break;
+        default:
+            setCursor(Qt::ArrowCursor);
+            break;
+        }
+    }
+    else
+        setCursor(Qt::ArrowCursor);
+
+    QGraphicsItem::hoverMoveEvent(event);
+}
+
+void CustomRectItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+{
+    // При уходе курсора с элемента восстанавливаем стандартный курсор
+    setCursor(Qt::ArrowCursor);
+    QGraphicsItem::hoverLeaveEvent(event);
 }
