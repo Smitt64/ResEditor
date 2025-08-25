@@ -1,0 +1,73 @@
+{
+    "propertylist": [
+        {
+            "name" : "fieldType",
+            "alias" : "Тип поля",
+            "enum" : ":/json/FieldTypeEnum.json"
+        },
+        {
+            "name" : "dataType",
+            "alias" : "Тип значения",
+            "enum" : ":/json/DataTypeEnum.json"
+        },
+        {
+            "name" : "dataLength",
+            "alias" : "Знаков"
+        },
+        {
+            "name" : "length",
+            "alias" : "Длина",
+            "enable" : false
+        },
+        {
+            "name" : "lines",
+            "alias" : "Высота",
+            "enable" : false
+        },
+        {
+            "name" : "point",
+            "alias" : "Точка"
+        },
+        {
+            "name" : "fdm",
+            "alias" : "Признак FDM"
+        },
+        {
+            "name" : "isText",
+            "alias" : "Признак текста"
+        },
+        {
+            "name" : "controlName",
+            "alias" : "Наименование поля"
+        },
+        {
+            "name" : "controlName2",
+            "alias" : "Имя/Текст 2"
+        },
+        {
+            "name" : "toolTip",
+            "alias" : "Подсказка (tooltip)"
+        },
+        {
+            "name" : "valueTemplate",
+            "alias" : "Шаблон"
+        },
+        {
+            "name" : "controlStyle",
+            "alias" : "Цвет",
+            "enum" : ":/json/PanelStyleEnum.json"
+        },
+        {
+            "name" : "controlGroup",
+            "alias" : "Группа"
+        },
+        {
+            "name" : "helpPage",
+            "alias" : "Страница помощи"
+        },
+        {
+            "name" : "controlFlags",
+            "alias" : "Доп. признаки"
+        }
+    ]
+}

@@ -9,6 +9,7 @@ class ObjectMapperPrivate
     Q_DECLARE_PUBLIC(ObjectMapper)
 public:
     ObjectMapperPrivate(ObjectMapper *obj) :
+        isActionGroup(false),
         q_ptr(obj)
     {
     }
@@ -16,6 +17,7 @@ public:
     QObject *object;
     QObject *reciever;
     QByteArray property;
+    bool isActionGroup; // Флаг для определения типа получателя
 
     ObjectMapper *q_ptr;
 };
@@ -31,8 +33,33 @@ void ObjectMapper::setChecked()
 {
     Q_D(ObjectMapper);
     QAction *action = qobject_cast<QAction*>(d->reciever);
-    QVariant value = d->object->property(d->property);
 
+    if (!action)
+        return;
+
+    // Получаем имя функции проверки из CLASSINFO
+    QString uniformFuncName = getUniformValueFunctionName(d->object);
+
+    // Ищем метод проверки единообразности
+    int uniformMethodIndex = d->object->metaObject()->indexOfMethod(QMetaObject::normalizedSignature(qPrintable(uniformFuncName + "(const char*)")));
+
+    if (uniformMethodIndex != -1)
+    {
+        QMetaMethod uniformMethod = d->object->metaObject()->method(uniformMethodIndex);
+        bool isUniform = false;
+
+        uniformMethod.invoke(d->object, Q_RETURN_ARG(bool, isUniform),
+                             Q_ARG(const char*, d->property.constData()));
+
+        if (!isUniform)
+        {
+            // Для неединообразных значений устанавливаем действие в частичное состояние
+            action->setChecked(false);
+            return;
+        }
+    }
+
+    QVariant value = d->object->property(d->property);
     if (action)
         action->setChecked(value.toBool());
 }
@@ -45,6 +72,33 @@ void ObjectMapper::setActionGroupChecked()
     if (!actionGroup)
         return;
 
+    // Получаем имя функции проверки из CLASSINFO
+    QString uniformFuncName = getUniformValueFunctionName(d->object);
+
+    // Ищем метод проверки единообразности
+    int uniformMethodIndex = d->object->metaObject()->indexOfMethod(QMetaObject::normalizedSignature(qPrintable(uniformFuncName + "(const char*)")));
+
+    if (uniformMethodIndex != -1)
+    {
+        QMetaMethod uniformMethod = d->object->metaObject()->method(uniformMethodIndex);
+        bool isUniform = false;
+
+        // Вызываем функцию проверки
+        uniformMethod.invoke(d->object, Q_RETURN_ARG(bool, isUniform),
+                             Q_ARG(const char*, d->property.constData()));
+
+        if (!isUniform)
+        {
+            // Если значения неединообразны, сбрасываем все действия
+            QList<QAction*> actions = actionGroup->actions();
+            for (QAction* action : qAsConst(actions))
+                action->setChecked(false);
+
+            return;
+        }
+    }
+
+    // Если значения единообразны или проверки нет, устанавливаем как обычно
     QList<QAction*> actions = actionGroup->actions();
     QVariant value = d->object->property(d->property);
 
@@ -56,6 +110,21 @@ void ObjectMapper::setActionGroupChecked()
             break;
         }
     }
+}
+
+// В класс ObjectMapper добавляем метод для получения имени функции проверки
+QString ObjectMapper::getUniformValueFunctionName(QObject* object) const
+{
+    const QMetaObject* meta = object->metaObject();
+    int classInfoIndex = meta->indexOfClassInfo("CLASSINFO_UNIFORMVALUEFUNC");
+
+    if (classInfoIndex != -1)
+    {
+        QMetaClassInfo classInfo = meta->classInfo(classInfoIndex);
+        return QString::fromLatin1(classInfo.value());
+    }
+
+    return "hasUniformValue";
 }
 
 // -----------------------------------------------------------------------
@@ -95,11 +164,6 @@ PropertyWidgetMapper::PropertyWidgetMapper(QObject *parent)
 PropertyWidgetMapper::~PropertyWidgetMapper()
 {
     delete d_ptr;
-}
-
-void PropertyWidgetMapper::setChecked()
-{
-    QObject *obj = sender();
 }
 
 bool PropertyWidgetMapper::bind(QObject *source, const char *property, QAction *action)
@@ -168,17 +232,58 @@ bool PropertyWidgetMapper::bind(QObject *source, const char *property, QActionGr
 
     QMetaProperty sourceProp = meta->property(propIndex);
 
+    // Получаем имя функции проверки из CLASSINFO
+    QString uniformFuncName;
+    int classInfoIndex = meta->indexOfClassInfo("CLASSINFO_UNIFORMVALUEFUNC");
+    if (classInfoIndex != -1)
+    {
+        QMetaClassInfo classInfo = meta->classInfo(classInfoIndex);
+        uniformFuncName = QString::fromLatin1(classInfo.value());
+    }
+    else
+    {
+        uniformFuncName = "hasUniformValue"; // Значение по умолчанию
+    }
+
+    // Проверяем, есть ли функция проверки единообразности
+    bool hasUniformCheck = false;
+    bool isUniform = true;
+    int uniformMethodIndex = meta->indexOfMethod(QMetaObject::normalizedSignature(qPrintable(uniformFuncName + "(const char*)")));
+
+    if (uniformMethodIndex != -1)
+    {
+        hasUniformCheck = true;
+        QMetaMethod uniformMethod = meta->method(uniformMethodIndex);
+        uniformMethod.invoke(source, Q_RETURN_ARG(bool, isUniform),
+                             Q_ARG(const char*, property));
+    }
+
     // Получаем список действий в группе
     QList<QAction*> actions = actionGroup->actions();
 
-    // Устанавливаем начальное значение из свойства
-    QVariant currentValue = sourceProp.read(source);
-    for (QAction* action : actions)
+    if (hasUniformCheck && !isUniform)
     {
-        if (action->data() == currentValue)
+        // Если значения неединообразны, сбрасываем все действия
+        for (QAction* action : qAsConst(actions))
         {
-            action->setChecked(true);
-            break;
+            action->setChecked(false);
+            action->setIcon(QIcon(":/icons/multiple_values.png"));
+            action->setToolTip(tr("Значения различаются у выделенных элементов"));
+        }
+    }
+    else
+    {
+        // Устанавливаем начальное значение из свойства
+        QVariant currentValue = sourceProp.read(source);
+        for (QAction* action : qAsConst(actions))
+        {
+            action->setIcon(QIcon());
+            action->setToolTip("");
+            if (action->data() == currentValue)
+            {
+                action->setChecked(true);
+                break;
+            }
         }
     }
 
@@ -186,12 +291,20 @@ bool PropertyWidgetMapper::bind(QObject *source, const char *property, QActionGr
     connect(actionGroup, &QActionGroup::triggered, [=](QAction* action)
     {
         if (action->isChecked())
+        {
             sourceProp.write(source, action->data());
+        }
     });
 
     QObject *mapobj = d->addMap(property, source, actionGroup);
-    QString signalName = QString("2%1").arg(sourceProp.notifySignal().methodSignature().data());
-    connect(source, signalName.toLocal8Bit().data(), mapobj, SLOT(setActionGroupChecked()));
+
+    // Подключаемся к сигналу уведомления об изменении свойства
+    if (sourceProp.hasNotifySignal())
+    {
+        QString signalName = QString("2%1").arg(sourceProp.notifySignal().methodSignature().constData());
+        if (!signalName.isEmpty() && signalName != "2")
+            connect(source, signalName.toLocal8Bit().constData(), mapobj, SLOT(setActionGroupChecked()));
+    }
 
     return true;
 }

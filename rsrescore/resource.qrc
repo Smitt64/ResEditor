@@ -108,5 +108,6 @@
         <file>img/gallary_style/smen.png</file>
         <file>img/gallary_style/smes.png</file>
         <file>res/reslib.xsd</file>
+        <file>json/ControlMulty.json</file>
     </qresource>
 </RCC>

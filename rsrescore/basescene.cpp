@@ -15,25 +15,29 @@ BaseScene::BaseScene(QObject *parent)
     connect(this, &QGraphicsScene::selectionChanged, [=]()
     {
         QList<QGraphicsItem*> sel = selectedItems();
-
-        if (sel.size() == 1)
-        {
-            CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(sel.first());
-
-            if (rectItem)
-            {
-                PropertyModel *model = rectItem->propertyModel();
-                emit propertyModelChanged(model);
-            }
-        }
-        else
-            emit propertyModelChanged(nullptr);
+        handleSelectionChanged(sel);
     });
 }
 
 BaseScene::~BaseScene()
 {
     disconnect(SIGNAL(selectionChanged()));
+}
+
+void BaseScene::handleSelectionChanged(const QList<QGraphicsItem*> &selectedItems)
+{
+    if (selectedItems.size() == 1)
+    {
+        CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(selectedItems.first());
+
+        if (rectItem)
+        {
+            PropertyModel *model = rectItem->propertyModel();
+            emit propertyModelChanged(model);
+        }
+    }
+    else
+        emit propertyModelChanged(nullptr);
 }
 
 void BaseScene::drawBackground(QPainter *painter, const QRectF &rect)

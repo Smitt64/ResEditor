@@ -21,6 +21,7 @@ SOURCES += \
     basescene.cpp \
     containeritem.cpp \
     controlitem.cpp \
+    controlitemswrapper.cpp \
     controlpropertysdlg.cpp \
     controtaborder.cpp \
     customrectitem.cpp \
@@ -77,6 +78,7 @@ HEADERS += \
     basescene.h \
     containeritem.h \
     controlitem.h \
+    controlitemswrapper.h \
     controlpropertysdlg.h \
     controtaborder.h \
     customrectitem.h \

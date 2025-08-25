@@ -13,6 +13,8 @@ public:
     ObjectMapper(QObject *parent = nullptr);
     virtual ~ObjectMapper() = default;
 
+    QString getUniformValueFunctionName(QObject* object) const;
+
 public slots:
     void setChecked();
     void setActionGroupChecked();
@@ -40,9 +42,6 @@ public:
 
     // Привязка Q_PROPERTY к QWidget (если widgetProperty == nullptr, ищем USER-свойство)
     //bool bind(QObject *source, const char *property, QWidget *widget, const char *widgetProperty = nullptr);
-
-private slots:
-    void setChecked();
 
 private:
     PropertyWidgetMapperPrivate * const d_ptr;

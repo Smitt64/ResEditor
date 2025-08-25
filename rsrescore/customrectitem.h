@@ -10,6 +10,7 @@
 #define CLASSINFO_UNDOREDO "UNDOREDO"
 #define CLASSINFO_PROPERTYLIST "PROPERTYLIST"
 #define CLASSINFO_PROPERTYGROUP "PROPERTYGROUP"
+#define CLASSINFO_UNIFORMVALUEFUNC "UNIFORMVALUEFUNC"
 
 #define checkPropSame(name,value) if (checkPropSameValue(name,value)) return
 

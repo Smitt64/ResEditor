@@ -1,5 +1,6 @@
 #include "stdpaneleditor.h"
 #include "baseeditorview.h"
+#include "controlitemswrapper.h"
 #include "controlpropertysdlg.h"
 #include "panelitem.h"
 #include "qmetaobject.h"
@@ -87,7 +88,13 @@ public:
             m_fShowCursor = !m_fShowCursor;
         });
 
+        m_controlItemsWrapper = new ControlItemsWrapper(this);
         m_pCursorTimer->start();
+    }
+
+    ControlItemsWrapper *controlItemsWrapper()
+    {
+        return m_controlItemsWrapper;
     }
 
     const QPointF &cursorPos() const
@@ -124,6 +131,35 @@ public:
     }
 
 protected:
+    virtual void handleSelectionChanged(const QList<QGraphicsItem*> &selectedItems) Q_DECL_OVERRIDE
+    {
+        QVector<ControlItem*> controlItems;
+
+        for (QGraphicsItem* item : selectedItems)
+        {
+            ControlItem* controlItem = dynamic_cast<ControlItem*>(item);
+            if (controlItem)
+                controlItems.append(controlItem);
+        }
+
+        if (!controlItems.isEmpty())
+        {
+            // Если выделено несколько ControlItem, создаем или обновляем обертку
+            if (!m_controlItemsWrapper->undoStack())
+                m_controlItemsWrapper->setUndoStack(controlItems.first()->undoStack());
+
+            m_controlItemsWrapper->clearControlItems();
+            m_controlItemsWrapper->addControlItems(controlItems);
+            m_controlItemsWrapper->emitAll();
+            emit propertyModelChanged(m_controlItemsWrapper->propertyModel());
+        }
+        else
+        {
+            // Нет выделения
+            emit propertyModelChanged(nullptr);
+        }
+    }
+
     virtual void drawBackground (QPainter* painter, const QRectF &rect) Q_DECL_OVERRIDE
     {
         BaseScene::drawBackground(painter, rect);
@@ -274,6 +310,7 @@ private:
     bool m_fShowCursor;
     QTimer *m_pCursorTimer;
     QPointF m_CursorPos;
+    ControlItemsWrapper *m_controlItemsWrapper;
 };
 
 // ----------------------------------------------------
@@ -1261,7 +1298,9 @@ void StdPanelEditor::CheckSpellingUpdateTexts(ResSpellStringsDlg *dlg)
 
 void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
 {
-    ResApplication *app = (ResApplication*)qApp;
+    //ResApplication *app = (ResApplication*)qApp;
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+
     SARibbonPannel *fieldpanel = category->addPannel(tr("Параметры поля"));
     SARibbonPannel *fieldtypepanel = category->addPannel(tr("Тип поля"));
     SARibbonPannel *datatypepanel = category->addPannel(tr("Тип значения"));
@@ -1306,6 +1345,14 @@ void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
         datatypepanel->addSmallAction(ftype);
         m_pDataTypeGroup->addAction(ftype);
     }
+
+    ControlItemsWrapper *wrp = pScene->controlItemsWrapper();
+    m_RibbonControlMapper.reset(new PropertyWidgetMapper());
+    m_RibbonMapper->bind(wrp, "fieldType", m_pFieledTypeGroup);
+    m_RibbonMapper->bind(wrp, "dataType", m_pDataTypeGroup);
+
+    m_RibbonMapper->bind(wrp, "fdm", m_pFdmAction);
+    m_RibbonMapper->bind(wrp, "isText", m_pAsTextAction);
 }
 
 void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
