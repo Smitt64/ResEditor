@@ -124,7 +124,7 @@ QString RsResCore::iconNameFromResType(const qint16 &Type)
         name = "GridUniform";
         break;
     case LbrObject::RES_BS:
-        name = "GridPane";
+        name = "BScrol";
         break;
     default:
         name = "Question";

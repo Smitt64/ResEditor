@@ -827,9 +827,7 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
 
         ribbonBar()->setUpdatesEnabled(false);
         if (lastwnd)
-        {
             lastwnd->clearRibbonTabs();
-        }
 
         wnd->updateRibbonTabs();
 
@@ -840,10 +838,7 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
         for (auto all : qAsConst(allCategoryes))
         {
             if (all->categoryCount())
-            {
                 ribbonBar()->showContextCategory(all);
-                qDebug() << ribbonBar()->categoryPages();
-            }
             else
                 ribbonBar()->hideContextCategory(all);
         }

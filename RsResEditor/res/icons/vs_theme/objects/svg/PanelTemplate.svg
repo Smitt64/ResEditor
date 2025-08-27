@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <style>.icon-vs-out{fill:#f6f6f6}.icon-vs-bg{fill:#424242}.icon-vs-fg{fill:#f0eff1}.icon-vs-action-orange{fill:#c27d1a}.st0{fill:#f6f6f6}.st1{fill:#f0eff1}.st2{fill:#c27d1a}</style>
+  <path class="st0" d="M0 0h16v16H0z" id="outline"/>
+  <path class="icon-vs-out" d="M0 0h16v16H0z"/>
+  <path class="icon-vs-bg" d="M 1 1 L 1 15 L 15 15 L 15 1 L 1 1 Z M 14 14 L 2 14 L 2 4 L 14 4 L 14 14 Z M 7 9 L 3 9 L 3 8 L 7 8 L 7 9 Z"/>
+  <path class="st1" d="M9 9h3v1H9z"/>
+  <path class="icon-vs-fg" d="M 14 14 L 2 14 L 2 4 L 14 4 L 14 14 Z" id="iconFg"/>
+</svg>

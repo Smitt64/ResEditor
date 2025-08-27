@@ -51,10 +51,7 @@ const QVector<ControlItem*> &ControlItemsWrapper::controlItems() const
 bool ControlItemsWrapper::hasUniformValue(const char *propertyName) const
 {
     if (m_controlItems.isEmpty())
-    {
-        qDebug() << "hasUniformValue";
         return true;
-    }
 
     const QMetaObject *meta = m_controlItems.first()->metaObject();
     int propIndex = meta->indexOfProperty(propertyName);

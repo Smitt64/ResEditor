@@ -21,6 +21,62 @@ NewItemsDlg::NewItemsDlg(LbrObjectInterface *lbr, QWidget *parent) :
     ui->setupUi(this);
     ui->treeWidget->header()->setVisible(false);
 
+    QString dialogStyle = R"(
+    /* Стиль для QTreeWidget - белый фон */
+    QTreeWidget {
+        background: white;
+        border: 1px solid #c0c0c0;
+        border-radius: 4px;
+        outline: none;
+    }
+
+    /* Элементы TreeView - белые без подсветки */
+    QTreeWidget::item {
+        background: white;
+        border: none;
+        padding: 4px;
+        color: black;
+    }
+
+    /* Заголовок TreeView - скрываем */
+    QHeaderView::section {
+        background: white;
+        border: none;
+        height: 0px;
+        padding: 0px;
+        margin: 0px;
+    }
+
+    /* Стиль для QListWidget */
+    QListWidget {
+        background: white;
+        outline: none;
+    }
+
+    QListWidget::item {
+        background: white;
+        border: 1px solid #d0d0d0;
+        border-radius: 4px;
+        padding: 8px;
+        margin: 2px;
+        color: black;
+        text-align: center;
+    }
+
+    QListWidget::item:selected {
+        background: #0078d7;
+        border: 2px solid #005fa3;
+    }
+
+    QListWidget::item:hover {
+        background: #e3f2fd;
+        border: 1px solid #0078d7;
+        color: black;
+    }
+    )";
+
+    setStyleSheet(dialogStyle);
+
     setWindowIcon(QIcon::fromTheme("NewFile"));
     updateAcceptButton();
 
@@ -84,6 +140,51 @@ QListWidget *NewItemsDlg::CreateSubList()
     connect(list, &QListWidget::itemDoubleClicked, this, &NewItemsDlg::itemDoubleClicked);
 
     return list;
+
+    /*QListWidget *list = new QListWidget(this);
+    list->setViewMode(QListView::IconMode);
+    list->setIconSize(QSize(32, 32)); // Явно устанавливаем размер иконок
+    list->setFrameShape(QFrame::NoFrame);
+    list->setSortingEnabled(true);
+    list->setWordWrap(true);
+    list->setResizeMode(QListView::Adjust); // Меняем на Adjust вместо Fixed
+    list->setMovement(QListView::Static);
+    list->setUniformItemSizes(false); // Меняем на false для переменного размера
+    list->setSpacing(10); // Увеличиваем отступы
+
+    // Устанавливаем размер сетки (опционально)
+    list->setGridSize(QSize(80, 80)); // Ширина, высота
+
+    // Включаем выравнивание по сетке
+    list->setViewMode(QListView::IconMode);
+
+    list->updateGeometry();
+
+    connect(list, &QListWidget::itemClicked, this, &NewItemsDlg::itemUpdated);
+    connect(list, &QListWidget::itemDoubleClicked, this, &NewItemsDlg::itemDoubleClicked);
+
+    return list;*/
+
+    /*QListWidget *list = new QListWidget(this);
+    list->setViewMode(QListView::IconMode);
+    list->setIconSize(QSize(32, 32));
+    list->setFrameShape(QFrame::NoFrame);
+    list->setSortingEnabled(true);
+    list->setWordWrap(true);
+    list->setResizeMode(QListView::Adjust);  // Меняем на Adjust для лучшего отображения
+    list->setMovement(QListView::Static);
+    list->setUniformItemSizes(false);        // Меняем на false
+    list->setSpacing(8);                     // Увеличиваем отступы
+
+    // Устанавливаем размер сетки для лучшего выравнивания
+    list->setGridSize(QSize(100, 90));
+
+    list->updateGeometry();
+
+    connect(list, &QListWidget::itemClicked, this, &NewItemsDlg::itemUpdated);
+    connect(list, &QListWidget::itemDoubleClicked, this, &NewItemsDlg::itemDoubleClicked);
+
+    return list;*/
 }
 
 QListWidget *NewItemsDlg::getGroup(const QString &name, bool addIfNotExists)
@@ -208,8 +309,19 @@ void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metad
     if (needlbr && !m_pLbrObj)
         return;
 
+    QIcon icon;
     QListWidgetItem *item = new QListWidgetItem();
-    item->setIcon(QIcon(metadata["icon"].toString()));
+    QString iconname = metadata["icon"].toString();
+
+    if (iconname.startsWith("theme:"))
+    {
+        iconname = iconname.remove("theme:");
+        icon = QIcon::fromTheme(iconname);
+    }
+    else
+        icon = QIcon(iconname);
+
+    item->setIcon(icon);
     item->setText(metadata["title"].toString());
     item->setData(RoleDescription, metadata["description"].toString());
     item->setData(RoleGroup, metadata["group"].toString());
