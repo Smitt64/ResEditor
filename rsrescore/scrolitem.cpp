@@ -1,14 +1,20 @@
 #include "scrolitem.h"
 #include "panelpropertysdlg.h"
 #include "qgraphicsscene.h"
+#include "basescene.h"
 #include "respanel.h"
 #include "undoredo/undoitemresize.h"
+#include "undoredo/undopropertychange.h"
 #include <QStyleOptionGraphicsItem>
 #include <QUndoStack>
 #include <QGraphicsView>
+#include <QGraphicsSceneMouseEvent>
 
 ScrolAreaRectItem::ScrolAreaRectItem(CustomRectItem* parent) :
-    CustomRectItem(parent)
+    CustomRectItem(parent),
+    m_IsResizingRowHeight(false),
+    m_RowHeightChanged(false),
+    m_HoverOverIndicator(false)
 {
     m_Scrol = qobject_cast<ScrolItem*>(parent);
     setCoord(m_Scrol->scrolPos());
@@ -18,6 +24,7 @@ ScrolAreaRectItem::ScrolAreaRectItem(CustomRectItem* parent) :
     setOpacity(0.7);
     setUndoStack(nullptr);
     setCanIntersects(false);
+    setAcceptHoverEvents(true);
 
     connect(this, &ScrolAreaRectItem::geometryChanged, [=]() -> void
     {
@@ -154,7 +161,162 @@ void ScrolAreaRectItem::paint(QPainter *painter, const QStyleOptionGraphicsItem 
     painter->save();
     QColor br = style()->color(ResStyle::Color_TextBg, &opt);
     paintBevel(painter, QColor::fromRgb(255 - br.red(), 255 - br.green(), 255 - br.blue()));
+
+    // Рисуем индикатор текущей высоты строки
+    QRectF rect = boundingRect();
+    qreal currentHeightPixels = m_Scrol->rowHeight() * style()->gridSize().height();
+    qreal indicatorY = rect.top() + currentHeightPixels;
+
+    // Изменяем цвет линии при наведении
+    QColor indicatorColor = m_HoverOverIndicator ? QColor(0, 200, 255) : QColor(0, 120, 215);
+
+    // Линия индикатора (увеличиваем толщину для лучшего хвата)
+    painter->setPen(QPen(indicatorColor, 4)); // Увеличиваем толщину с 3 до 4
+    painter->drawLine(rect.left(), indicatorY, rect.right(), indicatorY);
+
+    // Треугольник-маркер
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(indicatorColor);
+    QPolygonF triangle;
+    triangle << QPointF(rect.right() - 10, indicatorY - 5)
+             << QPointF(rect.right() - 10, indicatorY + 5)
+             << QPointF(rect.right(), indicatorY);
+    painter->drawPolygon(triangle);
+
+    // Отображаем текущую высоту строки
+    painter->setPen(Qt::white);
+    painter->setFont(QFont("Arial", 8));
+    QString heightText = QString("%1 стр.").arg(m_Scrol->rowHeight());
+    painter->drawText(QRectF(rect.left(), indicatorY - 20, rect.width(), 20),
+                      Qt::AlignCenter, heightText);
+
     painter->restore();
+}
+
+void ScrolAreaRectItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton)
+    {
+        QRectF rect = boundingRect();
+        qreal currentHeight = m_Scrol->rowHeight() * style()->gridSize().height();
+
+        // Увеличиваем зону обнаружения с 6 до 10 пикселей
+        QRectF heightIndicator(rect.left(), rect.top() + currentHeight - 5, rect.width(), 10);
+
+        if (heightIndicator.contains(event->pos()))
+        {
+            m_IsResizingRowHeight = true;
+            m_StartRowHeight = m_Scrol->rowHeight();
+            m_StartMousePos = event->scenePos();
+            m_StartTopLeft = sceneBoundingRect().topLeft();
+            event->accept();
+            return;
+        }
+    }
+
+    CustomRectItem::mousePressEvent(event);
+}
+
+void ScrolAreaRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (m_IsResizingRowHeight)
+    {
+        BaseScene* customScene = qobject_cast<BaseScene*>(scene());
+        QSize gridSize = customScene->getGridSize();
+
+        // Вычисляем изменение позиции мыши
+        qreal deltaY = event->scenePos().y() - m_StartMousePos.y();
+        qreal deltaHeight = round(deltaY / gridSize.height());
+        qreal newRowHeight = m_StartRowHeight + deltaHeight;
+
+        // Ограничения высоты
+        if (newRowHeight < 1) newRowHeight = 1;
+        if (newRowHeight > 20) newRowHeight = 20;
+
+        // Устанавливаем новую высоту только если изменилась
+        if (newRowHeight != m_Scrol->rowHeight())
+        {
+            // Временно отключаем undo stack для промежуточных изменений
+            bool oldSkip = m_Scrol->setSkipUndoStack(true);
+            m_Scrol->setRowHeight(newRowHeight);
+            m_Scrol->setSkipUndoStack(oldSkip);
+
+            m_RowHeightChanged = true; // Отмечаем что было изменение
+            update();
+            scene()->update();
+        }
+
+        event->accept();
+        return;
+    }
+
+    CustomRectItem::mouseMoveEvent(event);
+}
+
+void ScrolAreaRectItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (m_IsResizingRowHeight)
+    {
+        // Добавляем в undo stack только если было реальное изменение
+        if (m_RowHeightChanged && m_Scrol->undoStack() && m_StartRowHeight != m_Scrol->rowHeight())
+        {
+            // Создаем команду undo/redo с правильными значениями
+            UndoPropertyChange* undoCmd = new UndoPropertyChange(
+                qobject_cast<BaseScene*>(scene()),
+                m_Scrol->uuid()
+                );
+            undoCmd->setPropertyName("rowHeight");
+            undoCmd->setValues(m_StartRowHeight, m_Scrol->rowHeight());
+            m_Scrol->undoStack()->push(undoCmd);
+            emit rowHeightChanged();
+        }
+
+        m_IsResizingRowHeight = false;
+        m_RowHeightChanged = false;
+        event->accept();
+        return;
+    }
+
+    CustomRectItem::mouseReleaseEvent(event);
+}
+
+void ScrolAreaRectItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
+{
+    CustomRectItem::hoverMoveEvent(event);
+
+    QRectF rect = boundingRect();
+    qreal currentHeightPixels = m_Scrol->rowHeight() * style()->gridSize().height();
+
+    // Увеличиваем зону обнаружения с 6 до 10 пикселей
+    QRectF heightIndicator(rect.left(), rect.top() + currentHeightPixels - 5, rect.width(), 10);
+
+    bool wasHovering = m_HoverOverIndicator;
+    m_HoverOverIndicator = heightIndicator.contains(event->pos());
+
+    if (m_HoverOverIndicator)
+    {
+        setCursor(Qt::SizeVerCursor);
+        if (!wasHovering) // Обновляем только при изменении состояния
+            update();
+    }
+    else
+    {
+        setCursor(Qt::ArrowCursor);
+        if (wasHovering) // Обновляем только при изменении состояния
+            update();
+    }
+}
+
+void ScrolAreaRectItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+{
+    if (m_HoverOverIndicator)
+    {
+        m_HoverOverIndicator = false;
+        update(); // Обновляем для смены цвета линии
+    }
+
+    setCursor(Qt::ArrowCursor);
+    CustomRectItem::hoverLeaveEvent(event);
 }
 
 // --------------------------------------------------------------------

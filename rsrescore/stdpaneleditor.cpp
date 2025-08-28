@@ -154,10 +154,7 @@ protected:
             emit propertyModelChanged(m_controlItemsWrapper->propertyModel());
         }
         else
-        {
-            // Нет выделения
-            emit propertyModelChanged(nullptr);
-        }
+            BaseScene::handleSelectionChanged(selectedItems);
     }
 
     virtual void drawBackground (QPainter* painter, const QRectF &rect) Q_DECL_OVERRIDE
