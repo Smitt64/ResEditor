@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <bx:export>
+      <bx:file format="svg"/>
+    </bx:export>
+  </defs>
+  <style>.icon-vs-out{fill:#f6f6f6}.icon-vs-bg{fill:#424242}.icon-vs-fg{fill:#f0eff1}.icon-vs-action-orange{fill:#c27d1a}.st0{fill:#f6f6f6}.st1{fill:#f0eff1}.st2{fill:#c27d1a}</style>
+  <path class="st0" d="M0 0h16v16H0z" id="outline"/>
+  <path class="icon-vs-out" d="M0 0h16v16H0z"/>
+  <path class="icon-vs-bg" d="M 1 1 L 1 15 L 15 15 L 15 1 L 1 1 Z M 14 14 L 2 14 L 2 4 L 14 4 L 14 14 Z M 7 9 L 3 9 L 3 8 L 7 8 L 7 9 Z"/>
+  <path class="st1" d="M9 9h3v1H9z"/>
+  <path class="icon-vs-fg" d="M 14 14 L 2 14 L 2 4 L 14 4 L 14 14 Z" id="iconFg"/>
+  <g id="group-1" transform="matrix(0.921426, 0, 0, 0.767106, 0.153728, 3.246104)" style="">
+    <path class="st0" d="M0 0h16v16H0z" style="opacity: 0;"/>
+    <path class="st1" d="M2 1h13v13H2z" style="fill: rgb(246, 246, 246);"/>
+  </g>
+  <path class="st2" d="M 6.604 10.917 L 9.368 10.917 L 9.368 13.218 L 6.604 13.218 L 6.604 10.917 Z" style="stroke-width: 0.844;"/>
+  <path class="st2" d="M 6.604 4.78 L 9.368 4.78 L 9.368 7.082 L 6.604 7.082 L 6.604 4.78 Z" style="stroke-width: 0.844; fill: rgb(66, 66, 66);"/>
+  <path class="st2" d="M 10.289 10.917 L 13.054 10.917 L 13.054 13.218 L 10.289 13.218 L 10.289 10.917 Z" style="stroke-width: 0.844;"/>
+  <path class="st2" d="M 10.289 4.78 L 13.054 4.78 L 13.054 7.082 L 10.289 7.082 L 10.289 4.78 Z" style="stroke-width: 0.844; fill: rgb(66, 66, 66);"/>
+  <path class="st2" d="M 10.289 7.849 L 13.054 7.849 L 13.054 10.15 L 10.289 10.15 L 10.289 7.849 Z" style="stroke-width: 0.844;"/>
+  <path class="st2" d="M 2.918 4.78 L 5.682 4.78 L 5.682 7.082 L 2.918 7.082 L 2.918 4.78 Z" style="stroke-width: 0.844; fill: rgb(66, 66, 66);"/>
+  <path class="st2" d="M 2.918 10.917 L 5.682 10.917 L 5.682 13.218 L 2.918 13.218 L 2.918 10.917 Z" style="stroke-width: 0.844;"/>
+  <path class="st2" d="M 6.604 7.849 L 9.368 7.849 L 9.368 10.15 L 6.604 10.15 L 6.604 7.849 Z" style="stroke-width: 0.844;"/>
+  <path class="st2" d="M 2.918 7.849 L 5.682 7.849 L 5.682 10.15 L 2.918 10.15 L 2.918 7.849 Z" style="stroke-width: 0.844;"/>
+  <title>Paste_16x</title>
+  <g id="canvas" transform="matrix(0.669175, 0, 0, 0.625631, 5.296777, 5.987251)" style="">
+    <path class="icon-canvas-transparent" d="M16,16H0V0H16Z" style="fill: rgb(246, 246, 246); opacity: 0;"/>
+  </g>
+  <g id="iconBg" transform="matrix(0.669175, 0, 0, 0.625631, 5.296777, 5.987251)" style="">
+    <path class="icon-vs-out" d="M6,16V15H1V2H4.171A3,3,0,0,1,9.829,2H13V6h2V16Z"/>
+    <path class="icon-vs-bg" d="M12,7V3H9A2,2,0,0,0,5,3H2V14H7v1h7V7ZM5,4H6V3A1,1,0,0,1,8,3V4H9V5H5ZM3,13V4H4V6h6V4h1V7H7v6Zm10,1H8V8h5Z"/>
+  </g>
+  <g id="group-2" transform="matrix(0.669175, 0, 0, 0.625631, 5.296777, 5.987251)" style="">
+    <path class="icon-vs-fg" d="M5,4H6V3A1,1,0,0,1,8,3V4H9V5H5ZM3,13V4H4V6h6V4h1V7H7v6Zm10,1H8V8h5Z"/>
+  </g>
+</svg>

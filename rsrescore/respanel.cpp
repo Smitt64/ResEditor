@@ -585,6 +585,11 @@ QString ResPanel::name() const
     return m_Name;
 }
 
+QString ResPanel::comment() const
+{
+    return m_Comment;
+}
+
 qint16 ResPanel::type() const
 {
     return m_Type;
@@ -788,8 +793,8 @@ int ResPanel::loadXmlNode(const QDomElement &reslib)
             element._field->St = e.attribute("St", "0").toInt();
             element._field->FVt = e.attribute("FVt", "0").toInt();
             element._field->FVp = e.attribute("FVp", "0").toInt();
-            element._field->x = e.attribute("x", "0").toInt();
-            element._field->y = e.attribute("y", "0").toInt();
+            element._field->x = e.attribute("x", "0").toInt() + m_pPanel->x;
+            element._field->y = e.attribute("y", "0").toInt() + m_pPanel->x;
             element._field->l = e.attribute("l", "0").toInt();
             element._field->h = e.attribute("h", "0").toInt();
             element._field->kl = e.attribute("kl", "0").toInt();

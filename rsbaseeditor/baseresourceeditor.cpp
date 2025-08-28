@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QTextStream>
+#include <widgets/codeinputdialog.h>
 #include "SARibbon.h"
 //Q_IMPORT_PLUGIN(BaseResourceEditor)
 
@@ -51,7 +52,8 @@ bool BaseResourceEditor::newItemsActionAvalible(const QString &guid)
         "{c7e4dbe9-cd8e-4eaf-bcd3-975f9fb6ba1e}",
         "{57f88805-7474-42fb-bc00-24a90cd5e85d}",
         "{c01bd070-a483-482c-9a30-2946a4317b71}",
-        "{80384143-d159-4264-95c8-19e8a2cf7b70}"
+        "{80384143-d159-4264-95c8-19e8a2cf7b70}",
+        "{eaeac9f8-3230-4015-a029-ac337c3d83e9}"
     };
 
     return actions.contains(guid);
@@ -114,6 +116,20 @@ ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, con
                                             name,
                                             LbrObject::RES_BS);
     }
+    else if (guid == "{eaeac9f8-3230-4015-a029-ac337c3d83e9}")
+    {
+        // Скролинг из xml текста
+        QByteArray CodeText = CodeInputDialog::getCodeText(parent, tr("Скролинг из xml текста"), tr("введите "), QString(), HighlighterXml).toUtf8();
+
+        QBuffer buffer(&CodeText);
+
+        if (buffer.open(QIODevice::ReadOnly))
+        {
+            pNewEditor = LoadResFromXmlTemplate(&buffer,
+                                                name,
+                                                {LbrObject::RES_BS});
+        }
+    }
 
     result.wnd = pNewEditor;
 
@@ -166,6 +182,98 @@ void BaseResourceEditor::SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &T
                         .arg(RsResCore::inst()->typeNameFromResType(Type), name, title));
 }
 
+BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(QIODevice *device, const QString &name, const std::initializer_list<quint16> &type)
+{
+    static const std::vector<quint16> ScrolTypes =
+        {
+            LbrObject::RES_BS,
+            LbrObject::RES_SCROL,
+            LbrObject::RES_LS
+        };
+
+    std::vector<quint16> types;
+    types.insert(types.end(), std::begin(type), std::end(type));
+
+    BaseEditorWindow *pNewEditor = nullptr;
+
+    auto IsIntersects = [](const std::vector<quint16>& type1, const std::vector<quint16>& type2) -> bool
+    {
+        std::vector<quint16> v1, v2;
+
+        // Преобразуем оба параметра в vector
+        v1.insert(v1.end(), std::begin(type1), std::end(type1));
+        v2.insert(v2.end(), std::begin(type2), std::end(type2));
+
+        std::sort(v1.begin(), v1.end());
+        std::sort(v2.begin(), v2.end());
+
+        std::vector<quint16> intersection_result;
+        std::set_intersection(v1.begin(), v1.end(),
+                              v2.begin(), v2.end(),
+                              std::back_inserter(intersection_result));
+
+        return !intersection_result.empty();
+    };
+
+    ResPanel *testPan = nullptr;
+
+    try
+    {
+        RsResCore::inst()->loadFromXml(device, &testPan);
+        if (testPan)
+        {
+            bool Create = false;
+            quint16 panelType = testPan->type();
+
+            // Проверяем, является ли тип панели одним из запрошенных типов
+            if (IsIntersects({types}, {LbrObject::RES_PANEL}) &&
+                IsIntersects({panelType}, types))
+            {
+                Create = true;
+            }
+            // Проверяем, является ли тип панели скролом И запрошенные типы включают скролы
+            else if (IsIntersects(type, ScrolTypes) &&
+                     std::find(ScrolTypes.begin(), ScrolTypes.end(), panelType) != ScrolTypes.end())
+            {
+                Create = true;
+            }
+
+            if (Create)
+            {
+                // Создаем редактор с типом панели, а не с запрошенным типом
+                pNewEditor = new StdPanelEditor(panelType);
+                pNewEditor->setWindowIcon(RsResCore::inst()->iconFromResType(panelType));
+                pNewEditor->setupEditor();
+
+                testPan->setName(name);
+                // Не меняем тип панели - оставляем тот, что был в XML
+                qobject_cast<StdPanelEditor*>(pNewEditor)->setPanel(testPan, testPan->comment());
+                SetupEditorTitle(pNewEditor, panelType, name, testPan->title());
+            }
+            else
+            {
+                // Если тип не подходит, удаляем панель
+                delete testPan;
+                testPan = nullptr;
+            }
+        }
+    }
+    catch(const std::exception& e)
+    {
+        qWarning() << "Error loading XML template:" << e.what();
+        if (testPan)
+            delete testPan;
+    }
+    catch(...)
+    {
+        qWarning() << "Unknown error loading XML template";
+        if (testPan)
+            delete testPan;
+    }
+
+    return pNewEditor;
+}
+
 BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(const QString &filename,
                                                              const QString &name,
                                                              const quint16 &type)
@@ -174,23 +282,12 @@ BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(const QString &file
 
     try
     {
-        ResPanel *testPan = nullptr;
         QFile resxml(filename);
         if (!resxml.open(QIODevice::ReadOnly))
             return nullptr;
 
-        RsResCore::inst()->loadFromXml(&resxml, &testPan);
-        if (testPan)
-        {
-            pNewEditor = new StdPanelEditor(type);
-            pNewEditor->setWindowIcon(RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL));
-            pNewEditor->setupEditor();
-
-            testPan->setName(name);
-            testPan->setType(type);
-            qobject_cast<StdPanelEditor*>(pNewEditor)->setPanel(testPan);
-            SetupEditorTitle(pNewEditor, type, name, testPan->title());
-        }
+        pNewEditor = LoadResFromXmlTemplate(&resxml, name, {type});
+        resxml.close();
     }
     catch(...) {}
 

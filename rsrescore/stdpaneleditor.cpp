@@ -1397,10 +1397,23 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
         panelItem->setProperty(CONTRAST_PROPERTY, toogled);
     });
 
+    m_pScrolAreaAction = createAction(tr("Область скролинга"), "RowUpdating", QKeySequence("Alt+F9"));
+    m_pScrolAreaAction->setCheckable(true);
+    m_pScrolAreaAction->setVisible(m_Type != LbrObject::RES_PANEL);
+
+    if (m_Type != LbrObject::RES_PANEL)
+        connect(m_pScrolAreaAction, SIGNAL(toggled(bool)), panelItem, SLOT(showScrolArea(bool)));
+    /*connect(m_pScrolAreaAction, &QAction::toggled, [&](bool toogled)
+    {
+        QMetaObject *panelMeta = panelItem->metaObject();
+        //panelItem->setProperty(SCROLAREA_PROPERTY, toogled);
+    });*/
+
     app->settings()->beginGroup("StdEditor");
     m_pContrst->setChecked(app->settings()->value("AutoContrast", true).toBool());
     app->settings()->endGroup();
     editpanel->addLargeAction(m_pContrst);
+    editpanel->addLargeAction(m_pScrolAreaAction);
     editpanel->addSeparator();
 
     m_pCutAction = createAction(tr("Вырезать"), "Cut", QKeySequence::Cut);

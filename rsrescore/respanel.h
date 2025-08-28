@@ -117,6 +117,7 @@ public:
     QString title() const;
     QString status() const;
     QString status2() const;
+    QString comment() const;
     quint16 helpPage() const;
 
     QString name() const;

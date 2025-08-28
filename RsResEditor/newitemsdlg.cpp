@@ -28,13 +28,15 @@ NewItemsDlg::NewItemsDlg(LbrObjectInterface *lbr, QWidget *parent) :
         border: 1px solid #c0c0c0;
         border-radius: 4px;
         outline: none;
+        show-decoration-selected: 0;
     }
 
     /* Элементы TreeView - белые без подсветки */
     QTreeWidget::item {
         background: white;
         border: none;
-        padding: 4px;
+        padding: 0px;  /* Убираем отступы */
+        margin: 0px;   /* Убираем margins */
         color: black;
     }
 
@@ -66,6 +68,7 @@ NewItemsDlg::NewItemsDlg(LbrObjectInterface *lbr, QWidget *parent) :
     QListWidget::item:selected {
         background: #0078d7;
         border: 2px solid #005fa3;
+        color: white;
     }
 
     QListWidget::item:hover {
@@ -122,7 +125,7 @@ void NewItemsDlg::itemUpdated(QListWidgetItem *item)
 QListWidget *NewItemsDlg::CreateSubList()
 {
     QListWidget *list = new QListWidget(this);
-    list->setViewMode(QListView::IconMode);
+    //list->setViewMode(QListView::IconMode);
     list->setIconSize(QSize(32, 32));
     list->setFrameShape(QFrame::NoFrame);
     list->setSortingEnabled(true);
@@ -130,9 +133,9 @@ QListWidget *NewItemsDlg::CreateSubList()
     list->setResizeMode(QListView::Fixed);
     list->setMovement(QListView::Static);
     list->setUniformItemSizes(true);
-    list->setSpacing(2);
-    /*list->setGridSize(QSize(68, 68));
-    list->setResizeMode(QListView::Fixed);*/
+    //list->setSpacing(4);
+    //list->setGridSize(QSize(68, 68));
+    //list->setResizeMode(QListView::Fixed);
 
     list->updateGeometry();
 
@@ -140,51 +143,6 @@ QListWidget *NewItemsDlg::CreateSubList()
     connect(list, &QListWidget::itemDoubleClicked, this, &NewItemsDlg::itemDoubleClicked);
 
     return list;
-
-    /*QListWidget *list = new QListWidget(this);
-    list->setViewMode(QListView::IconMode);
-    list->setIconSize(QSize(32, 32)); // Явно устанавливаем размер иконок
-    list->setFrameShape(QFrame::NoFrame);
-    list->setSortingEnabled(true);
-    list->setWordWrap(true);
-    list->setResizeMode(QListView::Adjust); // Меняем на Adjust вместо Fixed
-    list->setMovement(QListView::Static);
-    list->setUniformItemSizes(false); // Меняем на false для переменного размера
-    list->setSpacing(10); // Увеличиваем отступы
-
-    // Устанавливаем размер сетки (опционально)
-    list->setGridSize(QSize(80, 80)); // Ширина, высота
-
-    // Включаем выравнивание по сетке
-    list->setViewMode(QListView::IconMode);
-
-    list->updateGeometry();
-
-    connect(list, &QListWidget::itemClicked, this, &NewItemsDlg::itemUpdated);
-    connect(list, &QListWidget::itemDoubleClicked, this, &NewItemsDlg::itemDoubleClicked);
-
-    return list;*/
-
-    /*QListWidget *list = new QListWidget(this);
-    list->setViewMode(QListView::IconMode);
-    list->setIconSize(QSize(32, 32));
-    list->setFrameShape(QFrame::NoFrame);
-    list->setSortingEnabled(true);
-    list->setWordWrap(true);
-    list->setResizeMode(QListView::Adjust);  // Меняем на Adjust для лучшего отображения
-    list->setMovement(QListView::Static);
-    list->setUniformItemSizes(false);        // Меняем на false
-    list->setSpacing(8);                     // Увеличиваем отступы
-
-    // Устанавливаем размер сетки для лучшего выравнивания
-    list->setGridSize(QSize(100, 90));
-
-    list->updateGeometry();
-
-    connect(list, &QListWidget::itemClicked, this, &NewItemsDlg::itemUpdated);
-    connect(list, &QListWidget::itemDoubleClicked, this, &NewItemsDlg::itemDoubleClicked);
-
-    return list;*/
 }
 
 QListWidget *NewItemsDlg::getGroup(const QString &name, bool addIfNotExists)
@@ -355,6 +313,42 @@ void NewItemsDlg::updateListSize(QListWidget *list)
 
     list->setFixedHeight(sz.height() + list->spacing() * 5);
     list->updateGeometry();
+    /*if (list->count() == 0) {
+        list->setFixedHeight(50);
+        return;
+    }
+
+    // Находим максимальные ширину и высоту среди всех элементов
+    int maxWidth = 0;
+    int maxHeight = 0;
+
+    for (int i = 0; i < list->count(); i++) {
+        QListWidgetItem *item = list->item(i);
+        QRect rect = list->visualItemRect(item);
+
+        if (rect.width() > maxWidth) {
+            maxWidth = rect.width();
+        }
+        if (rect.height() > maxHeight) {
+            maxHeight = rect.height();
+        }
+    }
+
+    list->setGridSize(QSize(maxWidth, maxHeight));
+
+    // Устанавливаем одинаковый размер для всех элементов
+    for (int i = 0; i < list->count(); i++) {
+        QListWidgetItem *item = list->item(i);
+        item->setSizeHint(QSize(maxWidth, maxHeight));
+    }
+
+    // Рассчитываем общую высоту списка
+    int visibleItems = list->count();
+    int spacing = list->spacing();
+    int totalHeight = (maxHeight + spacing) * visibleItems + spacing * 2;
+
+    list->setFixedHeight(totalHeight);
+    list->updateGeometry();*/
 }
 
 void NewItemsDlg::pathButton()

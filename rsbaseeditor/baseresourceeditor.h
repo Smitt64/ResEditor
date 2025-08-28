@@ -26,6 +26,7 @@ private:
                           const QString &name, const QString &title);
 
     BaseEditorWindow *LoadResFromXmlTemplate(const QString &filename, const QString &name, const quint16 &type);
+    BaseEditorWindow *LoadResFromXmlTemplate(QIODevice *device, const QString &name, const std::initializer_list<quint16> &type);
 };
 
 #endif // BASERESOURCEEDITOR_H
