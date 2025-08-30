@@ -167,21 +167,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_ResListDock, &ResListDockWidget::selectionChanged, this, &MainWindow::OnResListSelectionChanged);
     connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
     connect(ribbon, &SARibbonBar::currentRibbonTabChanged, this, &MainWindow::OnCurrentRibbonTabChanged);
-    /*connect(pUpdateChecker, &UpdateChecker::checkFinished, this, &MainWindow::checkUpdateFinished);
-    connect(m_ResListDock, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
-    connect(m_ResListDock, &ResListDockWidget::deleteRequest, this, &MainWindow::OnDeleteRequest);
-    connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
-    connect(ui->actionNew, &QAction::triggered, this, &MainWindow::onNew);
-    connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::onOpen);
-    connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onAbout);
-    connect(ui->actionOpenRes, &QAction::triggered, this, &MainWindow::onOpenRes);*/
 }
 
 MainWindow::~MainWindow()
 {
     delete m_ResListKey;
     delete m_ToolsListKey;
-    //delete ui;
 }
 
 void MainWindow::InitContextCategory()
@@ -891,6 +882,8 @@ void MainWindow::open(const QString &filename)
 
             UpdateFilterResTypes();
             UpdateActions();
+
+            setWindowTitle(QString("%1 - %2").arg(RecentLbrList::formatName(filename), WORKLBR_TITLE));
         }
         else
             QMessageBox::critical(this, tr("Ошибка!"), tr("Ошибка открытия файла: ") + m_pLbrObj->lastError());

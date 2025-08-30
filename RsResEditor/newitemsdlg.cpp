@@ -11,15 +11,47 @@
 
 #define isSeted(item,role) item->data(role).toBool()
 
+StdPanNameValidator::StdPanNameValidator(QObject* parent) :
+    QValidator(parent)
+{
+
+}
+
+QValidator::State StdPanNameValidator::validate(QString &input, int &pos) const
+{
+    QString filtered;
+    for (int i = 0; i < input.length(); ++i)
+    {
+        QChar ch = input[i];
+        if (ch.isLetterOrNumber())
+            filtered.append(ch.toUpper());
+    }
+
+    if (filtered != input)
+    {
+        input = filtered;
+        return QValidator::Intermediate;
+    }
+
+    return QValidator::Acceptable;
+}
+
+// -----------------------------------------------------------------------------
+
 NewItemsDlg::NewItemsDlg(LbrObjectInterface *lbr, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::NewItemsDlg),
     m_pLbrObj(lbr)
 {
     m_pSelectedItem = nullptr;
+    m_pValidator = nullptr;
 
     ui->setupUi(this);
     ui->treeWidget->header()->setVisible(false);
+
+    int typeId = QMetaType::type("StdPanNameValidator*");
+    if (typeId == QMetaType::UnknownType)
+        qRegisterMetaType<StdPanNameValidator*>();
 
     QString dialogStyle = R"(
     /* Стиль для QTreeWidget - белый фон */
@@ -99,11 +131,24 @@ void NewItemsDlg::itemUpdated(QListWidgetItem *item)
             .arg(item->data(RoleDescription).toString())
             .arg(item->text());
 
+    bool NeedName = item->data(RoleNeedName).toBool();
+    bool NeedPath = item->data(RoleNeedPath).toBool();
+
     ui->descriptionLabel->setText(label);
-    ui->nameEdit->setEnabled(item->data(RoleNeedName).toBool());
-    ui->pathEdit->setEnabled(item->data(RoleNeedPath).toBool());
-    ui->pathButton->setEnabled(item->data(RoleNeedPath).toBool());
+    ui->nameEdit->setEnabled(NeedName);
+    ui->pathEdit->setEnabled(NeedPath);
+    ui->pathButton->setEnabled(NeedPath);
     ui->nameEdit->setMaxLength(item->data(RoleNameLen).toInt());
+
+    if (m_pValidator)
+        delete m_pValidator;
+
+    QString ValidatorName = item->data(RoleValidator).toString();
+    if (!ValidatorName.isEmpty())
+    {
+        m_pValidator = createValidator(ValidatorName);
+        ui->nameEdit->setValidator(m_pValidator);
+    }
 
     QListWidget *list = qobject_cast<QListWidget*>(sender());
     if (list)
@@ -125,7 +170,7 @@ void NewItemsDlg::itemUpdated(QListWidgetItem *item)
 QListWidget *NewItemsDlg::CreateSubList()
 {
     QListWidget *list = new QListWidget(this);
-    //list->setViewMode(QListView::IconMode);
+    list->setViewMode(QListView::IconMode);
     list->setIconSize(QSize(32, 32));
     list->setFrameShape(QFrame::NoFrame);
     list->setSortingEnabled(true);
@@ -251,6 +296,7 @@ GroupInfoMap NewItemsDlg::fillGroupInfoFromListItem(QListWidgetItem* item)
     infoMap[RoleNameLen] = item->data(RoleNameLen);
     infoMap[RoleIconName] = item->data(RoleIconName);
     infoMap[RoleTitle] = item->data(RoleTitle);
+    infoMap[RoleValidator] = item->data(RoleValidator);
 
     return infoMap;
 }
@@ -290,6 +336,7 @@ void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metad
     item->setData(RoleNameLen, metadata["namelen"].toInt(255));
     item->setData(RoleIconName, metadata["icon"].toString());
     item->setData(RoleTitle, metadata["title"].toString());
+    item->setData(RoleValidator, metadata["validator"].toString());
 
     GroupInfoMap infoMap = fillGroupInfoFromListItem(item);
     m_Templates.insert(item->data(RoleAction).toString(), infoMap);
@@ -435,6 +482,7 @@ QList<GroupInfoMap> NewItemsDlg::groupInfo(const QString &name)
         AddInfoToElement(RoleNameLen);
         AddInfoToElement(RoleIconName);
         AddInfoToElement(RoleTitle);
+        AddInfoToElement(RoleValidator);
 
         lst.append(element);
     }
@@ -488,4 +536,33 @@ void NewItemsDlg::showEvent(QShowEvent* event)
         if (nextFocus && nextFocus->isEnabled())
             nextFocus->setFocus();
     }
+}
+
+QValidator *NewItemsDlg::createValidator(const QString &className, QObject* parent)
+{
+    int typeId = QMetaType::type(className.toUtf8() + "*");
+    if (typeId == QMetaType::UnknownType)
+    {
+        qWarning() << "Unknown validator type:" << className;
+        return nullptr;
+    }
+
+    const QMetaObject* metaObject = QMetaType::metaObjectForType(typeId);
+    if (!metaObject)
+    {
+        qWarning() << "No metaobject for type:" << className;
+        return nullptr;
+    }
+
+    QObject* object = metaObject->newInstance(Q_ARG(QObject*, parent));
+    QValidator* validator = qobject_cast<QValidator*>(object);
+
+    if (!validator)
+    {
+        qWarning() << "Failed to create validator:" << className;
+        delete object;
+        return nullptr;
+    }
+
+    return validator;
 }

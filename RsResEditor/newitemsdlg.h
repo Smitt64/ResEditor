@@ -2,6 +2,7 @@
 #define NEWITEMSDLG_H
 
 #include <QDialog>
+#include <QValidator>
 
 namespace Ui {
 class NewItemsDlg;
@@ -17,10 +18,23 @@ enum
     RoleNeedPath,
     RoleNameLen,
     RoleIconName,
-    RoleTitle
+    RoleTitle,
+    RoleValidator
 };
 
 using GroupInfoMap = QMap<int, QVariant>;
+
+class StdPanNameValidator : public QValidator
+{
+    Q_OBJECT
+public:
+    Q_INVOKABLE StdPanNameValidator(QObject* parent = nullptr);
+    virtual ~StdPanNameValidator() = default;
+
+    QValidator::State validate(QString &input, int &pos) const Q_DECL_OVERRIDE;
+};
+
+Q_DECLARE_OPAQUE_POINTER(StdPanNameValidator)
 
 class QListWidget;
 class QTreeWidgetItem;
@@ -56,6 +70,8 @@ public:
     GroupInfoMap fillGroupInfoFromListItem(QListWidgetItem* item);
     GroupInfoMap getInfoForItem(const QString &guid);
 
+    static QValidator *createValidator(const QString &className, QObject* parent = nullptr);
+
 private slots:
     void itemUpdated(QListWidgetItem *item);
     void pathButton();
@@ -78,6 +94,8 @@ private:
     QStringList m_RibbonScrols, m_RibbonPannels;
     QHash<QString, QTreeWidgetItem*> m_Groups;
     QHash<QString, GroupInfoMap> m_Templates;
+
+    QValidator *m_pValidator;
 };
 
 #endif // NEWITEMSDLG_H

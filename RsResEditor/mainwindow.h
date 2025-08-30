@@ -8,6 +8,8 @@
 #include <VarLocker.hpp>
 #include <variant>
 
+#define WORKLBR_TITLE "WorkLBR"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE

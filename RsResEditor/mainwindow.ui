@@ -11,14 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>WorkLBR (Alpha Test Version)</string>
+   <string>WorkLBR</string>
   </property>
   <widget class="QWidget" name="centralwidget"/>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <resources>
-  <include location="../rsrescore/resource.qrc"/>
-  <include location="../ToolsRuntimeProj/ToolsRuntime/res/res.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>
