@@ -53,7 +53,8 @@ bool BaseResourceEditor::newItemsActionAvalible(const QString &guid)
         "{57f88805-7474-42fb-bc00-24a90cd5e85d}",
         "{c01bd070-a483-482c-9a30-2946a4317b71}",
         "{80384143-d159-4264-95c8-19e8a2cf7b70}",
-        "{eaeac9f8-3230-4015-a029-ac337c3d83e9}"
+        "{eaeac9f8-3230-4015-a029-ac337c3d83e9}",
+        "{001b506e-4588-4810-a09a-d631fc0214d8}"
     };
 
     return actions.contains(guid);
@@ -119,7 +120,7 @@ ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, con
     else if (guid == "{eaeac9f8-3230-4015-a029-ac337c3d83e9}")
     {
         // Скролинг из xml текста
-        QByteArray CodeText = CodeInputDialog::getCodeText(parent, tr("Скролинг из xml текста"), tr("введите "), QString(), HighlighterXml).toUtf8();
+        QByteArray CodeText = CodeInputDialog::getCodeText(parent, tr("Скролинг из xml текста"), tr("Введите xml:"), QString(), HighlighterXml).toUtf8();
 
         QBuffer buffer(&CodeText);
 
@@ -128,6 +129,20 @@ ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, con
             pNewEditor = LoadResFromXmlTemplate(&buffer,
                                                 name,
                                                 {LbrObject::RES_BS});
+        }
+    }
+    else if (guid == "{001b506e-4588-4810-a09a-d631fc0214d8}")
+    {
+        // Панель из xml текста
+        QByteArray CodeText = CodeInputDialog::getCodeText(parent, tr("Панель из xml текста"), tr("Введите xml:"), QString(), HighlighterXml).toUtf8();
+
+        QBuffer buffer(&CodeText);
+
+        if (buffer.open(QIODevice::ReadOnly))
+        {
+            pNewEditor = LoadResFromXmlTemplate(&buffer,
+                                                name,
+                                                {LbrObject::RES_PANEL});
         }
     }
 

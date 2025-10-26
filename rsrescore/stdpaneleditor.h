@@ -97,7 +97,7 @@ private:
 
     void MakeResRibbonCategory(SARibbonCategory* category);
     void MakeBorderRaibbonGallary(SARibbonGallery* gallery);
-    void MakeStyleRaibbonGallary(SARibbonGallery* gallery);
+    void MakeStyleRaibbonGallary(SARibbonGallery* gallery, const char *slotName, bool inheritable = false);
 
     void MakeControlRibbonCategory(SARibbonCategory* category);
 
@@ -124,6 +124,7 @@ private:
     QAction *m_pCreateControl, *m_pSpellCheckAction;
 
     QAction *m_pFieldProperty, *m_pFdmAction, *m_pAsTextAction;
+    QAction *m_pNoTabStop;
 
     //QToolBar *m_pToolBar;
     QClipboard *m_pClipboard;
@@ -133,7 +134,7 @@ private:
     QScopedPointer<QTemporaryDir> m_ViewerDir;
     SARibbonCategory* m_pPanelCategory, *m_pControlCategory;
     SARibbonGallery* m_pBorderStyleGallery;
-    SARibbonGallery* m_pPanelStyleGallery;
+    SARibbonGallery* m_pPanelStyleGallery, *m_pControlStyleGallery;
     SARibbonGalleryGroup* m_pBorderGroup1;
     SARibbonGalleryGroup* m_pStyleGroup1;
 

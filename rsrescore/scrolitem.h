@@ -148,6 +148,9 @@ private:
 
     ScrolFlags m_ScrolFlags;
     ScrolAreaRectItem *m_ScrolArea;
+
+    bool m_IsResizing;
+    QSizeF m_StartSize;
 };
 
 Q_DECLARE_OPAQUE_POINTER(ScrolItem)

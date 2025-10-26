@@ -1343,6 +1343,14 @@ void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
         m_pDataTypeGroup->addAction(ftype);
     }
 
+    SARibbonPannel *stylepanel = category->addPannel(tr("Стиль"));
+    m_pControlStyleGallery = stylepanel->addGallery();
+    MakeStyleRaibbonGallary(m_pControlStyleGallery, 0, true);
+
+    m_pNoTabStop = createAction(tr("Признак FDM"), "TimeLineLock");
+    m_pNoTabStop->setCheckable(true);
+    fieldpanel->addMediumAction(m_pFdmAction);
+
     ControlItemsWrapper *wrp = pScene->controlItemsWrapper();
     m_RibbonControlMapper.reset(new PropertyWidgetMapper());
     m_RibbonMapper->bind(wrp, "fieldType", m_pFieledTypeGroup);
@@ -1454,7 +1462,8 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
 
     SARibbonPannel *stylepanel = category->addPannel(tr("Стиль"));
     m_pPanelStyleGallery = stylepanel->addGallery();
-    MakeStyleRaibbonGallary(m_pPanelStyleGallery);
+    MakeStyleRaibbonGallary(m_pPanelStyleGallery, SLOT(OnPanelStyleSelected(QAction*)));
+    ApplyPanelStyleToGallary();
 
     SARibbonPannel *excludepanel = category->addPannel(tr("Исключить"));
 
@@ -1506,9 +1515,17 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     m_RibbonMapper->bind(panelItem, "isExcludeShadow", excludeShadow);
 }
 
-void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery)
+void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery, const char *slotName, bool inheritable)
 {
     QList<QAction*> galleryActions;
+
+    if (inheritable)
+    {
+        QAction *inheritStyle = createAction("Наследуемый", "");
+        inheritStyle->setIcon(QIcon::fromTheme("InheritedControl"));
+        inheritStyle->setData(ResStyle::MainStyle);
+        galleryActions.append(inheritStyle);
+    }
 
     QAction *scomStyle = createAction("SCOM Основной стиль", "");
     scomStyle->setIcon(QIcon(":/img/gallary_style/scom.png"));
@@ -1549,9 +1566,8 @@ void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery)
     m_pStyleGroup1->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
     m_pStyleGroup1->setGridMinimumWidth(80);
 
-    ApplyPanelStyleToGallary();
-
-    connect(m_pStyleGroup1, &SARibbonGalleryGroup::triggered, this, &StdPanelEditor::OnPanelStyleSelected);
+    if (slotName)
+        connect(m_pStyleGroup1, SIGNAL(triggered(QAction*)), this, slotName);
 }
 
 void StdPanelEditor::MakeBorderRaibbonGallary(SARibbonGallery* gallery)

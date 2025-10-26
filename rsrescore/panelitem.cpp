@@ -42,6 +42,11 @@ PanelItem::PanelItem(CustomRectItem *parent) :
 
 PanelItem::~PanelItem()
 {
+    if (m_DragPixmap)
+        delete m_DragPixmap;
+
+    if (m_DragControl)
+        delete m_DragControl;
 }
 
 bool PanelItem::event(QEvent *e)

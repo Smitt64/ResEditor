@@ -43,6 +43,12 @@ CustomRectItem::CustomRectItem(const QRect& rect, QGraphicsItem* parent):
     init();
 }
 
+CustomRectItem::~CustomRectItem()
+{
+    if (pRubberBand)
+        delete pRubberBand;
+}
+
 void CustomRectItem::init()
 {
     m_ItemId = QUuid::createUuid();

@@ -61,6 +61,7 @@ public:
 
     Q_INVOKABLE CustomRectItem(QGraphicsItem* parent = nullptr);
     CustomRectItem(const QRect& rect, QGraphicsItem* parent = nullptr);
+    virtual ~CustomRectItem();
     QRectF boundingRect() const Q_DECL_OVERRIDE;
 
     void setBrush(const QBrush &brush);

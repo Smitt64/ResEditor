@@ -141,7 +141,10 @@ void NewItemsDlg::itemUpdated(QListWidgetItem *item)
     ui->nameEdit->setMaxLength(item->data(RoleNameLen).toInt());
 
     if (m_pValidator)
+    {
         delete m_pValidator;
+        m_pValidator = nullptr;
+    }
 
     QString ValidatorName = item->data(RoleValidator).toString();
     if (!ValidatorName.isEmpty())
@@ -337,6 +340,7 @@ void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metad
     item->setData(RoleIconName, metadata["icon"].toString());
     item->setData(RoleTitle, metadata["title"].toString());
     item->setData(RoleValidator, metadata["validator"].toString());
+    item->setSizeHint(QSize(90, 120));
 
     GroupInfoMap infoMap = fillGroupInfoFromListItem(item);
     m_Templates.insert(item->data(RoleAction).toString(), infoMap);

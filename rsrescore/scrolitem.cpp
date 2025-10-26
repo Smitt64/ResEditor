@@ -9,6 +9,7 @@
 #include <QUndoStack>
 #include <QGraphicsView>
 #include <QGraphicsSceneMouseEvent>
+#include <QPropertyAnimation>
 
 ScrolAreaRectItem::ScrolAreaRectItem(CustomRectItem* parent) :
     CustomRectItem(parent),
@@ -150,6 +151,9 @@ bool ScrolAreaRectItem::isIntersects(const QRectF &thisBound, QGraphicsItem *ite
 
 void ScrolAreaRectItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    if (!isVisible() || boundingRect().isEmpty())
+        return;
+
     ResStyleOption opt;
     opt.init(this);
     opt.rowHeight = m_Scrol->rowHeight();
@@ -498,7 +502,43 @@ void ScrolItem::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
 
 void ScrolItem::showScrolArea(bool visible)
 {
-    m_ScrolArea->setVisible(visible);
+    if (!m_ScrolArea) return;
+
+    // Если уже в нужном состоянии, выходим
+    if (visible && m_ScrolArea->isVisible() && m_ScrolArea->opacity() == 0.7) return;
+    if (!visible && !m_ScrolArea->isVisible()) return;
+
+    if (visible)
+    {
+        // Сбрасываем прозрачность для анимации появления
+        m_ScrolArea->setOpacity(0.0);
+        m_ScrolArea->setVisible(true);
+
+        QPropertyAnimation *animation = new QPropertyAnimation(m_ScrolArea, "opacity");
+        animation->setDuration(200);
+        animation->setStartValue(0.0);
+        animation->setEndValue(0.7);
+        animation->start(QAbstractAnimation::DeleteWhenStopped);
+    }
+    else
+    {
+        QPropertyAnimation *animation = new QPropertyAnimation(m_ScrolArea, "opacity");
+        animation->setDuration(200);
+        animation->setStartValue(m_ScrolArea->opacity());
+        animation->setEndValue(0.0);
+
+        connect(animation, &QPropertyAnimation::finished, this, [this]()
+        {
+            if (m_ScrolArea)
+            {
+                m_ScrolArea->setVisible(false);
+                // Восстанавливаем стандартную прозрачность для следующего показа
+                m_ScrolArea->setOpacity(0.7);
+            }
+        });
+
+        animation->start(QAbstractAnimation::DeleteWhenStopped);
+    }
 }
 
 void ScrolItem::FillItemPanel(PanelPropertysDlg &dlg)
