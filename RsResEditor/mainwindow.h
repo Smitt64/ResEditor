@@ -82,6 +82,7 @@ private slots:
 
 protected:
     virtual void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
+    virtual void showEvent(QShowEvent *event) Q_DECL_OVERRIDE;
 
 private:
     void InitQuickAccessBar();
@@ -121,7 +122,7 @@ private:
     ToolBoxDockWidget *m_ToolBoxDock;
     QMdiArea *m_Mdi;
 
-    QComboBox *pWindowsComboBox;
+    SARibbonComboBox *pWindowsComboBox;
     QMdiSubWindow *m_LastActiveWindow;
 
     LbrObjectInterface *m_pLbrObj;

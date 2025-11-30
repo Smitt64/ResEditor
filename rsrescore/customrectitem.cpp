@@ -765,8 +765,12 @@ bool CustomRectItem::canResize(const QRectF &newRect, const ResizeCorners &corne
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
     QSize gridSize = customScene->getGridSize();
+    int newWidth = round(newRect.width() / gridSize.width());
 
     if (newRect.width() < gridSize.width() || newRect.height() < gridSize.height())
+        return false;
+
+    if (newWidth > MAX_RES_SIZE)
         return false;
 
     if (corner != TOP_LEFT && corner != TOP && corner != TOP_RIGHT)

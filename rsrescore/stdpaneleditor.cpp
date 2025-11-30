@@ -25,6 +25,7 @@
 #include "widgets/resinfodlg.h"
 #include "spelling/resspellstringsdlg.h"
 #include "spelling/spellchecker.h"
+#include "stdeditorscene.h"
 #include "SARibbon.h"
 #include "propertywidgetmapper.h"
 #include <errorsmodel.h>
@@ -68,249 +69,6 @@
 #define SHADOW_CODE 9617
 
 // ----------------------------------------------------
-
-class StdEditorScene : public BaseScene
-{
-public:
-    StdEditorScene(QObject *parent = nullptr) :
-        BaseScene(parent),
-        m_fShowCursor(false)
-    {
-        QSize grSize = getGridSize();
-
-        m_pCursorTimer = new QTimer(this);
-        m_pCursorTimer->setInterval(500);
-        m_pCursorTimer->setSingleShot(false);
-        //m_CursorPos = QPointF(grSize.width(), grSize.height());
-
-        connect(m_pCursorTimer, &QTimer::timeout, [&]()
-        {
-            m_fShowCursor = !m_fShowCursor;
-        });
-
-        m_controlItemsWrapper = new ControlItemsWrapper(this);
-        m_pCursorTimer->start();
-    }
-
-    ControlItemsWrapper *controlItemsWrapper()
-    {
-        return m_controlItemsWrapper;
-    }
-
-    const QPointF &cursorPos() const
-    {
-        return m_CursorPos;
-    }
-
-    virtual ~StdEditorScene()
-    {
-    }
-
-    virtual void sceneItemPosChanged() Q_DECL_OVERRIDE
-    {
-        PanelItem *panel = findFirst<PanelItem>();
-
-        if (panel)
-            panel->updateChildControlsOrder();
-    }
-
-    void setCursorPosition(const QPointF &scenePos)
-    {
-        PanelItem* panel = findFirst<PanelItem>();
-        if (!panel)
-            return;
-
-        QPointF localPos = panel->mapFromScene(scenePos);
-        QSize gridSize = getGridSize();
-
-        qreal xV = floor(localPos.x() / gridSize.width()) * gridSize.width();
-        qreal yV = floor(localPos.y() / gridSize.height()) * gridSize.height();
-
-        m_CursorPos = QPointF(xV, yV);
-        update();
-    }
-
-protected:
-    virtual void handleSelectionChanged(const QList<QGraphicsItem*> &selectedItems) Q_DECL_OVERRIDE
-    {
-        QVector<ControlItem*> controlItems;
-
-        for (QGraphicsItem* item : selectedItems)
-        {
-            ControlItem* controlItem = dynamic_cast<ControlItem*>(item);
-            if (controlItem)
-                controlItems.append(controlItem);
-        }
-
-        if (!controlItems.isEmpty())
-        {
-            // Если выделено несколько ControlItem, создаем или обновляем обертку
-            if (!m_controlItemsWrapper->undoStack())
-                m_controlItemsWrapper->setUndoStack(controlItems.first()->undoStack());
-
-            m_controlItemsWrapper->clearControlItems();
-            m_controlItemsWrapper->addControlItems(controlItems);
-            m_controlItemsWrapper->emitAll();
-            emit propertyModelChanged(m_controlItemsWrapper->propertyModel());
-        }
-        else
-            BaseScene::handleSelectionChanged(selectedItems);
-    }
-
-    virtual void drawBackground (QPainter* painter, const QRectF &rect) Q_DECL_OVERRIDE
-    {
-        BaseScene::drawBackground(painter, rect);
-
-        QList<QGraphicsItem*> totalItems = items(Qt::AscendingOrder);
-        for (QGraphicsItem *item : qAsConst(totalItems))
-        {
-            PanelItem *panel = dynamic_cast<PanelItem*>(item);
-
-            if (panel)
-            {
-                QSize grSize = getGridSize();
-                QRectF panelRect = panel->mapRectToScene(panel->boundingRect());
-                panelRect.translate(QPointF(grSize.width() * 2, grSize.height()));
-                painter->save();
-                painter->setPen(Qt::NoPen);
-                painter->setBrush(QBrush(Qt::Dense3Pattern));
-                painter->drawRect(panelRect);
-                painter->restore();
-                break;
-            }
-        }
-    }
-
-    virtual void drawForeground(QPainter *painter, const QRectF &rect) Q_DECL_OVERRIDE
-    {
-        if (m_fShowCursor && !m_CursorPos.isNull())
-        {
-            painter->save();
-            painter->setCompositionMode(QPainter::RasterOp_NotDestination);
-
-            PanelItem* panel = findFirst<PanelItem>();
-            QPointF sceneCursorPos = m_CursorPos;
-            if (panel)
-                sceneCursorPos = panel->mapToScene(m_CursorPos);
-
-            painter->fillRect(QRectF(sceneCursorPos, QSizeF(getGridSize().width(), getGridSize().height())), Qt::black);
-            painter->restore();
-        }
-
-        update(rect);
-    }
-
-    virtual void keyPressEvent(QKeyEvent *keyEvent) Q_DECL_OVERRIDE
-    {
-        PanelItem* panel = findFirst<PanelItem>();
-        if (!panel)
-        {
-            BaseScene::keyPressEvent(keyEvent);
-            return;
-        }
-
-        QSize grSize = getGridSize();
-        QPointF localCursorPos = m_CursorPos;
-        QPointF savepos = localCursorPos;
-
-        if (keyEvent->key() == Qt::Key_Down)
-            localCursorPos.setY(localCursorPos.y() + grSize.height());
-
-        if (keyEvent->key() == Qt::Key_Up)
-            localCursorPos.setY(localCursorPos.y() - grSize.height());
-
-        if (keyEvent->key() == Qt::Key_Right)
-            localCursorPos.setX(localCursorPos.x() + grSize.width());
-
-        if (keyEvent->key() == Qt::Key_Left)
-            localCursorPos.setX(localCursorPos.x() - grSize.width());
-
-        QRectF panelRect = panel->boundingRect();
-        QRectF availableRect = panelRect;
-
-        if (panel->borderStyle() != ResStyle::Border_NoLine)
-        {
-            availableRect = panelRect.adjusted(grSize.width(), grSize.height(),
-                                               -grSize.width(), -grSize.height());
-        }
-
-        QRectF cursorRect(localCursorPos, QSizeF(grSize.width(), grSize.height()));
-
-        if (availableRect.contains(cursorRect))
-            m_CursorPos = localCursorPos;
-        else
-            m_CursorPos = savepos;
-
-        BaseScene::keyPressEvent(keyEvent);
-    }
-
-    virtual void mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent) Q_DECL_OVERRIDE
-    {
-        BaseScene::mousePressEvent(mouseEvent);
-
-        if (mouseEvent->button() != Qt::LeftButton)
-            return;
-
-        PanelItem* panelItem = findFirst<PanelItem>();
-        if (!panelItem)
-            return;
-
-        QSize gridSize = getGridSize();
-        QPointF scenePos = mouseEvent->scenePos();
-        QPointF localPos = panelItem->mapFromScene(scenePos);
-
-        qreal xV = floor(localPos.x() / gridSize.width()) * gridSize.width();
-        qreal yV = floor(localPos.y() / gridSize.height()) * gridSize.height();
-        QPointF gridPos(xV, yV);
-
-        QRectF cellRect(gridPos, gridSize);
-        if (!cellRect.contains(localPos))
-            return;
-
-        QRectF panelBound = panelItem->boundingRect();
-        QRectF availableBound = panelBound;
-
-        if (panelItem->borderStyle() != ResStyle::Border_NoLine)
-        {
-            availableBound = panelBound.adjusted(gridSize.width(), gridSize.height(),
-                                                 -gridSize.width(), -gridSize.height());
-        }
-
-        if (!availableBound.contains(cellRect))
-            return;
-
-        bool positionBlocked = false;
-        QList<QGraphicsItem*> itemsAtPos = items(scenePos);
-
-        for (QGraphicsItem* item : qAsConst(itemsAtPos))
-        {
-            if (item == panelItem || dynamic_cast<ScrolAreaRectItem*>(item) || !item->isVisible())
-                continue;
-
-            QRectF itemRect = item->mapRectToScene(item->boundingRect());
-            QRectF sceneCellRect = panelItem->mapToScene(cellRect).boundingRect();
-            if (itemRect.intersects(sceneCellRect))
-            {
-                positionBlocked = true;
-                break;
-            }
-        }
-
-        if (!positionBlocked)
-        {
-            m_CursorPos = gridPos; // Сохраняем в локальных координатах panelItem
-            update();
-        }
-    }
-
-private:
-    bool m_fShowCursor;
-    QTimer *m_pCursorTimer;
-    QPointF m_CursorPos;
-    ControlItemsWrapper *m_controlItemsWrapper;
-};
-
-// ----------------------------------------------------
 class StdEditorView : public BaseEditorView
 {
 public:
@@ -334,6 +92,9 @@ public:
 };
 
 // ----------------------------------------------------
+
+#define StyleIcon(_style) panelItem->style()->renderStyleIcon(panelItem->borderStyle(), _style, panelItem)
+#define BorderIcon(border) panelItem->style()->renderBorderIcon(border, panelItem->panelStyle(), panelItem)
 
 StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     BaseEditorWindow(parent),
@@ -435,6 +196,22 @@ void StdPanelEditor::setupEditor()
         emit titleChanged(panelItem->title());
     });
 
+    connect(panelItem, &PanelItem::panelStyleChanged, [=]()
+    {
+        m_pPanelStyleGallery->blockSignals(true);
+        ApplyPanelStyleToGallary();
+        UpdateGallarysIcons();
+        m_pPanelStyleGallery->blockSignals(false);
+    });
+
+    connect(panelItem, &PanelItem::borderStyleChanged, [=]()
+    {
+        m_pBorderStyleGallery->blockSignals(true);
+        ApplyBorderStyleToGallary();
+        UpdateGallarysIcons();
+        m_pBorderStyleGallery->blockSignals(false);
+    });
+
     connect(m_TabContainer->tabBar(), &QTabBar::tabCloseRequested, [=](int index)
     {
         QWidget *w = m_TabContainer->widget(index);
@@ -448,7 +225,7 @@ void StdPanelEditor::setupNameLine()
     QFont font("TerminalVector", 10);
     font.setFixedPitch(true);
 
-    m_pNameLineEdit = new QLineEdit(this);
+    m_pNameLineEdit = new SARibbonLineEdit(this);
     m_pNameLineEdit->setReadOnly(true);
     m_pNameLineEdit->setFont(font);
     m_pNameLineEdit->setObjectName("pNameLineEdit");
@@ -1345,7 +1122,7 @@ void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
 
     SARibbonPannel *stylepanel = category->addPannel(tr("Стиль"));
     m_pControlStyleGallery = stylepanel->addGallery();
-    MakeStyleRaibbonGallary(m_pControlStyleGallery, 0, true);
+    MakeStyleRaibbonGallary(m_pControlStyleGallery, 0, &m_pControlStyleGroup, true);
 
     m_pNoTabStop = createAction(tr("Признак FDM"), "TimeLineLock");
     m_pNoTabStop->setCheckable(true);
@@ -1400,6 +1177,7 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     connect(m_pContrst, &QAction::toggled, [&](bool toogled)
     {
         panelItem->setProperty(CONTRAST_PROPERTY, toogled);
+        UpdateGallarysIcons();
     });
 
     m_pScrolAreaAction = createAction(tr("Область скролинга"), "RowUpdating", QKeySequence("Alt+F9"));
@@ -1415,7 +1193,10 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     });*/
 
     app->settings()->beginGroup("StdEditor");
+    m_pContrst->blockSignals(true);
     m_pContrst->setChecked(app->settings()->value("AutoContrast", true).toBool());
+    panelItem->setProperty(CONTRAST_PROPERTY, m_pContrst->isChecked());
+    m_pContrst->blockSignals(false);
     app->settings()->endGroup();
     editpanel->addLargeAction(m_pContrst);
     editpanel->addLargeAction(m_pScrolAreaAction);
@@ -1462,7 +1243,7 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
 
     SARibbonPannel *stylepanel = category->addPannel(tr("Стиль"));
     m_pPanelStyleGallery = stylepanel->addGallery();
-    MakeStyleRaibbonGallary(m_pPanelStyleGallery, SLOT(OnPanelStyleSelected(QAction*)));
+    MakeStyleRaibbonGallary(m_pPanelStyleGallery, SLOT(OnPanelStyleSelected(QAction*)), &m_pPanelStyleGroup);
     ApplyPanelStyleToGallary();
 
     SARibbonPannel *excludepanel = category->addPannel(tr("Исключить"));
@@ -1515,7 +1296,7 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     m_RibbonMapper->bind(panelItem, "isExcludeShadow", excludeShadow);
 }
 
-void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery, const char *slotName, bool inheritable)
+void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery, const char *slotName, SARibbonGalleryGroup **pGroup, bool inheritable)
 {
     QList<QAction*> galleryActions;
 
@@ -1528,46 +1309,52 @@ void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery, const cha
     }
 
     QAction *scomStyle = createAction("SCOM Основной стиль", "");
-    scomStyle->setIcon(QIcon(":/img/gallary_style/scom.png"));
+    scomStyle->setIcon(StyleIcon(ResStyle::SCOM));
     scomStyle->setData(ResStyle::SCOM);
     galleryActions.append(scomStyle);
 
     QAction *smesStyle = createAction("SMES Стиль сообщений", "");
-    smesStyle->setIcon(QIcon(":/img/gallary_style/smes.png"));
+    smesStyle->setIcon(StyleIcon(ResStyle::SMES));
     smesStyle->setData(ResStyle::SMES);
     galleryActions.append(smesStyle);
 
     QAction *rmesStyle = createAction("RMES Стиль аварийных сообщений", "");
-    rmesStyle->setIcon(QIcon(":/img/gallary_style/rmes.png"));
+    rmesStyle->setIcon(StyleIcon(ResStyle::RMES));
     rmesStyle->setData(ResStyle::RMES);
     galleryActions.append(rmesStyle);
 
     QAction *shlpStyle = createAction("SHLP Стиль помощи", "");
-    shlpStyle->setIcon(QIcon(":/img/gallary_style/shlp.png"));
+    shlpStyle->setIcon(StyleIcon(ResStyle::SHLP));
     shlpStyle->setData(ResStyle::SHLP);
     galleryActions.append(shlpStyle);
 
     QAction *smenStyle = createAction("SMEN Стиль меню", "");
-    smenStyle->setIcon(QIcon(":/img/gallary_style/smen.png"));
+    smenStyle->setIcon(StyleIcon(ResStyle::SMEN));
     smenStyle->setData(ResStyle::SMEN);
     galleryActions.append(smenStyle);
 
     QAction *sbcmStyle = createAction("SBCM Стиль с яркой рамкой", "");
-    sbcmStyle->setIcon(QIcon(":/img/gallary_style/sbcm.png"));
+    sbcmStyle->setIcon(StyleIcon(ResStyle::SBCM));
     sbcmStyle->setData(ResStyle::SBCM);
     galleryActions.append(sbcmStyle);
 
     QAction *scrlStyle = createAction("SCRL Стиль справочных скролингов", "");
-    scrlStyle->setIcon(QIcon(":/img/gallary_style/scrl.png"));
+    scrlStyle->setIcon(StyleIcon(ResStyle::SCRL));
     scrlStyle->setData(ResStyle::SCRL);
     galleryActions.append(scrlStyle);
 
-    m_pStyleGroup1 = gallery->addCategoryActions(tr("Стиль"), galleryActions);
+    *pGroup = gallery->addCategoryActions(tr("Стиль"), galleryActions);
+    (*pGroup)->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
+    (*pGroup)->setGridMinimumWidth(80);
+
+    if (slotName)
+        connect(*pGroup, SIGNAL(triggered(QAction*)), this, slotName);
+    /*m_pStyleGroup1 = gallery->addCategoryActions(tr("Стиль"), galleryActions);
     m_pStyleGroup1->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
     m_pStyleGroup1->setGridMinimumWidth(80);
 
     if (slotName)
-        connect(m_pStyleGroup1, SIGNAL(triggered(QAction*)), this, slotName);
+        connect(m_pStyleGroup1, SIGNAL(triggered(QAction*)), this, slotName);*/
 }
 
 void StdPanelEditor::MakeBorderRaibbonGallary(SARibbonGallery* gallery)
@@ -1575,32 +1362,32 @@ void StdPanelEditor::MakeBorderRaibbonGallary(SARibbonGallery* gallery)
     QList<QAction*> galleryActions;
 
     QAction *emptyBorder = createAction("Отсутствует", "");
-    emptyBorder->setIcon(QIcon("://img/gallary_border/empty.png"));
+    emptyBorder->setIcon(BorderIcon(ResStyle::Border_NoLine));
     emptyBorder->setData(ResStyle::Border_NoLine);
     galleryActions.append(emptyBorder);
 
     QAction *singleBorder = createAction("Одинарная", "");
-    singleBorder->setIcon(QIcon("://img/gallary_border/single.png"));
+    singleBorder->setIcon(BorderIcon(ResStyle::Border_SingleLine));
     singleBorder->setData(ResStyle::Border_SingleLine);
     galleryActions.append(singleBorder);
 
     QAction *doubleBorder = createAction("Двойная", "");
-    doubleBorder->setIcon(QIcon("://img/gallary_border/double.png"));
+    doubleBorder->setIcon(BorderIcon(ResStyle::Border_DoubleLine));
     doubleBorder->setData(ResStyle::Border_DoubleLine);
     galleryActions.append(doubleBorder);
 
     QAction *combine1Border = createAction("Комбинированная 1", "");
-    combine1Border->setIcon(QIcon("://img/gallary_border/combine1.png"));
+    combine1Border->setIcon(BorderIcon(ResStyle::Border_Combine1));
     combine1Border->setData(ResStyle::Border_Combine1);
     galleryActions.append(combine1Border);
 
     QAction *combine2Border = createAction("Комбинированная 2", "");
-    combine2Border->setIcon(QIcon("://img/gallary_border/combine2.png"));
+    combine2Border->setIcon(BorderIcon(ResStyle::Border_Combine2));
     combine2Border->setData(ResStyle::Border_Combine2);
     galleryActions.append(combine2Border);
 
     QAction *solidBorder = createAction("Сплошная", "");
-    solidBorder->setIcon(QIcon("://img/gallary_border/solid.png"));
+    solidBorder->setIcon(BorderIcon(ResStyle::Border_Solid));
     solidBorder->setData(ResStyle::Border_Solid);
     galleryActions.append(solidBorder);
 
@@ -1617,12 +1404,16 @@ void StdPanelEditor::OnBorderStyleSelected(QAction *pAction)
 {
     int borderStyle = pAction->data().toInt();
     panelItem->setBorderStyle((ResStyle::BorderStyle)borderStyle);
+
+    UpdateGallarysIcons();
 }
 
 void StdPanelEditor::OnPanelStyleSelected(QAction *pAction)
 {
     int panelStyle = pAction->data().toInt();
     panelItem->setPanelStyle((ResStyle::PanelStyle)panelStyle);
+
+    UpdateGallarysIcons();
 }
 
 void StdPanelEditor::initRibbonPanels()
@@ -1660,22 +1451,38 @@ void StdPanelEditor::ApplyBorderStyleToGallary()
 void StdPanelEditor::ApplyPanelStyleToGallary()
 {
     int select = -1;
-    int panelStyle = panelItem->panelStyle();
+    ResStyle::PanelStyle panelStyle = panelItem->panelStyle();
 
-    SARibbonGalleryGroupModel *model = m_pStyleGroup1->groupModel();
+    SARibbonGalleryGroupModel *model = m_pPanelStyleGroup->groupModel();
     for (int i = 0; i < model->rowCount(QModelIndex()); i++)
     {
         SARibbonGalleryItem *item = model->at(i);
+        ResStyle::PanelStyle modelStyle = (ResStyle::PanelStyle)item->action()->data().toInt();
 
-        if (item->action()->data().toInt() == panelStyle)
+        if (modelStyle == panelStyle)
         {
             select = i;
             break;
         }
     }
 
-    m_pStyleGroup1->setCurrentIndex(m_pStyleGroup1->model()->index(select, 0));
+    m_pPanelStyleGroup->setCurrentIndex(m_pPanelStyleGroup->model()->index(select, 0));
     m_pPanelStyleGallery->currentViewGroup()->setCurrentIndex(m_pPanelStyleGallery->currentViewGroup()->model()->index(select, 0));
+}
+
+void StdPanelEditor::UpdateGallarysIcons()
+{
+    QList<QAction*> StyleGroup1 = m_pPanelStyleGroup->actionGroup()->actions();
+    QList<QAction*> BorderGroup = m_pBorderGroup1->actionGroup()->actions();
+
+    for (auto StyleAction : qAsConst(StyleGroup1))
+        StyleAction->setIcon(StyleIcon((ResStyle::PanelStyle)StyleAction->data().toInt()));
+
+    for (auto BorderAction : qAsConst(BorderGroup))
+        BorderAction->setIcon(BorderIcon((ResStyle::BorderStyle)BorderAction->data().toInt()));
+
+    m_pBorderStyleGallery->update();
+    m_pPanelStyleGallery->update();
 }
 
 void StdPanelEditor::updateRibbonTabs()

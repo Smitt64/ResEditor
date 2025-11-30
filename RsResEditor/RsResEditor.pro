@@ -76,3 +76,6 @@ DEPENDPATH += $$PWD/../ToolsRuntimeProj/ToolsRuntime
 
 #INCLUDEPATH += $$PWD/../../SARibbon-master/src/SARibbonBar
 #DEPENDPATH += $$PWD/../../SARibbon-master/src/SARibbonBar
+
+RESOURCES += \
+    lbrres.qrc

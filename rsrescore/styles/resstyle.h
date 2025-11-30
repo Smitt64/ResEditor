@@ -7,6 +7,7 @@
 #include <QVariant>
 #include <QJsonObject>
 #include <QHash>
+#include <QIcon>
 
 #define COLORSCHEME "COLORSCHEME"
 #define CONTRAST_PROPERTY "contrast"
@@ -105,10 +106,10 @@ public:
     virtual QFont font() const;
 
     virtual void drawSceneBackground(QPainter *painter, const QRectF &rect, ResStyleOption *option = nullptr);
-    virtual void drawBorder(QPainter *painter, const BorderStyle &bs, const QRectF &rect, const QString &text, ResStyleOption *option);
-    virtual void drawText(QPainter *painter, const QRectF &rect, const QString &text, const Qt::Alignment &alignment = Qt::AlignLeft | Qt::AlignVCenter, const QColor &penColor = Qt::white);
+    virtual void drawBorder(QPainter *painter, const BorderStyle &bs, const QRectF &rect, const QString &text, ResStyleOption *option) const;
+    virtual void drawText(QPainter *painter, const QRectF &rect, const QString &text, const Qt::Alignment &alignment = Qt::AlignLeft | Qt::AlignVCenter, const QColor &penColor = Qt::white) const;
 
-    virtual void drawControl(const ControlType &type, QPainter *painter, ResStyleOption *option);
+    virtual void drawControl(const ControlType &type, QPainter *painter, ResStyleOption *option) const;
 
     ControlType controlFromFvt(const quint8 &fvt) const;
     virtual QString controlDefaultText(const ControlType &type);
@@ -117,6 +118,9 @@ public:
     static GrigSizes gridSizes();
     static QStringList gridSizesName();
     static int fontSizeForGrid(int index);
+
+    QIcon renderBorderIcon(const BorderStyle &border, const PanelStyle &style, CustomRectItem *item = nullptr) const;
+    QIcon renderStyleIcon(const BorderStyle &border, const PanelStyle &style, CustomRectItem *item = nullptr) const;
 
 protected:
     typedef struct ColorScheme
@@ -128,7 +132,7 @@ protected:
 
     QHash<PanelStyle, ColorScheme> m_ColorScheme;
 
-    QSize getSizeFromItem(const QRectF &rect);
+    QSize getSizeFromItem(const QRectF &rect) const;
     BorderChars m_BorderChars[Border_Count];
     QFont m_Font;
 

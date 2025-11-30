@@ -500,6 +500,86 @@ void ScrolItem::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
     m_ScrolArea->setVisible(m_IsScrolAreaVisible);
 }
 
+void ScrolItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (isResizing())
+    {
+        // Сохраняем старый размер для вычисления дельты
+        QSizeF oldSize = boundingRect().size();
+
+        // Вызываем родительскую логику изменения размера
+        PanelItem::mouseMoveEvent(event);
+
+        // Вычисляем изменение размера
+        QSizeF newSize = boundingRect().size();
+        QSizeF delta = newSize - oldSize;
+
+        // Если размер изменился - обновляем ScrolAreaRectItem
+        if (!delta.isNull() && m_ScrolArea && m_ScrolArea->isVisible())
+            updateScrolAreaDuringResize(delta);
+
+        return;
+    }
+    else
+        PanelItem::mouseMoveEvent(event);
+}
+
+void ScrolItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton && isSelected())
+    {
+        if (mousePosOnHandles(event->scenePos()))
+        {
+            m_SaveScrollAreaVisible = m_ScrolArea->isVisible();
+            m_ScrolArea->setVisible(false);
+        }
+    }
+
+    PanelItem::mousePressEvent(event);
+}
+
+void ScrolItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    bool fResizing = isResizing();
+    PanelItem::mouseReleaseEvent(event);
+
+    if (fResizing)
+        m_ScrolArea->setVisible(m_SaveScrollAreaVisible);
+}
+
+void ScrolItem::updateScrolAreaDuringResize(const QSizeF &delta)
+{
+    /*if (!m_ScrolArea) return;
+
+    // Временно отключаем сигналы чтобы избежать рекурсии
+    m_ScrolArea->blockSignals(true);
+
+    // Вычисляем новые параметры по той же логике, что и в UndoItemResizeScrol
+    QSize grid = style()->gridSize();
+
+    // Вычисляем новые размеры области скроллинга ОТНОСИТЕЛЬНО НАЧАЛЬНЫХ ЗНАЧЕНИЙ
+    quint16 newRowLength = m_InitialRowLength + delta.width() / grid.width();
+    quint16 newRowNum = m_InitialRowNum + delta.height() / grid.height();
+
+    // Применяем ограничения
+    newRowLength = qMax(quint16(1), newRowLength);
+    newRowNum = qMax(quint16(1), newRowNum);
+
+    // Временно отключаем undo stack для промежуточных изменений
+    bool oldSkip = setSkipUndoStack(true);
+
+    // Обновляем параметры
+    setRowLength(newRowLength);
+    setRowNum(newRowNum);
+
+    setSkipUndoStack(oldSkip);
+    m_ScrolArea->blockSignals(false);
+
+    // Принудительное обновление отображения
+    m_ScrolArea->update();
+    scene()->update();*/
+}
+
 void ScrolItem::showScrolArea(bool visible)
 {
     if (!m_ScrolArea) return;

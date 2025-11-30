@@ -7,6 +7,8 @@
 #include <QUuid>
 #include <QJsonArray>
 
+#define MAX_RES_SIZE 255  // Максимальная длина строковых свойств
+
 #define CLASSINFO_UNDOREDO "UNDOREDO"
 #define CLASSINFO_PROPERTYLIST "PROPERTYLIST"
 #define CLASSINFO_PROPERTYGROUP "PROPERTYGROUP"
@@ -119,6 +121,8 @@ signals:
     void geometryChanged();
 
 protected:
+    bool mousePosOnHandles(QPointF pos);
+
     void pushUndoPropertyData(const QString &propertyName, const QVariant &_newValue);
     virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) Q_DECL_OVERRIDE;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
@@ -164,7 +168,6 @@ private:
     void serializeProperty(QJsonObject &obj, const QMetaObject *meta, const QString &propertyName);
     void deserializeProperty(QJsonObject &obj);
     QRubberBand *rubberBand();
-    bool mousePosOnHandles(QPointF pos);
 
     QVector<QRectF> m_ResizeHandles;
     QRubberBand *pRubberBand;

@@ -28,6 +28,7 @@ public:
     QString title() const;
     QString status() const;
     QString status2() const;
+    QString comment() const;
     quint16 helpPage() const;
     bool alignTextRight() const;
     bool alignPanelCenter() const;

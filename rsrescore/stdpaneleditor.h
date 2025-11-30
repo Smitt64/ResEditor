@@ -25,6 +25,7 @@ class PropertyWidgetMapper;
 class SARibbonCategory;
 class SARibbonGallery;
 class SARibbonGalleryGroup;
+class SARibbonLineEdit;
 class StdPanelEditor : public BaseEditorWindow
 {
     Q_OBJECT
@@ -97,12 +98,13 @@ private:
 
     void MakeResRibbonCategory(SARibbonCategory* category);
     void MakeBorderRaibbonGallary(SARibbonGallery* gallery);
-    void MakeStyleRaibbonGallary(SARibbonGallery* gallery, const char *slotName, bool inheritable = false);
+    void MakeStyleRaibbonGallary(SARibbonGallery* gallery, const char *slotName, SARibbonGalleryGroup **pGroup, bool inheritable = false);
 
     void MakeControlRibbonCategory(SARibbonCategory* category);
 
     void ApplyBorderStyleToGallary();
     void ApplyPanelStyleToGallary();
+    void UpdateGallarysIcons();
 
     BaseEditorView *m_pView;
     QTabWidget *m_TabContainer;
@@ -115,7 +117,7 @@ private:
     StatusBarElement *m_SizeText, *m_CursorText;
     QWidget *m_pStatusContainer;
     QHBoxLayout *m_pStatusContainerLayout;
-    QLineEdit *m_pNameLineEdit;
+    SARibbonLineEdit *m_pNameLineEdit;
 
     QAction *m_pContrst, *m_pDelete, *m_pProperty, *m_pScrolAreaAction;
     QAction *m_pCutAction, *m_pCopyAction, *m_pPasteAction;
@@ -136,7 +138,7 @@ private:
     SARibbonGallery* m_pBorderStyleGallery;
     SARibbonGallery* m_pPanelStyleGallery, *m_pControlStyleGallery;
     SARibbonGalleryGroup* m_pBorderGroup1;
-    SARibbonGalleryGroup* m_pStyleGroup1;
+    SARibbonGalleryGroup* m_pPanelStyleGroup, *m_pControlStyleGroup;
 
     QActionGroup *m_pFieledTypeGroup, *m_pDataTypeGroup;
 

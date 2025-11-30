@@ -90,9 +90,11 @@ MainWindow::MainWindow(QWidget *parent)
     m_pLbrObj(nullptr),
     m_FlagMassCloseMode(false)
 {
+    //sa_set_ribbon_theme(this, SARibbonTheme::RibbonThemeDark);
+    setWindowIcon(QIcon("://res/appicon-blue.svg"));
+
     ui->setupUi(this);
     SARibbonBar* ribbon = ribbonBar();
-
     SARibbonCategory *mainPage = new SARibbonCategory("Главная");
     ribbon->addCategoryPage(mainPage);
 
@@ -120,7 +122,7 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(m_Mdi);
     SetupMenus();
 
-    setWindowIcon(QIcon(":/img/lbrlogo.png"));
+    //setWindowIcon(QIcon(":/img/lbrlogo.png"));
     InitQuickAccessBar();
     InitButtonBar();
     InitLbrPanel(mainPage);
@@ -243,7 +245,7 @@ void MainWindow::InitButtonBar()
     if (!wbar)
         return;
 
-    pWindowsComboBox = new QComboBox(this);
+    pWindowsComboBox = new SARibbonComboBox(this);
     pWindowsComboBox->setMinimumWidth(250);
     pWindowsComboBox->setFrame(false);
     pWindowsComboBox->setFocusPolicy(Qt::NoFocus);
@@ -1140,6 +1142,28 @@ void MainWindow::checkUpdateFinished(bool hasUpdates, const CheckDataList &updat
         dlg.exec();
         pUpdateChecker->setCheckUpdateFlag(true);
     }
+}
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    SARibbonBar* ribbon = ribbonBar();
+    SARibbonMainWindow::showEvent(event);
+    setRibbonTheme(SARibbonTheme::RibbonThemeOffice2013);
+
+    QFile file;
+    file.setFileName("://res/theme-office2013-blue.qss");
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+
+    QString qss = QString::fromUtf8(file.readAll());
+    setStyleSheet(qss);
+    ribbon->setTabBarBaseLineColor(QColor(0, 114, 198));
+    ribbon->setWindowTitleTextColor(QColor(0, 114, 198));
+    //ribbon->setContextCategoryColorList({QColor(0, 114, 198)});
+
+    setContentsMargins(2,2,2,2);
+    //ribbon->setContentsMargins(2, 2, 0, 0);
+
+    update();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

@@ -10,6 +10,7 @@
 #include <QFile>
 #include <stdexcept>
 #include <QSettings>
+#include <QPixmap>
 
 ResStyleOption::ResStyleOption() :
     contrast(false)
@@ -388,7 +389,7 @@ QString ResStyle::controlDefaultText(const ControlType &type)
     return text;
 }
 
-QSize ResStyle::getSizeFromItem(const QRectF &rect)
+QSize ResStyle::getSizeFromItem(const QRectF &rect) const
 {
     QSize _gridSize = gridSize();
 
@@ -421,7 +422,7 @@ void ResStyle::drawSceneBackground(QPainter *painter, const QRectF &rect, ResSty
     painter->restore();
 }
 
-void ResStyle::drawBorder(QPainter *painter, const BorderStyle &bs, const QRectF &rect, const QString &text, ResStyleOption *option)
+void ResStyle::drawBorder(QPainter *painter, const BorderStyle &bs, const QRectF &rect, const QString &text, ResStyleOption *option) const
 {
     const BorderChars ch = borderChars(bs);
     QSize sz = getSizeFromItem(rect);
@@ -467,7 +468,7 @@ void ResStyle::drawBorder(QPainter *painter, const BorderStyle &bs, const QRectF
     painter->restore();
 }
 
-void ResStyle::drawText(QPainter *painter, const QRectF &rect, const QString &text, const Qt::Alignment &alignment, const QColor &penColor)
+void ResStyle::drawText(QPainter *painter, const QRectF &rect, const QString &text, const Qt::Alignment &alignment, const QColor &penColor) const
 {
     painter->save();
     painter->setPen(penColor);
@@ -476,7 +477,7 @@ void ResStyle::drawText(QPainter *painter, const QRectF &rect, const QString &te
     painter->restore();
 }
 
-void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleOption *option)
+void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleOption *option) const
 {
     if (type == Control_Panel)
     {
@@ -557,4 +558,46 @@ void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleO
         drawText(painter, option->rect, option->text, option->alignment, color(Color_ControlText, option));
         painter->restore();
     }
+}
+
+QIcon ResStyle::renderBorderIcon(const BorderStyle &border, const PanelStyle &style, CustomRectItem *item) const
+{
+    ResStyleOption opt;
+    opt.init(item);
+
+    GrigSizes sizes = gridSizes();
+    opt.gridSize = sizes.back();
+    opt.rect = QRect(0, 0, 4 * opt.gridSize.width(), 3 * opt.gridSize.height());
+    opt.panelStyle = style;
+    opt.borderStyle = border;
+
+    QPixmap pixmap(opt.rect.width(), opt.rect.height());
+    pixmap.fill(Qt::transparent);
+
+    QPainter painter(&pixmap);
+    drawControl(ResStyle::Control_Panel, &painter, &opt);
+
+    return QIcon(pixmap);
+}
+
+QIcon ResStyle::renderStyleIcon(const BorderStyle &border, const PanelStyle &style, CustomRectItem *item) const
+{
+    ResStyleOption opt;
+    opt.init(item);
+
+    GrigSizes sizes = gridSizes();
+    opt.gridSize = sizes.back();
+    opt.rect = QRect(0, 0, 4 * opt.gridSize.width(), 3 * opt.gridSize.height());
+    opt.panelStyle = style;
+    opt.borderStyle = border;
+    opt.contrast = false;
+    opt.astext = false;
+
+    QPixmap pixmap(opt.rect.width(), opt.rect.height());
+    pixmap.fill(Qt::transparent);
+
+    QPainter painter(&pixmap);
+    drawControl(ResStyle::Control_Panel, &painter, &opt);
+
+    return QIcon(pixmap);
 }

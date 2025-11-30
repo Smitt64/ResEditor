@@ -5,6 +5,7 @@
 #include "qgraphicsscene.h"
 #include "qlineedit.h"
 #include "respanel.h"
+#include "toolsruntime.h"
 #include "styles/resstyle.h"
 #include "undoredo/undoitemmove.h"
 #include "undoredo/undopropertychange.h"
@@ -112,9 +113,16 @@ bool TextItem::canResize(const QRectF &newRect, const ResizeCorners &corner) con
 
     if (fResize)
     {
+        QSize gridSize = style()->gridSize();
+        int newWidth = round(newRect.width() / gridSize.width());
+
+        // Проверка на максимальный размер
+        if (newWidth > MAX_RES_SIZE)
+            return false;
+
+        // остальная существующая логика...
         if (m_Type == TypeCheck || m_Type == TypeRadio)
         {
-            QSize gridSize = style()->gridSize();
             QString tmp = m_Value;
 
             if (m_CheckRadioPos == 0)
@@ -124,7 +132,6 @@ bool TextItem::canResize(const QRectF &newRect, const ResizeCorners &corner) con
 
             tmp = tmp.trimmed();
 
-            int newWidth = round(newRect.width() / gridSize.width());
             QString newText = checkRadioStr(m_Type) + QString(1, QChar::Space) + tmp;
 
             if (newWidth < newText.length())
@@ -132,8 +139,6 @@ bool TextItem::canResize(const QRectF &newRect, const ResizeCorners &corner) con
         }
         else if (m_Type == TypeTextHorizontal)
         {
-            QSize gridSize = style()->gridSize();
-            int newWidth = round(newRect.width() / gridSize.width());
             int pos = findLastNonHorline() + 1;
 
             if (newWidth < pos + 1)
@@ -228,14 +233,25 @@ void TextItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
             int newWidth = round(rect.width() / gridSize.width());
             int spaceLen = abs(newWidth - tmp.length()) - 3;
 
+            // Ограничение максимальной длины
+            if (newWidth > MAX_RES_SIZE)
+                newWidth = MAX_RES_SIZE;
+
+            if (spaceLen < 0)
+                spaceLen = 0;
+
             if (m_CheckRadioPos == 0)
             {
                 QString newText = checkRadioStr(m_Type) + QString(spaceLen, QChar::Space) + tmp;
+                if (newText.length() > MAX_RES_SIZE)
+                    newText = newText.left(MAX_RES_SIZE);
                 m_Value = newText;
             }
             else
             {
                 QString newText = tmp + QString(spaceLen, QChar::Space) + checkRadioStr(m_Type);
+                if (newText.length() > MAX_RES_SIZE)
+                    newText = newText.left(MAX_RES_SIZE);
                 m_Value = newText;
             }
         }
@@ -246,9 +262,11 @@ void TextItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
             QSize gridSize = style()->gridSize();
             int newWidth = round(rect.width() / gridSize.width());
 
-            m_Value = QString(newWidth, *QString(TEXTITEM_HORIZONTAL).begin());
+            // Ограничение максимальной длины
+            if (newWidth > MAX_RES_SIZE)
+                newWidth = MAX_RES_SIZE;
 
-            qDebug() << "isNonCharacter" << QChar(*QString(TEXTITEM_HORIZONTAL).begin()).isNonCharacter();
+            m_Value = QString(newWidth, *QString(TEXTITEM_HORIZONTAL).begin());
         }
         else if (m_Type == TypeTextHorizontal)
         {
@@ -257,8 +275,30 @@ void TextItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
             QSize gridSize = style()->gridSize();
             int newWidth = round(rect.width() / gridSize.width());
 
+            // Ограничение максимальной длины
+            if (newWidth > MAX_RES_SIZE)
+                newWidth = MAX_RES_SIZE;
+
             QString textPart = m_Value.mid(0, pos);
             m_Value = textPart + QString(newWidth - textPart.size(), *QString(TEXTITEM_HORIZONTAL).begin());
+
+            // Дополнительная проверка на случай, если текстовая часть уже превышает лимит
+            if (m_Value.length() > MAX_RES_SIZE)
+                m_Value = m_Value.left(MAX_RES_SIZE);
+        }
+        else
+        {
+            // Для обычного текста ограничиваем длину при ресайзе
+            QRectF rect = boundingRect();
+            QSize gridSize = style()->gridSize();
+            int newWidth = round(rect.width() / gridSize.width());
+
+            if (newWidth > MAX_RES_SIZE)
+            {
+                // Если новый размер превышает максимум, обрезаем текст
+                if (m_Value.length() > MAX_RES_SIZE)
+                    m_Value = m_Value.left(MAX_RES_SIZE);
+            }
         }
     }
 
@@ -379,17 +419,21 @@ QString TextItem::text() const
 
 void TextItem::setText(const QString &txt)
 {
-    checkPropSame("text", txt);
+    QString processedText = toolReplaceUnicodeSymToOem(txt);
+    if (processedText.length() > MAX_RES_SIZE)
+        processedText = processedText.left(MAX_RES_SIZE);
+
+    checkPropSame("text", processedText);
 
     QRect sz = geometry();
-    sz.setWidth(txt.length());
+    sz.setWidth(processedText.length());
 
     if (isSkipUndoStack() || !undoStack())
     {
         QUuid control = attachedControl();
         int offset = attachedControlOffset();
 
-        m_Value = txt.trimmed();
+        m_Value = processedText.trimmed();
 
         detectType();
         setGeometry(sz);
@@ -415,11 +459,11 @@ void TextItem::setText(const QString &txt)
     else
     {
         QRect sz = geometry();
-        sz.setWidth(txt.length());
+        sz.setWidth(processedText.length());
         QString msg = UndoPropertyChange::ChangePropertyMsg("text", metaObject());
 
         undoStack()->beginMacro(msg);
-        pushUndoPropertyData("text", txt);
+        pushUndoPropertyData("text", processedText);
         pushUndoPropertyData("geometry", sz);
         undoStack()->endMacro();
     }

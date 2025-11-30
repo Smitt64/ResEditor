@@ -132,6 +132,10 @@ protected:
     virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
     virtual void dragEnterEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
 
+    virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+
 signals:
     void rowNumChanged();
     void rowLengthChanged();
@@ -141,6 +145,7 @@ signals:
     void scrolTypeChanged();
 
 private:
+    void updateScrolAreaDuringResize(const QSizeF &delta);
     ScrolType m_Type;
     quint16 m_RowNum, m_RowLength, m_RowHeight;
     QPoint m_ScrolPos;
@@ -151,6 +156,8 @@ private:
 
     bool m_IsResizing;
     QSizeF m_StartSize;
+
+    bool m_SaveScrollAreaVisible;
 };
 
 Q_DECLARE_OPAQUE_POINTER(ScrolItem)

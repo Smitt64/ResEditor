@@ -49,6 +49,7 @@ SOURCES += \
     scrolitem.cpp \
     spelling/resspellstringsdlg.cpp \
     statusbarelement.cpp \
+    stdeditorscene.cpp \
     stdpaneleditor.cpp \
     styles/extextstyle.cpp \
     styles/resstyle.cpp \
@@ -108,6 +109,7 @@ HEADERS += \
     scrolitem.h \
     spelling/resspellstringsdlg.h \
     statusbarelement.h \
+    stdeditorscene.h \
     stdpaneleditor.h \
     styles/extextstyle.h \
     styles/resstyle.h \

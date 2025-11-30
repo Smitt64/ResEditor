@@ -4,6 +4,7 @@
 #include <QColor>
 #include "basescene.h"
 #include "containeritem.h"
+#include "controlitemswrapper.h"
 #include "controlpropertysdlg.h"
 #include "respanel.h"
 #include "rsrescore.h"
@@ -11,6 +12,7 @@
 #include "textitem.h"
 #include "undoredo/undopropertychange.h"
 #include "rscoreheader.h"
+#include "stdeditorscene.h"
 #include <QGraphicsScene>
 #include <QUndoStack>
 #include <QGraphicsView>
@@ -564,23 +566,26 @@ void ControlItem::setSigns(const quint16 &val)
 }
 
 #define RESET_DLG_FLAG(flag) thisFlags.setFlag(flag, dlgFlags.testFlag(flag))
-void ControlItem::FillItemControl(ControlPropertysDlg &dlg)
+/*void ControlItem::FillItemControl(ControlPropertysDlg &dlg)
 {
-    setDataLength(dlg.dataLength());
-    setSigns(dlg.point());
-    setHelpPage(dlg.helpPage());
-    setControlGroup(dlg.controlGroup());
-    setControlName(dlg.controlName());
-    setControlName2(dlg.nameText());
-    setValueTemplate(dlg.valueTemplate());
-    setToolTip(dlg.toolTip());
-    setFdm(dlg.fdm());
+    StdEditorScene* customScene = qobject_cast<StdEditorScene*> (scene());
+    ControlItemsWrapper *controlItemsWrapper = customScene->controlItemsWrapper();
 
-    setFieldType((ControlItem::FieldType)dlg.fieldType());
-    setDataType((ControlItem::DataType)dlg.dataType());
-    setControlStyle((ResStyle::PanelStyle)dlg.style());
+    controlItemsWrapper->setDataLength(dlg.dataLength());
+    controlItemsWrapper->setSigns(dlg.point());
+    controlItemsWrapper->setHelpPage(dlg.helpPage());
+    controlItemsWrapper->setControlGroup(dlg.controlGroup());
+    controlItemsWrapper->setControlName(dlg.controlName());
+    controlItemsWrapper->setControlName2(dlg.nameText());
+    controlItemsWrapper->setValueTemplate(dlg.valueTemplate());
+    controlItemsWrapper->setToolTip(dlg.toolTip());
+    controlItemsWrapper->setFdm(dlg.fdm());
 
-    ControlFlags thisFlags = (ControlFlags)controlFlags();
+    controlItemsWrapper->setFieldType((ControlItem::FieldType)dlg.fieldType());
+    controlItemsWrapper->setDataType((ControlItem::DataType)dlg.dataType());
+    controlItemsWrapper->setControlStyle((ResStyle::PanelStyle)dlg.style());
+
+    ControlFlags thisFlags = (ControlFlags)controlItemsWrapper->controlFlags();
     ControlFlags dlgFlags = (ControlFlags)dlg.controlFlags();
 
     RESET_DLG_FLAG(RF_ASTEXT);
@@ -589,17 +594,109 @@ void ControlItem::FillItemControl(ControlPropertysDlg &dlg)
     RESET_DLG_FLAG(RF_NOTABSTOP);
     RESET_DLG_FLAG(RF_DOWNBTN);
 
-    setControlFlags(thisFlags);
+    controlItemsWrapper->setControlFlags(thisFlags);
+}*/
+void ControlItem::FillItemControl(ControlPropertysDlg &dlg)
+{
+    StdEditorScene* customScene = qobject_cast<StdEditorScene*>(scene());
+    if (!customScene)
+        return;
+
+    ControlItemsWrapper *controlItemsWrapper = customScene->controlItemsWrapper();
+    if (!controlItemsWrapper)
+        return;
+
+    // Получаем ТОЛЬКО свойства, которые изменил пользователь в UI
+    QMap<QString, QVariant> changedProperties = dlg.getChangedProperties();
+
+    // Если нет изменений - выходим
+    if (changedProperties.isEmpty())
+        return;
+
+    // Применяем только измененные свойства
+    for (auto it = changedProperties.constBegin(); it != changedProperties.constEnd(); ++it)
+    {
+        const QString &propertyName = it.key();
+        const QVariant &newValue = it.value();
+
+        if (propertyName == "dataLength") {
+            controlItemsWrapper->setDataLength(newValue.value<quint16>());
+        }
+        else if (propertyName == "signs") {
+            controlItemsWrapper->setSigns(newValue.value<quint16>());
+        }
+        else if (propertyName == "helpPage") {
+            controlItemsWrapper->setHelpPage(newValue.value<quint16>());
+        }
+        else if (propertyName == "controlGroup") {
+            controlItemsWrapper->setControlGroup(newValue.value<quint16>());
+        }
+        else if (propertyName == "controlName") {
+            controlItemsWrapper->setControlName(newValue.toString());
+        }
+        else if (propertyName == "controlName2") {
+            controlItemsWrapper->setControlName2(newValue.toString());
+        }
+        else if (propertyName == "valueTemplate") {
+            controlItemsWrapper->setValueTemplate(newValue.toString());
+        }
+        else if (propertyName == "toolTip") {
+            controlItemsWrapper->setToolTip(newValue.toString());
+        }
+        else if (propertyName == "fdm") {
+            controlItemsWrapper->setFdm(newValue.toBool());
+        }
+        else if (propertyName == "isText") {
+            controlItemsWrapper->setIsText(newValue.toBool());
+        }
+        else if (propertyName == "fieldType") {
+            controlItemsWrapper->setFieldType(static_cast<ControlItem::FieldType>(newValue.toInt()));
+        }
+        else if (propertyName == "dataType") {
+            controlItemsWrapper->setDataType(static_cast<ControlItem::DataType>(newValue.toInt()));
+        }
+        else if (propertyName == "controlStyle") {
+            controlItemsWrapper->setControlStyle(static_cast<ResStyle::PanelStyle>(newValue.toInt()));
+        }
+        else if (propertyName == "controlFlags") {
+            // Специальная обработка флагов - сохраняем существующую логику
+            ControlFlags thisFlags = (ControlFlags)controlItemsWrapper->controlFlags();
+            ControlFlags dlgFlags = (ControlFlags)newValue.toInt();
+
+            // Устанавливаем только те флаги, которые есть на панели
+            // Остальные флаги остаются без изменений
+            RESET_DLG_FLAG(RF_ASTEXT);
+            RESET_DLG_FLAG(RF_GROUP);
+            RESET_DLG_FLAG(RF_GROUPING);
+            RESET_DLG_FLAG(RF_NOTABSTOP);
+            RESET_DLG_FLAG(RF_DOWNBTN);
+
+            controlItemsWrapper->setControlFlags(thisFlags);
+        }
+        else if (propertyName == "tabOrder") {
+            // Обработка tabOrder если нужно
+            if (newValue.canConvert<ControTabOrder>()) {
+                controlItemsWrapper->setTabOrder(newValue.value<ControTabOrder>());
+            }
+        }
+    }
+
+    // Обновляем сцену после применения изменений
+    if (customScene) {
+        customScene->update();
+    }
 }
 
 QVariant ControlItem::userAction(const qint32 &action, const QVariant &param)
 {
-    BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+    StdEditorScene* customScene = qobject_cast<StdEditorScene*>(scene());
+    ControlItemsWrapper *controlItemsWrapper = customScene->controlItemsWrapper();
+
     if (action == ActionKeyEnter)
     {
         QGraphicsView *view = customScene->views().first();
         ControlPropertysDlg dlg(view);
-        dlg.setControlItem(this);
+        dlg.setControlItem(controlItemsWrapper);
 
         if (dlg.exec() == QDialog::Accepted)
         {

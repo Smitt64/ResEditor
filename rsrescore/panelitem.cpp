@@ -6,6 +6,7 @@
 #include "basescene.h"
 #include "undoredo/undoitemadd.h"
 #include "panelpropertysdlg.h"
+#include "toolsruntime.h"
 #include <QGraphicsView>
 #include <QPainter>
 #include <QFont>
@@ -76,6 +77,7 @@ void PanelItem::FillItemPanel(PanelPropertysDlg &dlg)
     setHelpPage(dlg.helpPage());
     setIsCentered(dlg.alignPanelCenter());
     setIsRightText(dlg.alignTextRight());
+    setComment(dlg.comment());
 }
 
 QVariant PanelItem::userAction(const qint32 &action, const QVariant &param)
@@ -223,17 +225,21 @@ QString PanelItem::title() const
 
 void PanelItem::setTitle(const QString &text)
 {
-    checkPropSame("title", text);
+    QString processedText = toolReplaceUnicodeSymToOem(text);
+    if (processedText.length() > MAX_RES_SIZE)
+        processedText = processedText.left(MAX_RES_SIZE);
+
+    checkPropSame("title", processedText);
 
     if (isSkipUndoStack() || !undoStack())
     {
-        m_Title = text;
+        m_Title = processedText;
         emit titleChanged();
         update();
         scene()->update();
     }
     else
-        pushUndoPropertyData("title", text);
+        pushUndoPropertyData("title", processedText);
 }
 
 QString PanelItem::status() const
@@ -243,17 +249,21 @@ QString PanelItem::status() const
 
 void PanelItem::setStatus(const QString &text)
 {
-    checkPropSame("status", text);
+    QString processedText = toolReplaceUnicodeSymToOem(text);
+    if (processedText.length() > MAX_RES_SIZE)
+        processedText = processedText.left(MAX_RES_SIZE);
+
+    checkPropSame("status", processedText);
 
     if (isSkipUndoStack() || !undoStack())
     {
-        m_Status = text;
+        m_Status = processedText;
         emit statusChanged();
         update();
         scene()->update();
     }
     else
-        pushUndoPropertyData("status", text);
+        pushUndoPropertyData("status", processedText);
 }
 
 QString PanelItem::status2() const
@@ -263,17 +273,21 @@ QString PanelItem::status2() const
 
 void PanelItem::setStatus2(const QString &text)
 {
-    checkPropSame("status2", text);
+    QString processedText = toolReplaceUnicodeSymToOem(text);
+    if (processedText.length() > MAX_RES_SIZE)
+        processedText = processedText.left(MAX_RES_SIZE);
+
+    checkPropSame("status2", processedText);
 
     if (isSkipUndoStack() || !undoStack())
     {
-        m_Status2 = text;
+        m_Status2 = processedText;
         emit status2Changed();
         update();
         scene()->update();
     }
     else
-        pushUndoPropertyData("status2", text);
+        pushUndoPropertyData("status2", processedText);
 }
 
 const bool &PanelItem::isCentered() const
@@ -382,17 +396,21 @@ QString PanelItem::comment() const
 
 void PanelItem::setComment(const QString &text)
 {
-    checkPropSame("comment", text);
+    QString processedText = toolReplaceUnicodeSymToOem(text);
+    if (processedText.length() > MAX_RES_SIZE)
+        processedText = processedText.left(MAX_RES_SIZE);
+
+    checkPropSame("comment", processedText);
 
     if (isSkipUndoStack() || !undoStack())
     {
-        m_Comment = text;
+        m_Comment = processedText;
         emit commentChanged();
         update();
         scene()->update();
     }
     else
-        pushUndoPropertyData("comment", text);
+        pushUndoPropertyData("comment", processedText);
 }
 
 const quint16 &PanelItem::helpPage() const
@@ -528,6 +546,26 @@ void PanelItem::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
 
     update();
     scene()->update();
+}
+
+bool PanelItem::canResize(const QRectF &newRect, const ResizeCorners &corner) const
+{
+    bool fResize = ContainerItem::canResize(newRect, corner);
+
+    if (fResize)
+    {
+        BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+        QSize gridSize = customScene->getGridSize();
+
+        int newWidth = round(newRect.width() / gridSize.width());
+        int newHeight = round(newRect.height() / gridSize.height());
+
+        // Проверка на максимальный размер для панели
+        if (newWidth > MAX_RES_SIZE || newHeight > MAX_RES_SIZE)
+            return false;
+    }
+
+    return fResize;
 }
 
 void PanelItem::setChildsVisible(const bool &value)
