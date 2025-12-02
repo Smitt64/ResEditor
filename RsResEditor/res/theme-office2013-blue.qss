@@ -496,3 +496,13 @@ QDockWidget QTabBar::tab:hover:!selected {
     background-color: #e6f2fc;
     color: #0072C6;
 }
+
+QMainWindow::separator {
+	background: #F8F8F8;
+	width: 5px;
+	height: 5px;
+}
+
+QMainWindow::separator:hover {
+	background: #e6f2fc;
+}
