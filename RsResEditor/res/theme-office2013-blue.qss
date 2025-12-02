@@ -10,6 +10,11 @@ SARibbonMainWindow {
     border-top: 3px solid #0072C6;
 }
 
+SARibbonMainWindow > QStatusBar {
+	background-color: #0072C6;
+	color: white;
+}
+
 /*SARibbonBar*/
 SARibbonBar {
   background-color: white;
@@ -35,6 +40,7 @@ SARibbonStackedWidget {
   border-top-width: 0px;
   
   border-right: 2px solid #0072C6;
+  border-bottom: 1px solid #0072C6;
   padding: 0px
 }
 
@@ -366,6 +372,7 @@ SARibbonCategoryScrollButton:hover {
 SARibbonSystemToolButton {
   background-color: transparent; 
   border:none;
+  margin-top: 2px;
 }
 
 SARibbonSystemToolButton:focus {
@@ -402,10 +409,90 @@ SARibbonSystemToolButton#SACloseWindowButton {
     background-repeat: no-repeat;
     background-image: url(:/SARibbon/image/resource/Titlebar_Close.svg);
     border-right: 2px solid #0072C6;
+	/*padding-right: 4px;
+	margin-top: 2px;*/
 }
 SARibbonSystemToolButton#SACloseWindowButton:hover {
   background-color: #e81123;
 }
 SARibbonSystemToolButton#SACloseWindowButton:pressed {
     background-color: #f1707a;
+}
+
+SARibbonMainWindow {
+    border-left: 2px solid #0072C6;
+    border-right: 2px solid #0072C6;
+    border-bottom: 2px solid #0072C6;
+    border-top: 3px solid #0072C6;
+}
+
+QDockWidget::title {
+    background-color: white;
+    color: #0072C6;
+    padding: 6px 10px;
+    border: none;
+    /*border: 1px solid #0072C6;*/
+    text-align: left;
+    font-weight: bold;
+    font-size: 9pt;
+}
+
+QDockWidget::float-button {
+    background-color: transparent;
+    border: 1px solid transparent;
+    icon-size: 12px;
+    margin-right: 2px;
+}
+
+QDockWidget::float-button:hover {
+    background-color: #cee8fc;
+    border: 1px solid #0072C6;
+    border-radius: 2px;
+}
+
+QDockWidget::close-button {
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+QDockWidget::close-button:hover {
+    background-color: #e81123;
+    border: 1px solid #d01020;
+    border-radius: 2px;
+}
+
+QDockWidget > QWidget {
+    background-color: white;
+    border: none;
+}
+
+QDockWidget QTabWidget::pane {
+    border: 1px solid #0072C6;
+    background-color: white;
+}
+
+SARibbonMainWindow > QTabBar {
+    background-color: #F8F8F8;
+}
+
+QDockWidget QTabBar::tab {
+    background-color: #f8f8f8;
+    color: #333333;
+    border: 1px solid #c5d2e0;
+    border-bottom: none;
+    padding: 4px 10px;
+    margin-right: 1px;
+    font-size: 8pt;
+}
+
+QDockWidget QTabBar::tab:selected {
+    background-color: white;
+    color: #0072C6;
+    border: 1px solid #0072C6;
+    border-bottom: 1px solid white;
+}
+
+QDockWidget QTabBar::tab:hover:!selected {
+    background-color: #e6f2fc;
+    color: #0072C6;
 }

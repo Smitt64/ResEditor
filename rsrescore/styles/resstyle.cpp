@@ -254,7 +254,7 @@ void ResStyle::setGridSize(const int &index)
 QColor ResStyle::color(const StyleColor &type, ResStyleOption *option) const
 {
     if (!option && type == Color_SceneBackground)
-        return QColor(192,192,192);
+        return QColor(200,200,200);
 
     const ColorScheme &sheme = m_ColorScheme[option->panelStyle];
 

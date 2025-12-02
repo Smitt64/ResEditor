@@ -119,6 +119,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_Mdi->setDocumentMode(true);
     m_Mdi->setTabsClosable(true);
     m_Mdi->setViewMode(QMdiArea::TabbedView);
+    m_Mdi->setBackground(QBrush(QColor(248, 248, 248)));
     setCentralWidget(m_Mdi);
     SetupMenus();
 
