@@ -4,6 +4,7 @@
 #include "controlpropertysdlg.h"
 #include "panelitem.h"
 #include "qmetaobject.h"
+#include <QShortcut>
 #include "resapplication.h"
 #include "respanel.h"
 #include "rsrescore.h"
@@ -418,7 +419,7 @@ void StdPanelEditor::sceneCutItems()
 
 void StdPanelEditor::sceneDeleteItems()
 {
-    BaseScene *pScene = dynamic_cast<BaseScene*>(m_pView->scene());
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
 
     if (!pScene)
         return;
@@ -589,6 +590,13 @@ void StdPanelEditor::fillResPanel(ResPanel *resPanel)
     {
         QRect rc = item->geometry();
         resPanel->addText(item->text(), rc.x(), rc.y(), item->textStyle().style());
+    }
+
+    if (pPanel->comment().isEmpty())
+    {
+        pPanel->setSkipUndoStack(true);
+        pPanel->setComment(pPanel->title());
+        pPanel->setSkipUndoStack(false);
     }
 
     resPanel->setType(m_Type);
@@ -1224,10 +1232,12 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     connect(m_pCreateControl, &QAction::triggered, this, &StdPanelEditor::onInsertControl);
     editpanel->addLargeAction(m_pCreateControl);
 
-    m_pDelete = createAction(tr("Удалить элемент"), "DeleteClause", QKeySequence::Delete);
+    m_pDeleteShortcut = new QShortcut(QKeySequence::Delete, this);
+    m_pDelete = createAction(tr("Удалить элемент"), "DeleteClause");
     toolAddActionWithTooltip(m_pDelete,
                          tr("Удаляет выбранные элементы"),
                          QKeySequence::Delete);
+    connect(m_pDeleteShortcut, &QShortcut::activated, this, &StdPanelEditor::sceneDeleteItems);
     connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
     editpanel->addLargeAction(m_pDelete);
 

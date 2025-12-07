@@ -4,6 +4,7 @@
 #include "baseeditorwindow.h"
 #include <QProcess>
 
+class QShortcut;
 class QActionGroup;
 class ResPanel;
 class PanelItem;
@@ -123,6 +124,7 @@ private:
     StatusBarElement *m_SizeText, *m_CursorText;
     SARibbonLineEdit *m_pNameLineEdit;
 
+    QShortcut *m_pDeleteShortcut;
     QAction *m_pContrst, *m_pDelete, *m_pProperty, *m_pScrolAreaAction;
     QAction *m_pCutAction, *m_pCopyAction, *m_pPasteAction;
     QAction *m_pCheckAction, *m_EwViewAction, *m_ViewAction, *m_Statistic;

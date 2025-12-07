@@ -45,6 +45,7 @@ public:
     void addControlItem(ControlItem *item);
     void addControlItems(const QVector<ControlItem*> &items);
     void clearControlItems();
+    void removeControlItem(ControlItem *item);
 
     QVariant userAction(const qint32 &action, const QVariant &param = QVariant());
 

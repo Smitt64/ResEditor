@@ -67,20 +67,10 @@
         <file>json/InsertControlData.json</file>
         <file>img/explorer.exe_14_103-6.png</file>
         <file>res/options_preview.xml</file>
-        <file>img/gallary_border/double.png</file>
-        <file>img/gallary_border/empty.png</file>
-        <file>img/gallary_border/combine1.png</file>
-        <file>img/gallary_border/combine2.png</file>
-        <file>img/gallary_border/single.png</file>
-        <file>img/gallary_border/solid.png</file>
-        <file>img/gallary_style/rmes.png</file>
-        <file>img/gallary_style/sbcm.png</file>
-        <file>img/gallary_style/scom.png</file>
-        <file>img/gallary_style/scrl.png</file>
-        <file>img/gallary_style/shlp.png</file>
-        <file>img/gallary_style/smen.png</file>
-        <file>img/gallary_style/smes.png</file>
         <file>res/reslib.xsd</file>
         <file>json/ControlMulty.json</file>
+        <file>img/Close.svg</file>
+        <file>img/CloseRed.svg</file>
+        <file>img/CloseWhite.svg</file>
     </qresource>
 </RCC>

@@ -516,3 +516,70 @@ QMainWindow::separator:hover {
 QStatusBar QLabel {
 	color: white;
 }
+
+/* ================== QMdiArea и его вкладки ================== */
+
+/* Панель вкладок QMdiArea */
+QMdiArea QTabBar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #c5d2e0;
+    font-family: 'Segoe UI';
+    font-size: 9pt;
+}
+
+/* Отдельные вкладки */
+QMdiArea QTabBar::tab {
+    background-color: #f8f8f8;
+    color: #666666;
+    border: 1px solid #c5d2e0;
+    border-bottom: none;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    padding: 6px 12px 6px 12px;
+    margin-right: 1px;
+    margin-top: 2px;
+    min-width: 120px;
+    max-width: 250px;
+}
+
+QMdiArea QTabBar::tab:selected {
+    background-color: white;
+    color: #0072C6;
+    font-weight: bold;
+    border: 1px solid #c5d2e0;
+    border-bottom: 1px solid white;
+    border-top: 2px solid #0072C6;
+    margin-top: 0px;
+    padding: 8px 12px 8px 12px;
+}
+
+/* Кнопка закрытия на вкладке - правильная настройка */
+QMdiArea QTabBar::close-button {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    margin: 0px;
+    padding: 2px;
+    width: 16px;
+    height: 16px;
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+    right: 4px; /* Отступ от правого края вкладки */
+	image: url(:/SARibbon/image/resource/Titlebar_Close.svg);
+}
+
+/* Состояния кнопки закрытия */
+QMdiArea QTabBar::close-button:hover {
+    background-color: #e81123;
+    border: 1px solid #d01020;
+	image: url(:/img/CloseWhite.svg);
+}
+
+QMdiArea QTabBar::close-button:pressed {
+    background-color: #f1707a;
+    border: 1px solid #e81123;
+}
+
+QMdiArea QTabBar::close-button:pressed {
+    image: url(:/img/CloseWhite.svg);
+}

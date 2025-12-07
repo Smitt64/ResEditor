@@ -219,22 +219,26 @@ void MainWindow::InitQuickAccessBar()
     m_pActionRedo->setShortcut(QKeySequence::Redo);
     m_pActionRedo->setShortcutContext(Qt::ApplicationShortcut);
 
-    // Добавляем подсказку для Redo
-    toolAddActionWithTooltip(m_pActionRedo,
-                             tr("Повторяет отмененную операцию"),
-                             QKeySequence::Redo);
-
+    // Создаем меню "Повторить" с историей операций
     m_pUndoRedoMenu = new QMenu(tr("Повторить"), this);
     m_pUndoRedoMenu->setIcon(QIcon::fromTheme("Redo"));
 
-    // Добавляем описание для меню Undo/Redo
+    // Добавляем описание для меню "Повторить"
+    toolAddActionWithTooltip(m_pUndoRedoMenu,
+                             tr("Показывает историю операций и позволяет выбирать действие для повтора"));
+
+    // Добавляем подсказку для действия Redo
     toolAddActionWithTooltip(m_pActionRedo,
-                             tr("Показывает историю операций и позволяет повторять отмененные действия"),
+                             tr("Повторяет последнюю отмененную операцию"),
                              QKeySequence::Redo);
 
     m_pUndoActionWidget = new UndoActionWidget(this);
     m_pUndoRedoMenu->addAction(m_pActionRedo);
     m_pUndoRedoMenu->addAction(m_pUndoActionWidget);
+
+    // Добавляем описание для виджета истории отмены
+    toolAddActionWithTooltip(m_pUndoActionWidget,
+                             tr("Показывает список выполненных операций для выбора отмены/повтора"));
 
     quickAccessBar->addMenu(m_pUndoRedoMenu);
 
@@ -242,8 +246,14 @@ void MainWindow::InitQuickAccessBar()
 
     if (!actions.empty())
     {
+        // Создаем меню "Недавние файлы"
         QMenu* RecentLbrMenu = new QMenu(tr("Недавние файлы"), this);
         RecentLbrMenu->setIcon(QIcon::fromTheme("History"));
+
+        // Добавляем описание для меню "Недавние файлы"
+        toolAddActionWithTooltip(RecentLbrMenu,
+                                 tr("Список последних открытых библиотек ресурсов"));
+
         quickAccessBar->addSeparator();
 
         for (QAction *action : std::as_const(actions))
@@ -253,12 +263,17 @@ void MainWindow::InitQuickAccessBar()
             action->setObjectName(action->text());
             action->setParent(this);
             connect(action, SIGNAL(triggered(bool)), this, SLOT(onOpenRecent()));
+
+            // Добавляем подсказки для пунктов меню "Недавние файлы"
+            QString fileName = action->data().toString();
+            toolAddActionWithTooltip(action,
+                                     tr("Открывает библиотеку ресурсов: %1").arg(fileName));
         }
 
         quickAccessBar->addMenu(RecentLbrMenu, Qt::ToolButtonIconOnly, QToolButton::InstantPopup);
     }
 
-    // Добавляем подсказки к действиям
+    // Добавляем подсказки к основным действиям
     toolAddActionWithTooltip(actionNew,
                              tr("Создает новый ресурс или открывает диалог создания"),
                              QKeySequence::New);
@@ -893,7 +908,13 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
 
         ribbonBar()->setUpdatesEnabled(false);
         if (lastwnd)
+        {
+            QList<QWidget*> status = lastwnd->statusBarSections();
             lastwnd->clearRibbonTabs();
+
+            for (auto widget : qAsConst(status))
+                ui->statusbar->removeWidget(widget);
+        }
 
         wnd->updateRibbonTabs();
 
@@ -912,7 +933,10 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
 
         QList<QWidget*> status = wnd->statusBarSections();
         for (auto widget : qAsConst(status))
+        {
             ui->statusbar->addPermanentWidget(widget);
+            widget->show();
+        }
 
         m_LastActiveWindow = window;
 

@@ -1,11 +1,12 @@
 #include "undoitemdelete.h"
 #include "customrectitem.h"
-#include "basescene.h"
+#include "controlitemswrapper.h"
+#include "stdeditorscene.h"
 #include <QDebug>
 #include <QMetaType>
 #include <QMetaClassInfo>
 
-UndoItemDelete::UndoItemDelete(BaseScene *scene, const QUuid &uuid, QUndoCommand *parent) :
+UndoItemDelete::UndoItemDelete(StdEditorScene *scene, const QUuid &uuid, QUndoCommand *parent) :
     QUndoCommand(parent),
     m_pScene(scene),
     m_ItemId(uuid)
@@ -46,6 +47,14 @@ void UndoItemDelete::redo()
         qDebug() << "UndoItemDelete::redo: can't find item " << m_ItemId;
     else
     {
+        ControlItem *ctrl = qobject_cast<ControlItem*>(pItem);
+
+        if (ctrl)
+        {
+            ControlItemsWrapper *wrp = m_pScene->controlItemsWrapper();
+            wrp->removeControlItem(ctrl);
+        }
+
         m_pScene->removeItem(pItem);
         pItem->deleteLater();
     }

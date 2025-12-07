@@ -40,6 +40,17 @@ void ControlItemsWrapper::connectControlItemSignals(ControlItem *item)
             }
         }
     }
+
+    connect(item, &QObject::destroyed, [this](QObject *obj)
+    {
+        ControlItem *item = qobject_cast<ControlItem*>(obj);
+
+        if (!item)
+            return;
+
+        disconnectControlItemSignals(item);
+        m_controlItems.removeAll(item);
+    });
 }
 
 void ControlItemsWrapper::disconnectControlItemSignals(ControlItem *item)
@@ -105,6 +116,15 @@ void ControlItemsWrapper::clearControlItems()
 
     m_controlItems.clear();
     model->reset();
+}
+
+void ControlItemsWrapper::removeControlItem(ControlItem *item)
+{
+    if (!m_controlItems.contains(item))
+        return;
+
+    disconnectControlItemSignals(item);
+    m_controlItems.removeAll(item);
 }
 
 const QVector<ControlItem*> &ControlItemsWrapper::controlItems() const
