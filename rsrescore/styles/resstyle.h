@@ -121,6 +121,7 @@ public:
 
     QIcon renderBorderIcon(const BorderStyle &border, const PanelStyle &style, CustomRectItem *item = nullptr) const;
     QIcon renderStyleIcon(const BorderStyle &border, const PanelStyle &style, CustomRectItem *item = nullptr) const;
+    QIcon renderControlStyleIcon(PanelStyle elementStyle, PanelStyle parentStyle, CustomRectItem *item = nullptr) const;
 
 protected:
     typedef struct ColorScheme

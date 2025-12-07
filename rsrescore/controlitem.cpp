@@ -565,37 +565,49 @@ void ControlItem::setSigns(const quint16 &val)
         pushUndoPropertyData("signs", val);
 }
 
-#define RESET_DLG_FLAG(flag) thisFlags.setFlag(flag, dlgFlags.testFlag(flag))
-/*void ControlItem::FillItemControl(ControlPropertysDlg &dlg)
+bool ControlItem::noTabStop() const
 {
-    StdEditorScene* customScene = qobject_cast<StdEditorScene*> (scene());
-    ControlItemsWrapper *controlItemsWrapper = customScene->controlItemsWrapper();
+    return m_Flags.testFlag(RF_NOTABSTOP);
+}
 
-    controlItemsWrapper->setDataLength(dlg.dataLength());
-    controlItemsWrapper->setSigns(dlg.point());
-    controlItemsWrapper->setHelpPage(dlg.helpPage());
-    controlItemsWrapper->setControlGroup(dlg.controlGroup());
-    controlItemsWrapper->setControlName(dlg.controlName());
-    controlItemsWrapper->setControlName2(dlg.nameText());
-    controlItemsWrapper->setValueTemplate(dlg.valueTemplate());
-    controlItemsWrapper->setToolTip(dlg.toolTip());
-    controlItemsWrapper->setFdm(dlg.fdm());
+void ControlItem::setNoTabStop(const bool &val)
+{
+    checkPropSame("noTabStop", val);
 
-    controlItemsWrapper->setFieldType((ControlItem::FieldType)dlg.fieldType());
-    controlItemsWrapper->setDataType((ControlItem::DataType)dlg.dataType());
-    controlItemsWrapper->setControlStyle((ResStyle::PanelStyle)dlg.style());
+    if (isSkipUndoStack() || !undoStack())
+    {
+        m_Flags.setFlag(RF_NOTABSTOP, val);
+        emit tabNoTabStopChanged();
+        emit controlFlagsChanged();
+        update();
+        scene()->update();
+    }
+    else
+        pushUndoPropertyData("noTabStop", val);
+}
 
-    ControlFlags thisFlags = (ControlFlags)controlItemsWrapper->controlFlags();
-    ControlFlags dlgFlags = (ControlFlags)dlg.controlFlags();
+bool ControlItem::listSelect() const
+{
+    return m_Flags.testFlag(RF_DOWNBTN);
+}
 
-    RESET_DLG_FLAG(RF_ASTEXT);
-    RESET_DLG_FLAG(RF_GROUP);
-    RESET_DLG_FLAG(RF_GROUPING);
-    RESET_DLG_FLAG(RF_NOTABSTOP);
-    RESET_DLG_FLAG(RF_DOWNBTN);
+void ControlItem::setListSelect(const bool &val)
+{
+    checkPropSame("listSelect", val);
 
-    controlItemsWrapper->setControlFlags(thisFlags);
-}*/
+    if (isSkipUndoStack() || !undoStack())
+    {
+        m_Flags.setFlag(RF_DOWNBTN, val);
+        emit listSelectChanged();
+        emit controlFlagsChanged();
+        update();
+        scene()->update();
+    }
+    else
+        pushUndoPropertyData("listSelect", val);
+}
+
+#define RESET_DLG_FLAG(flag) thisFlags.setFlag(flag, dlgFlags.testFlag(flag))
 void ControlItem::FillItemControl(ControlPropertysDlg &dlg)
 {
     StdEditorScene* customScene = qobject_cast<StdEditorScene*>(scene());

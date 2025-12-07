@@ -18,11 +18,63 @@ ControlItemsWrapper::~ControlItemsWrapper()
 {
 }
 
+void ControlItemsWrapper::connectControlItemSignals(ControlItem *item)
+{
+    const QMetaObject *meta = metaObject();
+    const QMetaObject *itemMeta = item->metaObject();
+
+    for (int i = meta->methodOffset(); i < meta->methodCount(); ++i)
+    {
+        QMetaMethod signal = meta->method(i);
+        if (signal.methodType() == QMetaMethod::Signal)
+        {
+            QString signalName = QString::fromLatin1(signal.name());
+
+            int itemSignalIndex = itemMeta->indexOfSignal(
+                QMetaObject::normalizedSignature(signalName.toLatin1() + "()"));
+
+            if (itemSignalIndex != -1)
+            {
+                QMetaMethod itemSignal = itemMeta->method(itemSignalIndex);
+                QObject::connect(item, itemSignal, this, signal);
+            }
+        }
+    }
+}
+
+void ControlItemsWrapper::disconnectControlItemSignals(ControlItem *item)
+{
+    // Автоматически отключаем все сигналы
+    const QMetaObject *meta = metaObject();
+    const QMetaObject *itemMeta = item->metaObject();
+
+    for (int i = meta->methodOffset(); i < meta->methodCount(); ++i)
+    {
+        QMetaMethod signal = meta->method(i);
+        if (signal.methodType() == QMetaMethod::Signal)
+        {
+            QString signalName = QString::fromLatin1(signal.name());
+
+            int itemSignalIndex = itemMeta->indexOfSignal(
+                QMetaObject::normalizedSignature(signalName.toLatin1() + "()"));
+
+            if (itemSignalIndex != -1)
+            {
+                QMetaMethod itemSignal = itemMeta->method(itemSignalIndex);
+                QObject::disconnect(item, itemSignal, this, signal);
+            }
+        }
+    }
+}
+
 void ControlItemsWrapper::addControlItem(ControlItem *item)
 {
     PropertyModel *model = propertyModel();
     if (item && !m_controlItems.contains(item))
+    {
+        connectControlItemSignals(item);
         m_controlItems.append(item);
+    }
 
     model->reset();
 }
@@ -30,15 +82,27 @@ void ControlItemsWrapper::addControlItem(ControlItem *item)
 void ControlItemsWrapper::addControlItems(const QVector<ControlItem*> &items)
 {
     PropertyModel *model = propertyModel();
-    for (ControlItem *item : items)
+    for (ControlItem *item : qAsConst(items))
         addControlItem(item);
 
     model->reset();
 }
 
+QVariant ControlItemsWrapper::userAction(const qint32 &action, const QVariant &param)
+{
+    if (m_controlItems.isEmpty())
+        return QVariant();
+
+    return m_controlItems.first()->userAction(action, param);
+}
+
 void ControlItemsWrapper::clearControlItems()
 {
     PropertyModel *model = propertyModel();
+
+    for (ControlItem *item : qAsConst(m_controlItems))
+        disconnectControlItemSignals(item);
+
     m_controlItems.clear();
     model->reset();
 }
@@ -91,6 +155,7 @@ void ControlItemsWrapper::emitAll()
     emit helpPageChanged();
     emit controlFlagsChanged();
     emit tabOrderChanged();
+    emit tabNoTabStopChanged();
 }
 
 // Реализация геттеров (возвращают значение первого объекта)
@@ -179,7 +244,65 @@ ControTabOrder ControlItemsWrapper::tabOrder() const
     return m_controlItems.isEmpty() ? ControTabOrder() : m_controlItems.first()->tabOrder();
 }
 
+bool ControlItemsWrapper::noTabStop() const
+{
+    return m_controlItems.isEmpty() ? false : m_controlItems.first()->noTabStop();
+}
+
+bool ControlItemsWrapper::listSelect() const
+{
+    return m_controlItems.isEmpty() ? false : m_controlItems.first()->listSelect();
+}
+
 // Реализация сеттеров (устанавливают значения всем объектам)
+void ControlItemsWrapper::setNoTabStop(const bool &val)
+{
+    if (m_controlItems.isEmpty())
+        return;
+
+    if (m_controlItems.size() > 1 && undoStack() && !m_inMacro)
+    {
+        undoStack()->beginMacro(tr("Изменение режима обхода"));
+        m_inMacro = true;
+    }
+
+    for (ControlItem *item : qAsConst(m_controlItems))
+        item->setNoTabStop(val);
+
+    if (m_inMacro && undoStack())
+    {
+        undoStack()->endMacro();
+        m_inMacro = false;
+    }
+
+    emit controlFlagsChanged();
+    emit tabNoTabStopChanged();
+}
+
+void ControlItemsWrapper::setListSelect(const bool &val)
+{
+    if (m_controlItems.isEmpty())
+        return;
+
+    if (m_controlItems.size() > 1 && undoStack() && !m_inMacro)
+    {
+        undoStack()->beginMacro(tr("Изменение режима выбора из списка"));
+        m_inMacro = true;
+    }
+
+    for (ControlItem *item : qAsConst(m_controlItems))
+        item->setListSelect(val);
+
+    if (m_inMacro && undoStack())
+    {
+        undoStack()->endMacro();
+        m_inMacro = false;
+    }
+
+    emit controlFlagsChanged();
+    emit listSelectChanged();
+}
+
 void ControlItemsWrapper::setFieldType(ControlItem::FieldType val)
 {
     if (m_controlItems.isEmpty())

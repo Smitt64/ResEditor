@@ -56,6 +56,8 @@ public:
     virtual void updateRibbonTabs();
     virtual void clearRibbonTabs();
 
+    virtual QList<QWidget*> statusBarSections();
+
 signals:
     void propertyModelChanged(QAbstractItemModel *model);
     void readySave(bool closeAfterSave = false);

@@ -298,12 +298,17 @@ void BaseEditorWindow::clearRibbonTabs()
 
 }
 
+QList<QWidget*> BaseEditorWindow::statusBarSections()
+{
+    return QList<QWidget*>();
+}
+
 QAction* BaseEditorWindow::createAction(const QString& text, const QString& iconname, const QKeySequence &key)
 {
     QAction* act = new QAction(this);
     act->setText(text);
     act->setIcon(QIcon::fromTheme(iconname));
-    act->setObjectName(text);
+    act->setObjectName("obj_" + text);
 
     if (!key.isEmpty())
         act->setShortcut(key);

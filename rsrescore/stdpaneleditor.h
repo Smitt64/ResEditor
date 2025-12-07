@@ -35,6 +35,7 @@ public:
     virtual ~StdPanelEditor();
 
     virtual void setupEditor() Q_DECL_FINAL;
+    virtual QList<QWidget*> statusBarSections() Q_DECL_FINAL;
     void setPanel(ResPanel *panel, const QString &comment = QString());
 
     virtual bool save(ResBuffer *res, QString *error) Q_DECL_OVERRIDE;
@@ -68,6 +69,7 @@ private slots:
 
     void OnBorderStyleSelected(QAction *pAction);
     void OnPanelStyleSelected(QAction *pAction);
+    void OnControlStyleSelected(QAction *pAction);
 
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
@@ -104,19 +106,21 @@ private:
 
     void ApplyBorderStyleToGallary();
     void ApplyPanelStyleToGallary();
+    void ApplyControlStyleToGallary();
     void UpdateGallarysIcons();
 
+    QString getFieldTypeDescription(const qint16 &fieldType, QString &description) const;
+    QString getDataTypeDescription(const qint16 &dataType) const;
+    /* QString getDataTypeDescription(ControlItem::DataType dataType) const;*/
+
     BaseEditorView *m_pView;
-    QTabWidget *m_TabContainer;
+    //QTabWidget *m_TabContainer;
 
     ResPanel *m_pPanel;
     PanelItem* panelItem;
     qint16 m_Type;
 
-    QStatusBar *m_StatusBar;
     StatusBarElement *m_SizeText, *m_CursorText;
-    QWidget *m_pStatusContainer;
-    QHBoxLayout *m_pStatusContainerLayout;
     SARibbonLineEdit *m_pNameLineEdit;
 
     QAction *m_pContrst, *m_pDelete, *m_pProperty, *m_pScrolAreaAction;
@@ -126,7 +130,7 @@ private:
     QAction *m_pCreateControl, *m_pSpellCheckAction;
 
     QAction *m_pFieldProperty, *m_pFdmAction, *m_pAsTextAction;
-    QAction *m_pNoTabStop;
+    QAction *m_pNoTabStop, *m_pListSelect;
 
     //QToolBar *m_pToolBar;
     QClipboard *m_pClipboard;

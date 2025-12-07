@@ -29,6 +29,8 @@ class ControlItemsWrapper : public CustomRectItem
     Q_PROPERTY(quint16 helpPage READ helpPage WRITE setHelpPage NOTIFY helpPageChanged)
     Q_PROPERTY(ControlItem::ControlFlags controlFlags READ controlFlags WRITE setControlFlags NOTIFY controlFlagsChanged)
     Q_PROPERTY(ControTabOrder tabOrder READ tabOrder WRITE setTabOrder NOTIFY tabOrderChanged)
+    Q_PROPERTY(bool noTabStop READ noTabStop WRITE setNoTabStop NOTIFY tabNoTabStopChanged)
+    Q_PROPERTY(bool listSelect READ listSelect WRITE setListSelect NOTIFY listSelectChanged)
 
     Q_CLASSINFO(CLASSINFO_UNDOREDO, "CONTROL")
     Q_CLASSINFO(CLASSINFO_PROPERTYLIST, ":/json/ControlMulty.json")
@@ -43,6 +45,8 @@ public:
     void addControlItem(ControlItem *item);
     void addControlItems(const QVector<ControlItem*> &items);
     void clearControlItems();
+
+    QVariant userAction(const qint32 &action, const QVariant &param = QVariant());
 
     // Получение списка объектов
     const QVector<ControlItem*> &controlItems() const;
@@ -68,6 +72,8 @@ public:
     quint16 helpPage() const;
     ControlItem::ControlFlags controlFlags() const;
     ControTabOrder tabOrder() const;
+    bool noTabStop() const;
+    bool listSelect() const;
 
     void emitAll();
 
@@ -88,6 +94,8 @@ public slots:
     void setHelpPage(quint16 val);
     void setControlFlags(ControlItem::ControlFlags val);
     void setTabOrder(ControTabOrder val);
+    void setNoTabStop(const bool &val);
+    void setListSelect(const bool &val);
 
 signals:
     // Сигналы для всех свойств
@@ -108,7 +116,13 @@ signals:
     void helpPageChanged();
     void controlFlagsChanged();
     void tabOrderChanged();
+    void tabNoTabStopChanged();
+    void listSelectChanged();
+
 private:
+    void connectControlItemSignals(ControlItem *item);
+    void disconnectControlItemSignals(ControlItem *item);
+
     QVector<ControlItem*> m_controlItems;
     PropertyModel *m_propertyModel;
     bool m_inMacro;

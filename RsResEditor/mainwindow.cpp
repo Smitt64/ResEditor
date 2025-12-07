@@ -43,6 +43,7 @@
 #include "savefilesdlg.h"
 #include "reslibwriter.h"
 #include "xmlvalidator.h"
+#include <toolsruntime.h>
 
 class UndoActionWidget : public QWidgetAction
 {
@@ -90,7 +91,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_pLbrObj(nullptr),
     m_FlagMassCloseMode(false)
 {
-    //sa_set_ribbon_theme(this, SARibbonTheme::RibbonThemeDark);
+    ResApplication *app = (ResApplication*)qApp;
+    QSettings *Settings = app->settings();
+    RsResCore::inst()->setSettings(Settings);
+
     setWindowIcon(QIcon("://res/appicon-blue.svg"));
 
     ui->setupUi(this);
@@ -100,8 +104,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     SARibbonCategory *viewPage = new SARibbonCategory("Вид");
     ribbon->addCategoryPage(viewPage);
-
-    ResApplication *app = (ResApplication*)qApp;
 
     QAbstractButton* btn = ribbon->applicationButton();
     if (!btn)
@@ -123,12 +125,10 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(m_Mdi);
     SetupMenus();
 
-    //setWindowIcon(QIcon(":/img/lbrlogo.png"));
     InitQuickAccessBar();
     InitButtonBar();
     InitLbrPanel(mainPage);
     InitLbrResourcePanel(mainPage);
-    //InitNewGallary(mainPage);
     InitViewBar(viewPage);
     InitContextCategory();
 
@@ -153,8 +153,6 @@ MainWindow::MainWindow(QWidget *parent)
     m_ToolsListKey = new QShortcut(QKeySequence(tr("Alt+2")), this);
 
     QThreadPool::globalInstance()->start(pUpdateChecker);
-
-    //ui->actionOpenRes->setShortcut(QKeySequence("Alt+O"));
 
     QSettings *s = app->settings();
     restoreGeometry(s->value("Geometry").toByteArray());
@@ -191,24 +189,48 @@ void MainWindow::InitQuickAccessBar()
 
     SARibbonQuickAccessBar* quickAccessBar = ribbonBar()->quickAccessBar();
 
+    // Действие: Создание нового ресурса или файла
     QAction* actionNew = createAction(tr("Создать"), "NewFile");
     actionNew->setShortcut(QKeySequence::New);
     actionNew->setShortcutContext(Qt::ApplicationShortcut);
     quickAccessBar->addAction(actionNew);
     quickAccessBar->addSeparator();
 
+    // Действие: Сохранение текущего ресурса
     m_pActionSave = createAction(tr("Сохранить"), "Save");
     m_pActionSave->setShortcut(QKeySequence::Save);
     m_pActionSave->setShortcutContext(Qt::ApplicationShortcut);
     quickAccessBar->addAction(m_pActionSave);
     quickAccessBar->addSeparator();
 
+    // Действие: Отмена последней операции
     m_pActionUndo = createAction<ProxyAction>(tr("Отменить"), "Undo");
+    m_pActionUndo->setShortcut(QKeySequence::Undo);
+    m_pActionUndo->setShortcutContext(Qt::ApplicationShortcut);
     quickAccessBar->addAction(m_pActionUndo);
 
+    // Добавляем подсказку для Undo
+    toolAddActionWithTooltip(m_pActionUndo,
+                             tr("Отменяет последнюю выполненную операцию"),
+                             QKeySequence::Undo);
+
+    // Действие: Повтор отмененной операции
     m_pActionRedo = createAction<ProxyAction>(tr("Повторить"), "Redo");
+    m_pActionRedo->setShortcut(QKeySequence::Redo);
+    m_pActionRedo->setShortcutContext(Qt::ApplicationShortcut);
+
+    // Добавляем подсказку для Redo
+    toolAddActionWithTooltip(m_pActionRedo,
+                             tr("Повторяет отмененную операцию"),
+                             QKeySequence::Redo);
+
     m_pUndoRedoMenu = new QMenu(tr("Повторить"), this);
     m_pUndoRedoMenu->setIcon(QIcon::fromTheme("Redo"));
+
+    // Добавляем описание для меню Undo/Redo
+    toolAddActionWithTooltip(m_pActionRedo,
+                             tr("Показывает историю операций и позволяет повторять отмененные действия"),
+                             QKeySequence::Redo);
 
     m_pUndoActionWidget = new UndoActionWidget(this);
     m_pUndoRedoMenu->addAction(m_pActionRedo);
@@ -236,6 +258,15 @@ void MainWindow::InitQuickAccessBar()
         quickAccessBar->addMenu(RecentLbrMenu, Qt::ToolButtonIconOnly, QToolButton::InstantPopup);
     }
 
+    // Добавляем подсказки к действиям
+    toolAddActionWithTooltip(actionNew,
+                             tr("Создает новый ресурс или открывает диалог создания"),
+                             QKeySequence::New);
+
+    toolAddActionWithTooltip(m_pActionSave,
+                             tr("Сохраняет текущий редактируемый ресурс"),
+                             QKeySequence::Save);
+
     connect(actionNew, &QAction::triggered, this, &MainWindow::onNew);
     connect(m_pActionSave, &QAction::triggered, this, &MainWindow::onSave);
 }
@@ -253,12 +284,22 @@ void MainWindow::InitButtonBar()
     wbar->addWidget(pWindowsComboBox);
     wbar->addSeparator();
 
+    // Действие: Открытие диалога параметров приложения
     QAction* optionsAction = createAction(tr("Параметры"), "Settings");
     wbar->addAction(optionsAction);
 
     wbar->addSeparator();
+
+    // Действие: Открытие диалога "О программе"
     QAction* about = wbar->addAction(tr("О программе"), QIcon::fromTheme("HelpApplication"), Qt::ToolButtonIconOnly);
     wbar->addSeparator();
+
+    // Добавляем подсказки
+    toolAddActionWithTooltip(optionsAction,
+                             tr("Открывает диалог настроек и параметров приложения"));
+
+    toolAddActionWithTooltip(about,
+                             tr("Показывает информацию о программе, версии и авторских правах"));
 
     connect(about, &QAction::triggered, this, &MainWindow::onAbout);
     connect(optionsAction, &QAction::triggered, this, &MainWindow::onOptions);
@@ -267,29 +308,55 @@ void MainWindow::InitButtonBar()
 
 void MainWindow::InitLbrPanel(SARibbonCategory *category)
 {
-    SARibbonPannel* libPannel = new SARibbonPannel(tr("Бибилтотека"));
+    SARibbonPannel* libPannel = new SARibbonPannel(tr("Библиотека"));
     category->addPannel(libPannel);
 
+    // Действие: Создание новой библиотеки ресурсов
     m_pActionNew = createAction(tr("Создать"), "NewLibrary");
-    //m_pActionNew->setShortcut(QKeySequence("Ctrl+N"));
     libPannel->addLargeAction(m_pActionNew);
 
+    // Действие: Открытие существующей библиотеки
     m_pActionOpen = createAction(tr("Открыть"), "OpenLibrary");
     m_pActionOpen->setShortcut(QKeySequence::Open);
     libPannel->addLargeAction(m_pActionOpen);
 
     libPannel->addSeparator();
+
+    // Действие: Импорт ресурсов из XML файла
     m_ImportXml = createAction(tr("Импорт XML файла"), "ImportXml");
     libPannel->addLargeAction(m_ImportXml);
 
+    // Действие: Импорт ресурсов из каталога с XML файлами
     m_pImportXmlFolder = createAction(tr("Импорт из каталога"), "ImportCatalogPart");
     libPannel->addSmallAction(m_pImportXmlFolder);
 
+    // Действие: Экспорт библиотеки в XML файл
     m_pExportXmlFile = createAction(tr("Экспорт в XML файл"), "ExportXml");
     libPannel->addSmallAction(m_pExportXmlFile);
 
+    // Действие: Экспорт библиотеки в каталог с XML файлами
     m_pExportXmlFolder = createAction(tr("Экспорт в каталог"), "ExportFolder");
     libPannel->addSmallAction(m_pExportXmlFolder);
+
+    // Добавляем подсказки
+    toolAddActionWithTooltip(m_pActionNew,
+                             tr("Создает новую библиотеку ресурсов (.lbr файл)"));
+
+    toolAddActionWithTooltip(m_pActionOpen,
+                             tr("Открывает существующую библиотеку ресурсов"),
+                             QKeySequence::Open);
+
+    toolAddActionWithTooltip(m_ImportXml,
+                             tr("Загружает ресурсы из выбранного XML файла в текущую библиотеку"));
+
+    toolAddActionWithTooltip(m_pImportXmlFolder,
+                             tr("Загружает ресурсы из всех XML файлов в указанном каталоге"));
+
+    toolAddActionWithTooltip(m_pExportXmlFile,
+                             tr("Экспортирует всю библиотеку в один XML файл"));
+
+    toolAddActionWithTooltip(m_pExportXmlFolder,
+                             tr("Экспортирует каждый ресурс библиотеки в отдельный XML файл"));
 
     connect(m_pActionNew, &QAction::triggered, this, &MainWindow::onNewLbr);
     connect(m_pActionOpen, &QAction::triggered, this, &MainWindow::onOpen);
@@ -332,20 +399,28 @@ void MainWindow::InitLbrResourcePanel(SARibbonCategory *category)
                     panelmenu->setDefaultAction(action);
                     panelmenu->setActiveAction(action);
                 }
-
-                //connect(action, &QAction::triggered, this, &MainWindow::OnNewResAction);
             }
 
+            // Действие: Создание нового ресурса типа PANEL (меню с подтипами)
             m_pActionNewPanel = resPannel->addLargeMenu(panelmenu, QToolButton::MenuButtonPopup);
             m_pActionNewPanel->setData(panels[0]);
+
+            // Добавляем подсказку
+            toolAddActionWithTooltip(m_pActionNewPanel,
+                                     tr("Создает новый ресурс типа PANEL или его подтип"));
+
             connect(resPannel, &SARibbonPannel::actionTriggered, this, &MainWindow::OnNewResActionEx);
         }
         else
         {
+            // Действие: Создание нового ресурса типа PANEL
             m_pActionNewPanel = createAction(tr("Создать PANEL"), "NewDialog");
             m_pActionNewPanel->setData(panels[0]);
             resPannel->addLargeAction(m_pActionNewPanel);
-            //connect(m_pActionNewPanel, &QAction::triggered, this, &MainWindow::OnNewResAction);
+
+            // Добавляем подсказку
+            toolAddActionWithTooltip(m_pActionNewPanel,
+                                     tr("Создает новый ресурс типа PANEL"));
         }
     }
 
@@ -370,70 +445,52 @@ void MainWindow::InitLbrResourcePanel(SARibbonCategory *category)
                     panelmenu->setDefaultAction(action);
                     panelmenu->setActiveAction(action);
                 }
-
-                //connect(action, &QAction::triggered, this, &MainWindow::OnNewResAction);
             }
         }
         else
         {
+            // Действие: Создание нового ресурса типа BSCROL
             m_pActionNewBScrol = createAction(tr("Создать BSCROL"), "NewTable");
             m_pActionNewBScrol->setData(scrols[0]);
             resPannel->addLargeAction(m_pActionNewBScrol);
+
+            // Добавляем подсказку
+            toolAddActionWithTooltip(m_pActionNewBScrol,
+                                     tr("Создает новый ресурс типа BSCROL (скролинговая панель)"));
         }
     }
 
+    // Действие: Редактирование выбранного ресурса
     m_pActionEditRes = createAction(tr("Редактировать"), "EditDocument");
     resPannel->addMediumAction(m_pActionEditRes);
 
+    // Действие: Удаление выбранного ресурса
     m_pActionDeleteRes = createAction(tr("Удалить"), "DeleteTag");
     resPannel->addMediumAction(m_pActionDeleteRes);
 
-    connect(m_pActionEditRes, &QAction::triggered, [=]()
-    {
-        QString name = m_pActionEditRes->property("Name").toString();
-        int type = m_pActionEditRes->property("Type").toInt();
+    // Добавляем подсказки
+    toolAddActionWithTooltip(m_pActionEditRes,
+                             tr("Открывает выбранный ресурс для редактирования"));
 
-        doubleResClicked(name, type);
-    });
+    toolAddActionWithTooltip(m_pActionDeleteRes,
+                             tr("Удаляет выбранный ресурс из библиотеки"),
+                             QKeySequence::Delete);
+
+    connect(m_pActionEditRes, &QAction::triggered, [=]()
+            {
+                QString name = m_pActionEditRes->property("Name").toString();
+                int type = m_pActionEditRes->property("Type").toInt();
+
+                doubleResClicked(name, type);
+            });
 
     connect(m_pActionDeleteRes, &QAction::triggered, [=]()
-    {
-        QString name = m_pActionDeleteRes->property("Name").toString();
-        int type = m_pActionDeleteRes->property("Type").toInt();
+            {
+                QString name = m_pActionDeleteRes->property("Name").toString();
+                int type = m_pActionDeleteRes->property("Type").toInt();
 
-        OnDeleteRequest(name, type);
-    });
-}
-
-void MainWindow::InitNewGallary(SARibbonCategory *category)
-{
-    SARibbonPannel* pannel = new SARibbonPannel(tr("Создать"));
-    category->addPannel(pannel);
-
-    SARibbonGallery* gallery = pannel->addGallery();
-    gallery->setGalleryButtonMaximumWidth(80);
-
-    LbrObjectInterface *TmpInterface = nullptr;
-    CreateLbrObject(&TmpInterface, this);
-
-    NewItemsDlg dlg(TmpInterface);
-    dlg.buildStandartNewItems();
-
-    QList<QAction*> galleryActions;
-    QStringList groups = dlg.getGroups();
-
-    for (const QString &grp : std::as_const(groups))
-    {
-        const QList<GroupInfoMap> &info = dlg.groupInfo(grp);
-
-        for (const GroupInfoMap &elem : info)
-        {
-            QAction *action = createAction(elem[RoleTitle].toString(), elem[RoleIconName].toString());
-            galleryActions.append(action);
-        }
-    }
-
-    gallery->addCategoryActions(tr("Новые элементы"), galleryActions);
+                OnDeleteRequest(name, type);
+            });
 }
 
 void MainWindow::InitViewBar(SARibbonCategory *category)
@@ -453,6 +510,19 @@ void MainWindow::InitViewBar(SARibbonCategory *category)
     viewPannel->addLargeAction(actionProperty);
     viewPannel->addLargeAction(actionToolBox);
 
+    // Добавляем подсказки для панелей
+    toolAddActionWithTooltip(actionResList,
+                             tr("Показывает или скрывает список ресурсов библиотеки"),
+                             QKeySequence("Alt+1"));
+
+    toolAddActionWithTooltip(actionProperty,
+                             tr("Показывает или скрывает панель свойств"),
+                             QKeySequence("Alt+3"));
+
+    toolAddActionWithTooltip(actionToolBox,
+                             tr("Показывает или скрывает панель инструментов"),
+                             QKeySequence("Alt+2"));
+
     m_pFilterRibbonPanel = new SARibbonPannel(tr("Фильтр"));
     category->addPannel(m_pFilterRibbonPanel);
 
@@ -463,6 +533,7 @@ void MainWindow::InitViewBar(SARibbonCategory *category)
         QString name = RsResCore::typeNameFromResType(type);
         QString iconName = RsResCore::iconNameFromResType(type);
 
+        // Действие: Фильтр по типу ресурса (переключаемое)
         QAction *typeAction = createAction(name, iconName);
         typeAction->setCheckable(true);
         typeAction->setChecked(true);
@@ -472,6 +543,10 @@ void MainWindow::InitViewBar(SARibbonCategory *category)
             typeAction->setVisible(false);
 
         m_pFilterRibbonPanel->addSmallAction(typeAction);
+
+        // Добавляем подсказку для фильтра
+        QString description = tr("Показывает или скрывает ресурсы типа %1 в списке").arg(name);
+        toolAddActionWithTooltip(typeAction, description);
 
         connect(typeAction, &QAction::toggled, this, &MainWindow::UpdateFilterResTypes);
     }
@@ -485,22 +560,47 @@ void MainWindow::InitViewBar(SARibbonCategory *category)
 
     QAction* optAct = new QAction(this);
     windowsPannel->setOptionAction(optAct);
-    connect(optAct, &QAction::triggered, this, [this](bool on)
-    {
-        Q_UNUSED(on);
-        showWindowList();
-    });
 
+    // Добавляем подсказку для опции
+    toolAddActionWithTooltip(optAct,
+                             tr("Открывает диалог со списком всех открытых окон"));
+
+    connect(optAct, &QAction::triggered, this, [this](bool on)
+            {
+                Q_UNUSED(on);
+                showWindowList();
+            });
+
+    // Действие: Активация следующего окна редактирования
     QAction *nextWindow = createAction(tr("Следующее"), "NextDocument");
+    // Действие: Активация предыдущего окна редактирования
     QAction *prevWindow = createAction(tr("Предыдущее"), "PreviousDocument");
     windowsPannel->addMediumAction(nextWindow);
     windowsPannel->addMediumAction(prevWindow);
     windowsPannel->addSeparator();
 
+    // Действие: Закрытие активного окна редактирования
     QAction *closeWindow = createAction(tr("Закрыть"), "CloseDocument");
+    // Действие: Закрытие всех окон редактирования
     QAction *closeAllWindow = createAction(tr("Закрыть все"), "CloseDocumentGroup");
     windowsPannel->addMediumAction(closeWindow);
     windowsPannel->addMediumAction(closeAllWindow);
+
+    // Добавляем подсказки для управления окнами
+    toolAddActionWithTooltip(nextWindow,
+                             tr("Активирует следующее окно в списке открытых окон"),
+                             QKeySequence("Ctrl+Tab"));
+
+    toolAddActionWithTooltip(prevWindow,
+                             tr("Активирует предыдущее окно в списке открытых окон"),
+                             QKeySequence("Ctrl+Shift+Tab"));
+
+    toolAddActionWithTooltip(closeWindow,
+                             tr("Закрывает текущее активное окно редактирования"),
+                             QKeySequence("Ctrl+F4"));
+
+    toolAddActionWithTooltip(closeAllWindow,
+                             tr("Закрывает все открытые окна редактирования"));
 
     connect(nextWindow, SIGNAL(triggered(bool)), m_Mdi, SLOT(activateNextSubWindow()));
     connect(prevWindow, SIGNAL(triggered(bool)), m_Mdi, SLOT(activatePreviousSubWindow()));
@@ -554,38 +654,6 @@ void MainWindow::SetupMenus()
 {
     ResApplication *app = (ResApplication*)qApp;
     m_RecentLbrList.reset(new RecentLbrList(app->settings()));
-
-    /*ui->actionNew->setIcon(QIcon(":/img/DocumentHS.png"));
-    ui->actionNew->setShortcuts(QKeySequence::New);
-
-    ui->actionOpen->setIcon(QIcon(":/img/openHS.png"));
-    ui->actionOpen->setShortcuts(QKeySequence::Open);*/
-
-    /*ui->toolBar->addAction(ui->actionNew);
-    ui->toolBar->addAction(ui->actionOpen);
-    ui->toolBar->addSeparator();
-    ui->toolBar->addAction(ui->actionOpenRes);*/
-
-    /*ui->viewMenu->addAction(m_ResListDock->toggleViewAction());
-    ui->viewMenu->addAction(m_PropertyDock->toggleViewAction());
-    ui->viewMenu->addAction(m_ToolBoxDock->toggleViewAction());
-    ui->viewMenu->addSeparator();
-    ui->viewMenu->addAction(ui->toolBar->toggleViewAction());
-    ui->viewMenu->addAction(ui->windowToolBar->toggleViewAction());*/
-
-    /*QList<QAction*> actions = m_RecentLbrList->actions();
-    for (QAction *action : actions)
-    {
-        ui->menuFile->addAction(action);
-        connect(action, SIGNAL(triggered(bool)), this, SLOT(onOpenRecent()));
-    }
-
-    ui->menuFile->addSeparator();
-    QAction *exit = ui->menuFile->addAction(tr("Выход"));
-    connect(exit, &QAction::triggered, [=]()
-    {
-        qApp->quit();
-    });*/
 }
 
 void MainWindow::onOptions()
@@ -636,14 +704,6 @@ void MainWindow::AddEditorWindow(BaseEditorWindow *editor)
     QModelIndex index = pWindowsModel->addWindow(wnd);
     pWindowsComboBox->setCurrentIndex(index.row());
 
-    /*QList<SARibbonContextCategory*> CatList = editor->contextCategoryes();
-
-    for (auto category : std::as_const(CatList))
-    {
-        ribbonBar()->addContextCategory(category);
-        //ribbonBar()->showContextCategory(category);
-    }*/
-
     connect(editor, &BaseEditorWindow::modifyChanged, this, &MainWindow::UpdateActions);
 }
 
@@ -675,7 +735,7 @@ void MainWindow::readySave(BaseEditorWindow *editor)
     if (m_pLbrObj->isResExists(name, type))
     {
         QString msg = tr("Перезаписать существующий ресурс %1 [<b>%2</b>]?")
-                .arg(RsResCore::inst()->typeNameFromResType(type), name);
+                          .arg(RsResCore::inst()->typeNameFromResType(type), name);
 
         if (QMessageBox::question(this, tr("Сохранение"), msg, QMessageBox::Yes | QMessageBox::No) == QMessageBox::No)
             return;
@@ -711,7 +771,7 @@ void MainWindow::readySave(BaseEditorWindow *editor)
     if (!errorMsg.isEmpty())
     {
         QString text = tr("Ошибка сохранения ресурса %1 [<b>%2</b>]")
-                .arg(RsResCore::inst()->typeNameFromResType(type), name);
+                           .arg(RsResCore::inst()->typeNameFromResType(type), name);
 
         if (errorMsg.isEmpty())
             QMessageBox::critical(this, tr("Сохранение"), text);
@@ -758,7 +818,13 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
             BaseEditorWindow *lastwnd = dynamic_cast<BaseEditorWindow*>(m_LastActiveWindow->widget());
 
             if (lastwnd)
+            {
+                QList<QWidget*> status = lastwnd->statusBarSections();
                 lastwnd->clearRibbonTabs();
+
+                for (auto widget : qAsConst(status))
+                    ui->statusbar->removeWidget(widget);
+            }
         }
 
         QList<SARibbonContextCategory*> allCategoryes = ribbonBar()->contextCategoryList();
@@ -780,7 +846,6 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
 
     if (m_LastActiveWindow == window)
     {
-        //m_LastActiveWindow->clearRibbonTabs();
         return;
     }
 
@@ -801,7 +866,13 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
         m_pUndoActionWidget->setUndoStack(nullptr);
 
         if (lastwnd)
+        {
+            QList<QWidget*> status = lastwnd->statusBarSections();
             lastwnd->clearRibbonTabs();
+
+            for (auto widget : qAsConst(status))
+                ui->statusbar->removeWidget(widget);
+        }
 
         m_LastActiveWindow = nullptr;
     }
@@ -838,6 +909,10 @@ void MainWindow::subWindowActivated(QMdiSubWindow *window)
                 ribbonBar()->hideContextCategory(all);
         }
         ribbonBar()->setUpdatesEnabled(true);
+
+        QList<QWidget*> status = wnd->statusBarSections();
+        for (auto widget : qAsConst(status))
+            ui->statusbar->addPermanentWidget(widget);
 
         m_LastActiveWindow = window;
 
@@ -942,7 +1017,6 @@ void MainWindow::onNewLbr()
         else
             filename = fi.fileName();
 
-        // {c7e4dbe9-cd8e-4eaf-bcd3-975f9fb6ba1e}
         ResourceEditorInterface *interface = RsResCore::inst()->pluginForNewAction(guid);
 
         if (!interface)
@@ -1004,11 +1078,11 @@ void MainWindow::onOpen()
 }
 
 void MainWindow::SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
-                      const QString &name, const QString &title, bool changed)
+                                  const QString &name, const QString &title, bool changed)
 {
     QString typeName = RsResCore::inst()->typeNameFromResType(Type);
     QString titlestr = QString("%1 [%2]: %3")
-            .arg(typeName, name, title);
+                           .arg(typeName, name, title);
 
     if (changed)
         titlestr += " 🖊";
@@ -1067,12 +1141,12 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                 QList<FileInfo> files;
                 qint32 id = reinterpret_cast<qint32>(editor);
                 files.append(
-                {
-                    id,
-                    editor->name(),
-                    RsResCore::inst()->typeNameFromResType(editor->type()),
-                    RsResCore::inst()->iconFromResType(editor->type())
-                });
+                    {
+                        id,
+                        editor->name(),
+                        RsResCore::inst()->typeNameFromResType(editor->type()),
+                        RsResCore::inst()->iconFromResType(editor->type())
+                    });
 
                 SaveFilesDlg dlg(files, this);
                 if (dlg.exec() == QDialog::Accepted)
@@ -1093,20 +1167,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                         event->ignore();
                 }
             }
-            /*QString typeName = RsResCore::inst()->typeNameFromResType(editor->type());
-            QString msg = tr("Сохранить изменения в ресурсе %1 [<b>%2</b>]")
-                    .arg(typeName, editor->name());
-
-            QMessageBox::StandardButton btn = QMessageBox::question(this, tr("Сохранение"),
-                                  msg, QMessageBox::Save | QMessageBox::Discard | QMessageBox::Abort);
-
-            if (btn == QMessageBox::Abort)
-                event->ignore();
-            else if (btn == QMessageBox::Save)
-            {
-                readySave(editor);
-                event->accept();
-            }*/
             return true;
         }
     }
@@ -1122,7 +1182,7 @@ void MainWindow::OnDeleteRequest(const QString &name, const int &type)
     QString typeName = RsResCore::inst()->typeNameFromResType(type);
     QMessageBox::StandardButton btn =
         QMessageBox::question(this, tr("Удаление"), tr("Удалить ресурс %1 [<b>%2</b>]?")
-                          .arg(typeName, name));
+                                                        .arg(typeName, name));
 
     if (btn == QMessageBox::Yes)
         m_pLbrObj->deleteResource(name, type);
@@ -1159,10 +1219,8 @@ void MainWindow::showEvent(QShowEvent *event)
     setStyleSheet(qss);
     ribbon->setTabBarBaseLineColor(QColor(0, 114, 198));
     ribbon->setWindowTitleTextColor(QColor(0, 114, 198));
-    //ribbon->setContextCategoryColorList({QColor(0, 114, 198)});
 
     setContentsMargins(2,2,2,2);
-    //ribbon->setContentsMargins(2, 2, 0, 0);
 
     update();
 }
@@ -1198,7 +1256,6 @@ void MainWindow::subWindowIndexChanged(const int &index)
 
 void MainWindow::SetActiveWindow(QMdiSubWindow *wnd)
 {
-    //wnd->setWindowState(Qt::WindowNoState);
     m_Mdi->setActiveSubWindow(wnd);
 }
 
@@ -1283,12 +1340,12 @@ void MainWindow::closeAllSubWindows(bool *canceled)
             qint32 id = reinterpret_cast<qint32>(editor);
 
             files.append(
-            {
-                id,
-                editor->name(),
-                RsResCore::inst()->typeNameFromResType(editor->type()),
-                RsResCore::inst()->iconFromResType(editor->type())
-            });
+                {
+                    id,
+                    editor->name(),
+                    RsResCore::inst()->typeNameFromResType(editor->type()),
+                    RsResCore::inst()->iconFromResType(editor->type())
+                });
         }
     }
 
@@ -1399,74 +1456,6 @@ bool MainWindow::processSingleImportXmlFile(const QString& filePath, ErrorsModel
     ResXmlLoader loader(m_pLbrObj, errorsModel);
     loader.readXml(&file);
 
-    /*bool success = false;
-
-    try
-    {
-        ResPanel* panel = nullptr;
-        RsResCore::inst()->loadFromXml(&file, &panel);
-
-        if (panel)
-        {
-            bool exists = false;
-            bool deleted = true;
-            if (m_pLbrObj->isResExists(panel->name(), panel->type()))
-            {
-                exists = true;
-                if (!m_pLbrObj->deleteResource(panel->name(), panel->type()))
-                {
-                    deleted = false;
-                    if (errorsModel)
-                        errorsModel->appendError(tr("Не удалось перезаписать ресурс <b>%1</b>").arg(panel->name()));
-                }
-            }
-
-            if (deleted)
-            {
-                QString errorMsg;
-                ResBuffer *resBuffer = nullptr;
-
-                if (m_pLbrObj->beginSaveRes(panel->name(), panel->type(), &resBuffer))
-                {
-                    if (!panel->save(resBuffer))
-                    {
-                        if (errorsModel)
-                        {
-                            if (!exists)
-                                errorsModel->appendMessage(tr("Файл <b>%1</b> успешно загружен").arg(fileInfo.fileName()));
-                            else
-                                errorsModel->appendMessage(tr("Файл <b>%1</b> успешно перезаписан").arg(fileInfo.fileName()));
-                        }
-
-                        success = true;
-                        delete panel;
-                        m_pLbrObj->endSaveRes(&resBuffer);
-                    }
-                    else
-                    {
-                        if (errorsModel)
-                            errorsModel->appendError(tr("Не удалось загрузить файл <b>%1</b>").arg(fileInfo.fileName()));
-                    }
-                }
-                else
-                {
-                    if (errorsModel)
-                        errorsModel->appendError(tr("Не удалось загрузить файл <b>%1</b>").arg(fileInfo.fileName()));
-                }
-            }
-        }
-        else
-        {
-            if (errorsModel)
-                errorsModel->appendError(tr("Файл <b>%1</b> не содержит поддерживаемых ресурсов").arg(fileInfo.fileName()));
-        }
-    }
-    catch (const std::exception& e)
-    {
-        if (errorsModel)
-            errorsModel->appendError(tr("Ошибка в %1: %2").arg(fileInfo.fileName(), e.what()));
-    }*/
-
     file.close();
 
     return true;
@@ -1505,15 +1494,15 @@ void MainWindow::processImportXmlWithProgress(const QStringList& filePaths, Erro
 void MainWindow::OnImportXmlFile()
 {
     QStringList filePaths = QFileDialog::getOpenFileNames(this,
-        tr("Выберите XML файлы для загрузки"), QString(),
-        tr("XML файлы (*.xml);"));
+                                                          tr("Выберите XML файлы для загрузки"), QString(),
+                                                          tr("XML файлы (*.xml);"));
 
     if (filePaths.isEmpty())
         return;
 
     ErrorsModel errors;
     processImportXmlWithProgress(filePaths, &errors, this,
-        tr("Загрузка файлов"), tr("Загрузка XML файлов..."));
+                                 tr("Загрузка файлов"), tr("Загрузка XML файлов..."));
 
     ErrorDlg dlg(ErrorDlg::ModeInformation, this);
     dlg.setErrors(&errors);
@@ -1648,17 +1637,17 @@ void MainWindow::OnExportXml()
         progress.setCancelButton(nullptr);
 
         QFuture<bool> future = QtConcurrent::run([&errors,filename]()
-        {
-            QFile libxml(filename);
-            if (libxml.open(QIODevice::ReadOnly))
-            {
-                bool res = RsResCore::inst()->validateResXmlWithXsd(&libxml, &errors);
-                libxml.close();
-                return res;
-            }
+                                                 {
+                                                     QFile libxml(filename);
+                                                     if (libxml.open(QIODevice::ReadOnly))
+                                                     {
+                                                         bool res = RsResCore::inst()->validateResXmlWithXsd(&libxml, &errors);
+                                                         libxml.close();
+                                                         return res;
+                                                     }
 
-            return false;
-        });
+                                                     return false;
+                                                 });
 
         while (!future.isFinished())
         {

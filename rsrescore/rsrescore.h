@@ -11,6 +11,7 @@
 #define USES_SECTION "uses"
 #define LBR_RECENTFOLDERS_CONTEXT "LbrFolders"
 
+class QSettings;
 class ResPanel;
 class LbrObjectInterface;
 class ResourceEditorInterface;
@@ -36,6 +37,9 @@ public:
     QStringList newItemsMetaList() const;
     void init();
 
+    QSettings *settings();
+    void setSettings(QSettings *settings);
+
     void loadFromXml(QIODevice *device, ResPanel **panel) throw(std::runtime_error, std::logic_error);
 
     bool getResXmlXsd(QXmlSchema **schema, QAbstractMessageHandler **handler, ErrorsModel *errorMessage = nullptr);
@@ -56,6 +60,7 @@ private:
 
     static RsResCore *m_Inst;
 
+    QSettings *m_pSettings;
     QList<ResourceEditorInterface*> m_Plugins;
     QMultiHash<qint16,ResourceEditorInterface*> m_PluginTypes;
 };

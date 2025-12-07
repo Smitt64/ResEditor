@@ -74,6 +74,7 @@ RsResCore *RsResCore::m_Inst = nullptr;
 
 RsResCore::RsResCore()
 {
+    m_pSettings = nullptr;
 }
 
 void RsResCore::init()
@@ -110,6 +111,16 @@ RsResCore *RsResCore::inst()
     if (!m_Inst)
         m_Inst = new RsResCore();
     return m_Inst;
+}
+
+QSettings *RsResCore::settings()
+{
+    return m_pSettings;
+}
+
+void RsResCore::setSettings(QSettings *settings)
+{
+    m_pSettings = settings;
 }
 
 QString RsResCore::iconNameFromResType(const qint16 &Type)

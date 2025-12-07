@@ -268,7 +268,6 @@ bool PropertyWidgetMapper::bind(QObject *source, const char *property, QActionGr
         {
             action->setChecked(false);
             action->setIcon(QIcon(":/icons/multiple_values.png"));
-            action->setToolTip(tr("Значения различаются у выделенных элементов"));
         }
     }
     else
@@ -278,7 +277,6 @@ bool PropertyWidgetMapper::bind(QObject *source, const char *property, QActionGr
         for (QAction* action : qAsConst(actions))
         {
             action->setIcon(QIcon());
-            action->setToolTip("");
             if (action->data() == currentValue)
             {
                 action->setChecked(true);

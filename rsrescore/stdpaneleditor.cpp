@@ -65,6 +65,9 @@
 #include <QTextCodec>
 #include <QProgressDialog>
 #include <QActionGroup>
+#include <QGroupBox>
+#include <QButtonGroup>
+#include <QRadioButton>
 
 #define SHADOW_CODE 9617
 
@@ -93,14 +96,14 @@ public:
 
 // ----------------------------------------------------
 
-#define StyleIcon(_style) panelItem->style()->renderStyleIcon(panelItem->borderStyle(), _style, panelItem)
+#define PanStyleIcon(_style) panelItem->style()->renderStyleIcon(panelItem->borderStyle(), _style, panelItem)
+#define CtrlStyleIcon(_ctrlstyle) panelItem->style()->renderControlStyleIcon(_ctrlstyle, panelItem->panelStyle(), panelItem)
 #define BorderIcon(border) panelItem->style()->renderBorderIcon(border, panelItem->panelStyle(), panelItem)
 
 StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     BaseEditorWindow(parent),
     m_pPanel(nullptr),
     panelItem(nullptr),
-    m_StatusBar(nullptr),
     m_pPanelCategory(nullptr)
 {
     m_Type = Type;
@@ -117,27 +120,17 @@ StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     }
 
     m_pStructModel = new PanelStructModel(panelItem);
-
-    m_StatusBar = new QStatusBar(this);
-    m_pStatusContainer = new QWidget(this);
     setWindowTitle(tr("Редактирование панели"));
 
     m_SizeText = new StatusBarElement(this);
-    m_SizeText->setPixmap(QPixmap(":/img/Size.png"));
+    m_SizeText->setPixmap(QIcon::fromTheme("MoveGlyphBox").pixmap(16));
     m_SizeText->setText(QString("0 x 0"));
+    m_SizeText->setMaximumWidth(200);
 
     m_CursorText = new StatusBarElement(this);
-    m_CursorText->setPixmap(QPixmap(":/img/CursorPos.png"));
+    m_CursorText->setPixmap(QIcon::fromTheme("DirectSelection").pixmap(16));
     m_CursorText->setText(QString("0 : 0"));
-
-    m_pStatusContainerLayout = new QHBoxLayout();
-    m_pStatusContainerLayout->setMargin(0);
-    m_pStatusContainerLayout->addWidget(m_SizeText);
-    m_pStatusContainerLayout->addWidget(m_CursorText);
-    m_pStatusContainer->setLayout(m_pStatusContainerLayout);
-    m_StatusBar->addPermanentWidget(m_pStatusContainer);
-    setStatusBar(m_StatusBar);
-
+    m_CursorText->setMaximumWidth(200);
     setMouseTracking(true);
 
     m_pClipboard = QApplication::clipboard();
@@ -153,22 +146,16 @@ StdPanelEditor::~StdPanelEditor()
     m_pControlCategory = nullptr;
 }
 
+QList<QWidget*> StdPanelEditor::statusBarSections()
+{
+    return { m_SizeText, m_CursorText };
+}
+
 void StdPanelEditor::setupEditor()
 {
-    /*m_pToolBar = addToolBar(tr("Основная"));
-    m_pToolBar->setIconSize(QSize(16, 16));*/
-
     m_pView = new StdEditorView(this);
     m_pView->setupScene();
-
-    m_TabContainer = new QTabWidget(this);
-    m_TabContainer->addTab(m_pView, tr("Редактор"));
-    m_TabContainer->setTabPosition(QTabWidget::South);
-    m_TabContainer->setTabShape(QTabWidget::Triangular);
-    m_TabContainer->setTabsClosable(true);
-    m_TabContainer->tabBar()->setTabButton(0, QTabBar::RightSide, nullptr);
-
-    setCentralWidget(m_TabContainer);
+    setCentralWidget(m_pView);
 
     panelItem->setBrush(QColor(128, 128, 0));
 
@@ -183,14 +170,12 @@ void StdPanelEditor::setupEditor()
     setupNameLine();
     initUndoRedo();
 
-    BaseScene *baseScene = dynamic_cast<BaseScene*>(m_pView->scene());
+    StdEditorScene *baseScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
     if (baseScene)
         initpropertyModelSignals(baseScene);
 
     loadToolBox();
 
-    //connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
-    //connect(m_pSave, &QAction::triggered, this, &StdPanelEditor::onSave);
     connect(panelItem, &PanelItem::titleChanged, [=]()
     {
         emit titleChanged(panelItem->title());
@@ -212,11 +197,12 @@ void StdPanelEditor::setupEditor()
         m_pBorderStyleGallery->blockSignals(false);
     });
 
-    connect(m_TabContainer->tabBar(), &QTabBar::tabCloseRequested, [=](int index)
+    ControlItemsWrapper *wrp = baseScene->controlItemsWrapper();
+    connect(wrp, &ControlItemsWrapper::controlStyleChanged, [=]()
     {
-        QWidget *w = m_TabContainer->widget(index);
-        m_TabContainer->removeTab(index);
-        w ->deleteLater();
+        m_pControlStyleGallery->blockSignals(true);
+        ApplyControlStyleToGallary();
+        m_pControlStyleGallery->blockSignals(false);
     });
 }
 
@@ -237,34 +223,6 @@ void StdPanelEditor::setupNameLine()
         pClipboard->setText(m_pNameLineEdit->text(), QClipboard::Clipboard);
     });
 }
-
-/*QAction *StdPanelEditor::addAction(const QIcon &icon, const QString &text, const QKeySequence &key)
-{
-    QAction *action = m_pToolBar->addAction(icon, text);
-    action->setToolTip(text);
-
-    if (!key.isEmpty())
-    {
-        action->setShortcut(key);
-        AddShortcutToToolTip(action);
-    }
-
-    return action;
-}
-
-QAction *StdPanelEditor::addAction(QMenu *menu, const QIcon &icon, const QString &text, const QKeySequence &key)
-{
-    QAction *action = menu->addAction(icon, text);
-    action->setToolTip(text);
-
-    if (!key.isEmpty())
-    {
-        action->setShortcut(key);
-        AddShortcutToToolTip(action);
-    }
-
-    return action;
-}*/
 
 void StdPanelEditor::setCursorToFirstFreeCell()
 {
@@ -678,7 +636,7 @@ void StdPanelEditor::addCodeWindow(const QString &title, const QString &text)
     pEdit->setPlainText(text);
 
     ToolApplyHighlighter(pEdit, HighlighterXml);
-    m_TabContainer->addTab(pEdit, title);
+    //m_TabContainer->addTab(pEdit, title);
 }
 
 const char *StdPanelEditor::resTypeStr(int tp)
@@ -699,13 +657,41 @@ const char *StdPanelEditor::resTypeStr(int tp)
 void StdPanelEditor::saveToXml()
 {
     QFileDialog fileDlg(this);
+    QSettings *pSettings = RsResCore::inst()->settings();
+
+    QStringList recentDirs;
+    int size = pSettings->beginReadArray("RecentXmlDirs");
+    for (int i = 0; i < size; i++)
+    {
+        pSettings->setArrayIndex(i);
+        QString dir = pSettings->value("path").toString();
+        if (QDir(dir).exists() && !recentDirs.contains(dir))
+            recentDirs.append(dir);
+    }
+    pSettings->endArray();
+
     fileDlg.setOption(QFileDialog::DontUseNativeDialog);
     fileDlg.setWindowTitle(tr("Сохранение в xml"));
     fileDlg.setAcceptMode(QFileDialog::AcceptOpen);
     fileDlg.setDirectory("/home/jana");
     fileDlg.setFileMode(QFileDialog::DirectoryOnly);
     fileDlg.setViewMode(QFileDialog::List);
-    //fileDlg.setNameFilter(tr("Image Files (*.png *.jpg *.bmp)"));
+
+    QList<QUrl> sidebarUrls;
+    sidebarUrls << QUrl::fromLocalFile(QDir::homePath())
+                << QUrl::fromLocalFile(QDir::currentPath());
+
+    for (const QString &dir : recentDirs)
+    {
+        if (QDir(dir).exists())
+            sidebarUrls.append(QUrl::fromLocalFile(dir));
+    }
+    fileDlg.setSidebarUrls(sidebarUrls);
+
+    if (!recentDirs.isEmpty())
+        fileDlg.setDirectory(recentDirs.first());
+    else
+        fileDlg.setDirectory(QDir::homePath());
 
     QScopedPointer<QHBoxLayout> hbl(new QHBoxLayout(0));
     QScopedPointer<QComboBox> encode(new QComboBox());
@@ -728,7 +714,45 @@ void StdPanelEditor::saveToXml()
     QString result =
         RsResCore::inst()->saveResToXml(type(), name(), lbr(), filename, encodetxt);
 
-    addCodeWindow(tr("XML"), result);
+    if (QDir(filename).exists())
+    {
+        recentDirs.removeAll(filename);
+        recentDirs.prepend(filename);
+
+        pSettings->beginWriteArray("RecentXmlDirs");
+        for (int i = 0; i < recentDirs.size(); i++)
+        {
+            pSettings->setArrayIndex(i);
+            pSettings->setValue("path", recentDirs[i]);
+        }
+        pSettings->endArray();
+        pSettings->sync();
+    }
+
+    /*addCodeWindow(tr("XML"), result);*/
+    bool showMessage = pSettings->value("StdPanelEditor/ShowXmlSuccessMessage", true).toBool();
+    if (showMessage)
+    {
+        QMessageBox msgBox(QMessageBox::Information,
+                           tr("Сохранение XML"),
+                           tr("<b>Ресурс '%1' успешно экспортирован в XML</b><br><br>"
+                              "Каталог: %2<br>"
+                              "Кодировка: %3")
+                               .arg(name())
+                               .arg(QDir::toNativeSeparators(filename))
+                               .arg(encodetxt),
+                           QMessageBox::Ok,
+                           this);
+
+        msgBox.setCheckBox(new QCheckBox(tr("Больше не показывать")));
+        msgBox.exec();
+
+        if (msgBox.checkBox()->isChecked())
+        {
+            pSettings->setValue("StdPanelEditor/ShowXmlSuccessMessage", false);
+            pSettings->sync();
+        }
+    }
 }
 
 void StdPanelEditor::showCheckError(int stat, ErrorsModel *model)
@@ -888,13 +912,11 @@ void StdPanelEditor::onInsertControl()
     if (!pPanel)
         return;
 
-    //CursorPos = pPanel->mapFromScene(CursorPos);
-
     bool found = false;
     QSize grid = pScene->getGridSize();
     QRectF cursor(CursorPos, QSizeF(grid.width(), grid.height()));
     QList<CustomRectItem*> lst = pScene->findItems<CustomRectItem>();
-    for (CustomRectItem *item : lst)
+    for (CustomRectItem *item : qAsConst(lst))
     {
         if (pPanel == item)
             continue;
@@ -946,7 +968,7 @@ void StdPanelEditor::CheckSpelling()
 
     QProgressDialog dialog(tr("Загрузка словаря"), "", 0, 0, this);
     dialog.setWindowTitle("Орфография");
-    dialog.setWindowIcon(QIcon(":/img/CheckSpellingHS.png"));
+    dialog.setWindowIcon(QIcon::fromTheme("SpellingCheck"));
     dialog.setCancelButton(nullptr);
     dialog.setWindowModality(Qt::WindowModal);
     dialog.setAutoClose(true);
@@ -1072,7 +1094,6 @@ void StdPanelEditor::CheckSpellingUpdateTexts(ResSpellStringsDlg *dlg)
 
 void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
 {
-    //ResApplication *app = (ResApplication*)qApp;
     StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
 
     SARibbonPannel *fieldpanel = category->addPannel(tr("Параметры поля"));
@@ -1080,14 +1101,20 @@ void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
     SARibbonPannel *datatypepanel = category->addPannel(tr("Тип значения"));
 
     m_pFieldProperty = createAction(tr("Параметры поля"), "FieldProperties");
+    toolAddActionWithTooltip(m_pFieldProperty,
+                         tr("Открывает диалог параметров поля"),
+                         QKeySequence("Enter"));
     fieldpanel->addLargeAction(m_pFieldProperty);
 
     m_pFdmAction = createAction(tr("Признак FDM"), "TimeLineLock");
     m_pFdmAction->setCheckable(true);
+    toolAddActionWithTooltip(m_pFdmAction, tr("Включает/выключает режим FDM"));
     fieldpanel->addMediumAction(m_pFdmAction);
 
     m_pAsTextAction = createAction(tr("Признак текста"), "TextBlock");
     m_pAsTextAction->setCheckable(true);
+    toolAddActionWithTooltip(m_pAsTextAction,
+                         tr("Включает/выключает текстовый режим поля"));
     fieldpanel->addMediumAction(m_pAsTextAction);
 
     m_pFieledTypeGroup = new QActionGroup(this);
@@ -1104,8 +1131,13 @@ void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
         ftype->setCheckable(true);
         ftype->setData(value);
 
-        fieldtypepanel->addSmallAction(ftype);
+        QString status;
+        QString description = getFieldTypeDescription(value, status);
+        ftype->setToolTip(description);
+        ftype->setStatusTip(status);
+
         m_pFieledTypeGroup->addAction(ftype);
+        fieldtypepanel->addMediumAction(ftype);
     }
 
     QMetaEnum DataTypeEnum = QMetaEnum::fromType<ControlItem::DataType>();
@@ -1116,17 +1148,26 @@ void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
         ftype->setCheckable(true);
         ftype->setData(value);
 
-        datatypepanel->addSmallAction(ftype);
+        QString tooltip = getDataTypeDescription(static_cast<ControlItem::DataType>(value));
+        ftype->setToolTip(tooltip);
+
         m_pDataTypeGroup->addAction(ftype);
+        datatypepanel->addMediumAction(ftype);
     }
 
     SARibbonPannel *stylepanel = category->addPannel(tr("Стиль"));
     m_pControlStyleGallery = stylepanel->addGallery();
-    MakeStyleRaibbonGallary(m_pControlStyleGallery, 0, &m_pControlStyleGroup, true);
+    MakeStyleRaibbonGallary(m_pControlStyleGallery, SLOT(OnControlStyleSelected(QAction*)), &m_pControlStyleGroup, true);
 
-    m_pNoTabStop = createAction(tr("Признак FDM"), "TimeLineLock");
+    m_pNoTabStop = createAction(tr("Исключить из обхода"), "ExcludePath");
+    toolAddActionWithTooltip(m_pNoTabStop, tr("Исключает поле из перехода по Tab"));
     m_pNoTabStop->setCheckable(true);
-    fieldpanel->addMediumAction(m_pFdmAction);
+    fieldpanel->addMediumAction(m_pNoTabStop);
+
+    m_pListSelect = createAction(tr("Выбор из списка"), "ListBoxSearch");
+    toolAddActionWithTooltip(m_pListSelect, tr("Позволяет пользователю выбирать значения из предопределенного списка"));
+    m_pListSelect->setCheckable(true);
+    fieldpanel->addMediumAction(m_pListSelect);
 
     ControlItemsWrapper *wrp = pScene->controlItemsWrapper();
     m_RibbonControlMapper.reset(new PropertyWidgetMapper());
@@ -1135,20 +1176,35 @@ void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
 
     m_RibbonMapper->bind(wrp, "fdm", m_pFdmAction);
     m_RibbonMapper->bind(wrp, "isText", m_pAsTextAction);
+    m_RibbonMapper->bind(wrp, "noTabStop", m_pNoTabStop);
+    m_RibbonMapper->bind(wrp, "listSelect", m_pListSelect);
+
+    connect(m_pFieldProperty, &QAction::triggered, [&]()
+    {
+        StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+        ControlItemsWrapper *controlItemsWrapper = pScene->controlItemsWrapper();
+        controlItemsWrapper->userAction(CustomRectItem::ActionKeyEnter);
+    });
 }
 
 void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
 {
     ResApplication *app = (ResApplication*)qApp;
     SARibbonPannel *respanel = category->addPannel(tr("Панель"));
-    //respanel->setObjectName(respanel->titleLabel()->text());
 
     QAction *panelPropertyAction = createAction(tr("Параметры панели"), "WindowsService");
+    toolAddActionWithTooltip(panelPropertyAction,
+                         tr("Открывает диалог свойств панели"),
+                         QKeySequence("Enter"));
     respanel->addLargeAction(panelPropertyAction);
     respanel->addSeparator();
 
     m_SaveToXml = createAction(tr("Сохранить в XML"), "XMLFile", QKeySequence("Ctrl+ALT+S"));
     respanel->addLargeAction(m_SaveToXml);
+    toolAddActionWithTooltip(m_SaveToXml,
+                         tr("Сохраняет панель в XML-формат"),
+                         QKeySequence("Ctrl+ALT+S"));
+
     connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
     respanel->addSeparator();
 
@@ -1162,10 +1218,16 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     SARibbonPannel *editpanel = category->addPannel(tr("Правка"));
 
     m_pCreateControl = createAction(tr("Создать поле"), "TextBox", QKeySequence(Qt::Key_Insert));
+    toolAddActionWithTooltip(m_pCreateControl,
+                         tr("Создает новое поле в позиции курсора"),
+                         QKeySequence(Qt::Key_Insert));
     connect(m_pCreateControl, &QAction::triggered, this, &StdPanelEditor::onInsertControl);
     editpanel->addLargeAction(m_pCreateControl);
 
     m_pDelete = createAction(tr("Удалить элемент"), "DeleteClause", QKeySequence::Delete);
+    toolAddActionWithTooltip(m_pDelete,
+                         tr("Удаляет выбранные элементы"),
+                         QKeySequence::Delete);
     connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
     editpanel->addLargeAction(m_pDelete);
 
@@ -1174,6 +1236,9 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
 
     m_pContrst = createAction(tr("Контраст"), "AcrylicBrush", QKeySequence("Alt+F9"));
     m_pContrst->setCheckable(true);
+    toolAddActionWithTooltip(m_pContrst,
+                         tr("Включает/выключает режим контраста для лучшей видимости"),
+                         QKeySequence("Alt+F9"));
     connect(m_pContrst, &QAction::toggled, [&](bool toogled)
     {
         panelItem->setProperty(CONTRAST_PROPERTY, toogled);
@@ -1182,15 +1247,13 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
 
     m_pScrolAreaAction = createAction(tr("Область скролинга"), "RowUpdating", QKeySequence("Alt+F9"));
     m_pScrolAreaAction->setCheckable(true);
+    toolAddActionWithTooltip(m_pScrolAreaAction,
+                         tr("Показывает/скрывает область скролинга"),
+                         QKeySequence("Alt+F9"));
     m_pScrolAreaAction->setVisible(m_Type != LbrObject::RES_PANEL);
 
     if (m_Type != LbrObject::RES_PANEL)
         connect(m_pScrolAreaAction, SIGNAL(toggled(bool)), panelItem, SLOT(showScrolArea(bool)));
-    /*connect(m_pScrolAreaAction, &QAction::toggled, [&](bool toogled)
-    {
-        QMetaObject *panelMeta = panelItem->metaObject();
-        //panelItem->setProperty(SCROLAREA_PROPERTY, toogled);
-    });*/
 
     app->settings()->beginGroup("StdEditor");
     m_pContrst->blockSignals(true);
@@ -1203,19 +1266,31 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     editpanel->addSeparator();
 
     m_pCutAction = createAction(tr("Вырезать"), "Cut", QKeySequence::Cut);
+    toolAddActionWithTooltip(m_pCutAction,
+                         tr("Вырезает выбранные элементы в буфер обмена"),
+                         QKeySequence::Cut);
     connect(m_pCutAction, &QAction::triggered, this, &StdPanelEditor::sceneCutItems);
     editpanel->addSmallAction(m_pCutAction);
 
     m_pCopyAction = createAction(tr("Копировать"), "Copy", QKeySequence::Copy);
+    toolAddActionWithTooltip(m_pCopyAction,
+                         tr("Копирует выбранные элементы в буфер обмена"),
+                         QKeySequence::Copy);
     connect(m_pCopyAction, &QAction::triggered, this, &StdPanelEditor::sceneCopyItems);
     editpanel->addSmallAction(m_pCopyAction);
 
     m_pPasteAction = createAction(tr("Вставить"), "Paste", QKeySequence::Paste);
+    toolAddActionWithTooltip(m_pPasteAction,
+                         tr("Вставляет элементы из буфера обмена"),
+                         QKeySequence::Paste);
     connect(m_pPasteAction, &QAction::triggered, this, &StdPanelEditor::scenePasteItems);
     editpanel->addSmallAction(m_pPasteAction);
 
     QAction *centerAction = createAction(tr("Выводить панель по центру"), "AlignCenter");
+    toolAddActionWithTooltip(centerAction, tr("Выводит панель по центру экрана при отображении"));
+
     QAction *alignRightAction = createAction(tr("Выравнивание текста справа"), "AlignRight");
+    toolAddActionWithTooltip(alignRightAction, tr("Выравнивает текст панели по правому краю"));
     centerAction->setCheckable(true);
     alignRightAction->setCheckable(true);
     respanel->addSmallAction(centerAction);
@@ -1223,18 +1298,29 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
 
     SARibbonPannel *checkpanel = category->addPannel(tr("Рецензирование"));
     m_pSpellCheckAction = createAction(tr("Проверить орфографию"), "SpellingCheck", QKeySequence("Alt+H"));
+    toolAddActionWithTooltip(m_pSpellCheckAction,
+                         tr("Запускает проверку орфографии текстов панели"),
+                         QKeySequence("Alt+H"));
     connect(m_pSpellCheckAction, &QAction::triggered, this, &StdPanelEditor::CheckSpelling);
     checkpanel->addLargeAction(m_pSpellCheckAction);
 
     m_pCheckAction = createAction(tr("Проверить на ошибки"), "ValidateDocument", QKeySequence("Ctrl+H"));
+    toolAddActionWithTooltip(m_pCheckAction,
+                         tr("Проверяет панель на наличие ошибок"),
+                         QKeySequence("Ctrl+H"));
     connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
     checkpanel->addSmallAction(m_pCheckAction);
 
     m_EwViewAction = createAction(tr("Просмотр в EW"), "FormInstance", QKeySequence("Ctrl+F3"));
+    toolAddActionWithTooltip(m_EwViewAction,
+                         tr("Запускает просмотр панели в EasyWin"),
+                         QKeySequence("Ctrl+F3"));
     connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
     checkpanel->addSmallAction(m_EwViewAction);
 
     m_Statistic = createAction(tr("Информация"), "InformationSymbol");
+    toolAddActionWithTooltip(m_Statistic,
+                         tr("Показывает статистическую информацию о панели"));
     checkpanel->addSmallAction(m_Statistic);
 
     SARibbonPannel *borderpanel = category->addPannel(tr("Рамка"));
@@ -1249,14 +1335,17 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     SARibbonPannel *excludepanel = category->addPannel(tr("Исключить"));
 
     QAction *excludeAutoStep = createAction(tr("Автоматический обход"), "Step");
+    toolAddActionWithTooltip(excludeAutoStep, tr("Исключает автоматический обход полей по Tab"));
     excludeAutoStep->setCheckable(true);
     excludepanel->addSmallAction(excludeAutoStep);
 
     QAction *excludeAutoNum = createAction(tr("Автоматическую нумерацию полей"), "NumericListBox");
+    toolAddActionWithTooltip(excludeAutoNum, tr("Исключает автоматическую нумерацию полей панели"));
     excludeAutoNum->setCheckable(true);
     excludepanel->addSmallAction(excludeAutoNum);
 
     QAction *excludeShadow = createAction(tr("Отображение тени"), "Shader_exp");
+    toolAddActionWithTooltip(excludeShadow, tr("Исключает отображение тени у элементов панели"));
     excludeShadow->setCheckable(true);
     excludepanel->addSmallAction(excludeShadow);
 
@@ -1296,6 +1385,7 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     m_RibbonMapper->bind(panelItem, "isExcludeShadow", excludeShadow);
 }
 
+#define StyleIcon(_style_) (inheritable ? CtrlStyleIcon(_style_) : PanStyleIcon(_style_))
 void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery, const char *slotName, SARibbonGalleryGroup **pGroup, bool inheritable)
 {
     QList<QAction*> galleryActions;
@@ -1303,7 +1393,7 @@ void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery, const cha
     if (inheritable)
     {
         QAction *inheritStyle = createAction("Наследуемый", "");
-        inheritStyle->setIcon(QIcon::fromTheme("InheritedControl"));
+        inheritStyle->setIcon(StyleIcon(ResStyle::MainStyle));
         inheritStyle->setData(ResStyle::MainStyle);
         galleryActions.append(inheritStyle);
     }
@@ -1349,12 +1439,6 @@ void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery, const cha
 
     if (slotName)
         connect(*pGroup, SIGNAL(triggered(QAction*)), this, slotName);
-    /*m_pStyleGroup1 = gallery->addCategoryActions(tr("Стиль"), galleryActions);
-    m_pStyleGroup1->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
-    m_pStyleGroup1->setGridMinimumWidth(80);
-
-    if (slotName)
-        connect(m_pStyleGroup1, SIGNAL(triggered(QAction*)), this, slotName);*/
 }
 
 void StdPanelEditor::MakeBorderRaibbonGallary(SARibbonGallery* gallery)
@@ -1416,6 +1500,15 @@ void StdPanelEditor::OnPanelStyleSelected(QAction *pAction)
     UpdateGallarysIcons();
 }
 
+void StdPanelEditor::OnControlStyleSelected(QAction *pAction)
+{
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+    ControlItemsWrapper *wrp = pScene->controlItemsWrapper();
+
+    int controlStyle = pAction->data().toInt();
+    wrp->setControlStyle((ResStyle::PanelStyle)controlStyle);
+}
+
 void StdPanelEditor::initRibbonPanels()
 {
     m_pPanelCategory = new SARibbonCategory(tr("Панель"), ribbon());
@@ -1470,19 +1563,56 @@ void StdPanelEditor::ApplyPanelStyleToGallary()
     m_pPanelStyleGallery->currentViewGroup()->setCurrentIndex(m_pPanelStyleGallery->currentViewGroup()->model()->index(select, 0));
 }
 
+void StdPanelEditor::ApplyControlStyleToGallary()
+{
+    int select = -1;
+    StdEditorScene *baseScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+    ControlItemsWrapper *wrp = baseScene->controlItemsWrapper();
+    ResStyle::PanelStyle controlStyle = wrp->controlStyle();
+
+    if (wrp->hasUniformValue("controlStyle"))
+    {
+        SARibbonGalleryGroupModel *model = m_pControlStyleGroup->groupModel();
+        for (int i = 0; i < model->rowCount(QModelIndex()); i++)
+        {
+            SARibbonGalleryItem *item = model->at(i);
+            ResStyle::PanelStyle modelStyle = (ResStyle::PanelStyle)item->action()->data().toInt();
+
+            if (modelStyle == controlStyle)
+            {
+                select = i;
+                break;
+            }
+        }
+
+        m_pControlStyleGroup->setCurrentIndex(m_pPanelStyleGroup->model()->index(select, 0));
+        m_pControlStyleGallery->currentViewGroup()->setCurrentIndex(m_pControlStyleGallery->currentViewGroup()->model()->index(select, 0));
+    }
+    else
+    {
+        m_pControlStyleGroup->clearSelection();
+        m_pControlStyleGallery->currentViewGroup()->clearSelection();
+    }
+}
+
 void StdPanelEditor::UpdateGallarysIcons()
 {
     QList<QAction*> StyleGroup1 = m_pPanelStyleGroup->actionGroup()->actions();
     QList<QAction*> BorderGroup = m_pBorderGroup1->actionGroup()->actions();
+    QList<QAction*> ControlStyleGroup = m_pControlStyleGroup->actionGroup()->actions();
 
     for (auto StyleAction : qAsConst(StyleGroup1))
-        StyleAction->setIcon(StyleIcon((ResStyle::PanelStyle)StyleAction->data().toInt()));
+        StyleAction->setIcon(PanStyleIcon((ResStyle::PanelStyle)StyleAction->data().toInt()));
 
     for (auto BorderAction : qAsConst(BorderGroup))
         BorderAction->setIcon(BorderIcon((ResStyle::BorderStyle)BorderAction->data().toInt()));
 
+    for (auto ControlStyle : qAsConst(ControlStyleGroup))
+        ControlStyle->setIcon(CtrlStyleIcon((ResStyle::PanelStyle)ControlStyle->data().toInt()));
+
     m_pBorderStyleGallery->update();
     m_pPanelStyleGallery->update();
+    m_pControlStyleGroup->update();
 }
 
 void StdPanelEditor::updateRibbonTabs()
@@ -1557,4 +1687,269 @@ void StdPanelEditor::clearRibbonTabs()
 
     if (!hasVisible)
         ribbon()->hideContextCategory(context);
+}
+
+QString StdPanelEditor::getFieldTypeDescription(const qint16 &fieldType, QString &description) const
+{
+    QString title;
+
+    switch(fieldType)
+    {
+    case ControlItem::FET:
+        title = tr("FET - Редактируемое поле");
+        description = tr("Редактирование данных, clipboard, выбор из списка");
+        break;
+    case ControlItem::FBT:
+        title = tr("FBT - Нередактируемое поле");
+        description = tr("Отображение данных, кнопка без редактирования");
+        break;
+    case ControlItem::FBS:
+        title = tr("FBS - Кнопка с тенью");
+        description = tr("Визуальная кнопка с 3D-эффектом тени");
+        break;
+    case ControlItem::FWR:
+        title = tr("FWR - Многострочное редактируемое поле");
+        description = tr("Многострочный редактор, перенос текста");
+        break;
+    case ControlItem::FVT:
+        title = tr("FVT - Поле просмотра");
+        description = tr("Только для отображения, без редактирования");
+        break;
+    case ControlItem::FSP:
+        title = tr("FSP - Subpanel");
+        description = tr("Контейнер для группировки элементов");
+        break;
+    case ControlItem::FCL:
+        title = tr("FCL - Cluster");
+        description = tr("Check box или Radio button для выбора");
+        break;
+    case ControlItem::FVW:
+        title = tr("FVW - Многострочное нередактируемое поле");
+        description = tr("Многострочное отображение без редактирования");
+        break;
+    default:
+        title = tr("Тип поля");
+        description = tr("Неизвестный тип поля");
+        break;
+    }
+
+    return QString("<b>%1</b><br>%2").arg(title, description);
+}
+
+QString StdPanelEditor::getDataTypeDescription(const qint16 &dataType) const
+{
+    QString title;
+    QString description;
+    QString ftType;
+    QString size;
+    QString cppType;
+
+    switch(dataType)
+    {
+    case ControlItem::INT16:
+        title = tr("INT16 - 16-битное целое число");
+        description = tr("Целое число от -32,768 до 32,767");
+        ftType = tr("FT_INT / FT_INT_NATIVE");
+        size = tr("2 байта");
+        cppType = tr("int16_t, short");
+        break;
+
+    case ControlItem::INT32:
+        title = tr("INT32 - 32-битное целое число");
+        description = tr("Целое число от -2,147,483,648 до 2,147,483,647");
+        ftType = tr("FT_LONG / FT_LONG_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("int32_t, long");
+        break;
+
+    case ControlItem::INT64:
+        title = tr("INT64 - 64-битное целое число");
+        description = tr("Целое число от -9,223,372,036,854,775,808 до 9,223,372,036,854,775,807");
+        ftType = tr("FT_BIGINT / FT_BIGINT_NATIVE");
+        size = tr("8 байт");
+        cppType = tr("int64_t, long long");
+        break;
+
+    case ControlItem::FLOAT:
+        title = tr("FLOAT - Число с плавающей точкой");
+        description = tr("Число одинарной точности, ~7 значащих цифр");
+        ftType = tr("FT_FLOAT / FT_FLOAT_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("float, db_float");
+        break;
+
+    case ControlItem::FLOATG:
+        title = tr("FLOATG - Число с плавающей точкой");
+        description = tr("Аналогично FLOAT с группировкой разрядов");
+        ftType = tr("FT_FLOATG / FT_FLOATG_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("float, db_float");
+        break;
+
+    case ControlItem::DOUBLE:
+        title = tr("DOUBLE - Число двойной точности");
+        description = tr("Число двойной точности, ~15 значащих цифр");
+        ftType = tr("FT_DOUBLE / FT_DOUBLE_NATIVE");
+        size = tr("8 байт");
+        cppType = tr("double, db_double");
+        break;
+
+    case ControlItem::DOUBLEG:
+        title = tr("DOUBLEG - Число двойной точности");
+        description = tr("Аналогично DOUBLE с группировкой разрядов");
+        ftType = tr("FT_DOUBLEG / FT_DOUBLEG_NATIVE");
+        size = tr("8 байт");
+        cppType = tr("double, db_double");
+        break;
+
+    case ControlItem::LDOUBLE:
+        title = tr("LDOUBLE - Длинное вещественное число");
+        description = tr("Число расширенной точности, ~19 значащих цифр");
+        ftType = tr("FT_LDOUBLE10 / FT_LDOUBLE10_NATIVE");
+        size = tr("10 байт");
+        cppType = tr("long double, db_double10");
+        break;
+
+    case ControlItem::MONEY:
+        title = tr("MONEY - Денежный тип");
+        description = tr("Денежная сумма");
+        ftType = tr("FT_MONEY / FT_MONEY_NATIVE");
+        size = tr("8 байт");
+        cppType = tr("dmoney (Numeric), db_dmoney (DBNumeric)");
+        break;
+
+    case ControlItem::MONEYR:
+        title = tr("MONEYR - Денежный тип");
+        description = tr("Денежная сумма");
+        ftType = tr("FT_MONEYR / FT_MONEYR_NATIVE");
+        size = tr("8 байт");
+        cppType = tr("dmoney (Numeric), db_dmoney (DBNumeric)");
+        break;
+
+    case ControlItem::LMONEY:
+        title = tr("LMONEY - Длинная денежная сумма");
+        description = tr("Денежная сумма расширенной точности");
+        ftType = tr("FT_LMONEY / FT_LMONEY_NATIVE");
+        size = tr("10 байт");
+        cppType = tr("lmoney (Numeric), db_lmoney (DBNumeric)");
+        break;
+
+    case ControlItem::LMONEYR:
+        title = tr("LMONEYR - Длинная денежная сумма ");
+        description = tr("Денежная сумма");
+        ftType = tr("FT_LMONEYR / FT_LMONEYR_NATIVE");
+        size = tr("10 байт");
+        cppType = tr("lmoney (Numeric), db_lmoney (DBNumeric)");
+        break;
+
+    case ControlItem::DECIMAL:
+        title = tr("DECIMAL - Точное десятичное число");
+        description = tr("Точное десятичное число с фиксированной точкой");
+        ftType = tr("FT_DECIMAL / FT_DECIMAL_NATIVE");
+        size = tr("16 байт");
+        cppType = tr("decimal (Numeric), db_decimal (DBNumeric)");
+        break;
+
+    case ControlItem::NUMERIC:
+        title = tr("NUMERIC - Числовой тип SQL");
+        description = tr("SQL NUMERIC с заданной точностью и масштабом");
+        ftType = tr("FT_NUMERIC / FT_NUMERIC_NATIVE");
+        size = tr("20 байт");
+        cppType = tr("DBNumeric, Numeric");
+        break;
+
+    case ControlItem::STRING:
+        title = tr("STRING - Строковый тип");
+        description = tr("Строка переменной длины");
+        ftType = tr("FT_STRING");
+        size = tr("Переменная длина");
+        cppType = tr("char*");
+        break;
+
+    case ControlItem::SNR:
+        title = tr("SNR - Строка");
+        description = tr("Аналогично STRING, с форматом отображения");
+        ftType = tr("FT_SNR");
+        size = tr("Переменная длина");
+        cppType = tr("char*");
+        break;
+
+    case ControlItem::NUMSTR:
+        title = tr("NUMSTR - Числовая строка");
+        description = tr("Строка, содержащая только цифры");
+        ftType = tr("FT_NUMSTR");
+        size = tr("Переменная длина");
+        cppType = tr("char*");
+        break;
+
+    case ControlItem::DATE:
+        title = tr("DATE - Дата");
+        description = tr("Дата в формате базы данных");
+        ftType = tr("FT_DATE / FT_DATE_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("bdate, db_bdate");
+        break;
+
+    case ControlItem::TIME:
+        title = tr("TIME - Время");
+        description = tr("Время в формате базы данных");
+        ftType = tr("FT_TIME / FT_TIME_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("btime, db_btime");
+        break;
+
+    case ControlItem::SHTM:
+        title = tr("SHTM - Короткое время");
+        description = tr("Время без секунд в формате базы данных");
+        ftType = tr("FT_SHTM / FT_SHTM_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("btime, db_btime");
+        break;
+
+    case ControlItem::CHAR:
+        title = tr("CHAR - Символ");
+        description = tr("Один символ (байт)");
+        ftType = tr("FT_CHR");
+        size = tr("1 байт");
+        cppType = tr("char, uchar");
+        break;
+
+    case ControlItem::UCHAR:
+        title = tr("UCHAR - Беззнаковый символ");
+        description = tr("Беззнаковый символ (0-255)");
+        ftType = tr("FT_UCHR");
+        size = tr("1 байт");
+        cppType = tr("unsigned char, uint8_t");
+        break;
+
+    case ControlItem::PICTURE:
+        title = tr("PICTURE - Изображение");
+        description = tr("Двоичные данные изображения");
+        ftType = tr("FT_PICTURE");
+        size = tr("Переменная длина");
+        cppType = tr("CRSImageBase, CRSImage");
+        break;
+
+    default:
+        title = tr("Неизвестный тип данных");
+        description = tr("Тип не определен");
+        ftType = tr("?");
+        size = tr("?");
+        cppType = tr("?");
+        break;
+    }
+
+    return QString("<html><div style='width: 500px;'>"
+                   "<b>%1</b>"
+                   "<div>%2</div>"
+                   "<div>"
+                   "<b>Внутренний тип:</b> %3<br>"
+                   "<b>Размер:</b> %4<br>"
+                   "<b>C++ тип:</b> %5"
+                   "</div></div></html>")
+        .arg(title)
+        .arg(description)
+        .arg(ftType)
+        .arg(size)
+        .arg(cppType);
 }

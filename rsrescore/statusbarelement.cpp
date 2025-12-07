@@ -11,7 +11,7 @@ StatusBarElement::StatusBarElement(QWidget *parent)
     m_pText = new QLabel(this);
     pLayout = new QHBoxLayout();
     pLayout->setMargin(0);
-    m_pText->setAlignment(Qt::AlignLeft);
+    m_pText->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
     pLayout->addWidget(m_pIcon);
     pLayout->addWidget(m_pText, 1, Qt::AlignLeft);
