@@ -1,12 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>baseeditor.json</file>
-        <file>img/BScrol.png</file>
-        <file>img/Panel.png</file>
-        <file>img/Scrol.png</file>
-        <file>img/Unknown.png</file>
-        <file>img/Size.png</file>
-        <file>img/CursorPos.png</file>
         <file>json/CustomRectItem.json</file>
         <file>json/LabelItem.json</file>
         <file>json/Container.json</file>
@@ -41,19 +35,14 @@
         <file>img/Label_vertright24x.png</file>
         <file>img/Label_upright24x.png</file>
         <file>img/CustomControl_16x.png</file>
-        <file>img/filecabinet.png</file>
         <file>json/BaseResourceNewItems.json</file>
         <file>json/BorderStyle.json</file>
         <file>json/PanelStyleEnum.json</file>
         <file>templates/EMPTY_PANEL_DOUBLE.xml</file>
-        <file>img/PanelFromDoc.png</file>
         <file>json/FieldTypeEnum.json</file>
         <file>json/DataTypeEnum.json</file>
         <file>json/Scrol.json</file>
-        <file>img/Panel2.png</file>
         <file>templates/EMPTY_BSCROL_DOUBLE.xml</file>
-        <file>img/appicon.svg</file>
-        <file>img/lbrlogo.png</file>
         <file>json/tooboxincludes/StdPanelEditorToolBoxFilter.json</file>
         <file>img/FilterDateRange.png</file>
         <file>img/ComboBox_24x.png</file>

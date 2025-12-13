@@ -1,5 +1,6 @@
 #include "resapplication.h"
 #include "codeeditor/highlighterstyle.h"
+#include <toolsruntime.h>
 #include <QSettings>
 #include <QDir>
 #include <QStyleFactory>
@@ -39,13 +40,6 @@ QSettings *ResApplication::settings()
     return m_pSettings;
 }
 
-void ResApplication::applyStyle()
-{
-    QString styleName = m_pSettings->value("style").toString();
-    QStyle *style = QStyleFactory::create(styleName);
-    QApplication::setStyle(style);
-}
-
 void ResApplication::init()
 {
     QDir trDir(applicationDirPath());
@@ -55,12 +49,12 @@ void ResApplication::init()
         QString translatorFile = QString("qt_%1").arg("ru");
         if (qt_translator.load(translatorFile, trDir.absolutePath()))
         {
-            //qCInfo(logCore()) << "Translator installed: " << translatorFile;
+            qCInfo(logSettings()) << "Translator installed: " << translatorFile;
             installTranslator(&qt_translator);
         }
-        /*else
-            qCWarning(logCore()) << "Error loading translator " << translatorFile;
-   */ }
-    /*else
-        qCWarning(logCore()) << "Can't find translations folder";*/
+        else
+            qCWarning(logSettings()) << "Error loading translator " << translatorFile;
+    }
+    else
+        qCWarning(logSettings()) << "Can't find translations folder";
 }

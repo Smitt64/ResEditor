@@ -16,8 +16,6 @@ public:
     QSettings *settings();
     void init();
 
-    void applyStyle();
-
 private:
     QSettings *m_pSettings;
     QTranslator qt_translator;

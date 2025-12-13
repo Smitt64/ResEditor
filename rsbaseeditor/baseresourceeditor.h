@@ -4,6 +4,7 @@
 #include "ResourceEditorInterface.h"
 #include <QObject>
 
+class ErrorsModel;
 class BaseResourceEditor : public QObject, public ResourceEditorInterface
 {
     Q_OBJECT
@@ -22,11 +23,12 @@ public:
 
     QList<SARibbonContextCategory*> contextCategoryes(SARibbonBar *ribbon) Q_DECL_FINAL;
 private:
+    void ShowErrors(ErrorsModel *model, QWidget *parent);
     void SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
                           const QString &name, const QString &title);
 
-    BaseEditorWindow *LoadResFromXmlTemplate(const QString &filename, const QString &name, const quint16 &type);
-    BaseEditorWindow *LoadResFromXmlTemplate(QIODevice *device, const QString &name, const std::initializer_list<quint16> &type);
+    BaseEditorWindow *LoadResFromXmlTemplate(const QString &filename, const QString &name, const quint16 &type, ErrorsModel *model);
+    BaseEditorWindow *LoadResFromXmlTemplate(QIODevice *device, const QString &name, const std::initializer_list<quint16> &type, ErrorsModel *model);
 };
 
 #endif // BASERESOURCEEDITOR_H

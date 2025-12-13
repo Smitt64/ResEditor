@@ -971,15 +971,25 @@ void MainWindow::open(const QString &filename)
     {
         if (m_pLbrObj)
         {
-            m_ResListDock->setModel(nullptr);
-            delete m_pLbrObj;
-            m_pLbrObj = nullptr;
+            if (windowFilePath() != filename)
+            {
+                m_ResListDock->setModel(nullptr);
+                delete m_pLbrObj;
+                m_pLbrObj = nullptr;
+            }
+            else
+            {
+                QMessageBox::information(this, tr("Открытие библиотеки"),
+                                         tr("Файл <b>[%1]</b> уже открыт").arg(filename));
+                return;
+            }
         }
 
         CreateLbrObject(&m_pLbrObj, this);
 
         if (m_pLbrObj->open(filename))
         {
+            setWindowFilePath(filename);
             m_ResListDock->setModel(m_pLbrObj->list());
             m_RecentLbrList->addFile(filename);
 
@@ -987,6 +997,7 @@ void MainWindow::open(const QString &filename)
             UpdateActions();
 
             setWindowTitle(QString("%1 - %2").arg(RecentLbrList::formatName(filename), WORKLBR_TITLE));
+            m_ResListDock->raise();
         }
         else
             QMessageBox::critical(this, tr("Ошибка!"), tr("Ошибка открытия файла: ") + m_pLbrObj->lastError());

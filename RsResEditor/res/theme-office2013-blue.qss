@@ -433,14 +433,35 @@ QDockWidget {
 }
 
 QDockWidget::title {
-    background-color: #c5d2e0;
-    color: #c5d2e0;
-    padding: 6px;
-    /*border: none;
-    border: 1px solid #0072C6;*/
+    background-color: #f8f8f8;
+    color: #666666;
+    border: 1px solid #c5d2e0;
+    border-bottom: none;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    padding: 6px 12px;
     text-align: left;
-    font-weight: bold;
+    font-weight: normal;
     font-size: 9pt;
+    font-family: 'Segoe UI';
+}
+
+/* Когда док-виджет активен/выделен */
+QDockWidget:focus::title {
+    background-color: white;
+    color: #0072C6;
+    font-weight: bold;
+    border: 1px solid #c5d2e0;
+    border-bottom: 1px solid white;
+    border-top: 2px solid #0072C6;
+}
+
+/* Ховер на заголовок */
+QDockWidget::title:hover {
+    background-color: #e6f2fc;
+    color: #0072C6;
+    border: 1px solid #9ed2f9;
+    border-bottom: none;
 }
 
 QDockWidget::float-button {

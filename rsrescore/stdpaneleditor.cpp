@@ -69,6 +69,7 @@
 #include <QGroupBox>
 #include <QButtonGroup>
 #include <QRadioButton>
+#include <QColor>
 
 #define SHADOW_CODE 9617
 
@@ -107,6 +108,18 @@ StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     panelItem(nullptr),
     m_pPanelCategory(nullptr)
 {
+    PropertyModel::setGroupColors
+    (
+        {
+            QColor(222, 235, 247),
+            QColor(235, 244, 231),
+            QColor(255, 242, 204),
+            QColor(249, 231, 231),
+            QColor(242, 237, 250),
+            QColor(231, 244, 249)
+        }
+    );
+
     m_Type = Type;
     if (Type == LbrObject::RES_PANEL)
         panelItem = new PanelItem();

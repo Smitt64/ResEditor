@@ -1,5 +1,5 @@
 {
-    "logo": ":/img/lbrlogo.png",
+    "logo": "://res/appicon-blue.svg",
     "application": "WorkLbr",
     "description": "WorkLbR – утилита, предоставляющая интерфейсный создания ресурсов программы",
     "initalproject": "Work Lbr"

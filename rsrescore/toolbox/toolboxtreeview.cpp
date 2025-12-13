@@ -9,35 +9,170 @@
 #include <QStyledItemDelegate>
 #include <QApplication>
 #include <QStyleOptionToolBox>
+#include <QPainter>
+#include <QPainterPath>
+#include <QFontDatabase>
 
 class ToolBoxDelegate : public QStyledItemDelegate
 {
 public:
     ToolBoxDelegate(QObject *parent = nullptr) :
-        QStyledItemDelegate(parent)
+        QStyledItemDelegate(parent),
+        m_hoveredRow(-1)
     {
     }
 
     virtual ~ToolBoxDelegate()
     {
-
     }
 
-    virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const Q_DECL_FINAL
+    // Обновляем hoveredRow при движении мыши (нужно вызывать извне)
+    void setHoveredRow(int row) {
+        m_hoveredRow = row;
+    }
+
+    virtual void paint(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const Q_DECL_FINAL
     {
-        if (!index.parent().isValid())
+        if (!index.parent().isValid()) // Это элемент верхнего уровня (группа)
         {
-            QStyle *m_pStyle = QApplication::style();
 
-            QStyleOptionToolBox opt;
-            (*((QStyleOption*)&opt)) = option;
-            opt.text = index.data().toString();
+            QString groupName = index.data(Qt::DisplayRole).toString();
 
-            m_pStyle->drawControl(QStyle::CE_ToolBoxTab, &opt, painter);
-            return;
+            // Проверяем, наведен ли курсор мыши на эту строку
+            bool isHovered = opt.state & QStyle::State_MouseOver ||
+                             opt.state & QStyle::QStyle::State_HasFocus;
+
+            // ========== ФОН С ЗАМЕТНЫМ ЦВЕТОМ ==========
+            QColor bgColor("#f8f8f8");
+
+            // Если наведен курсор - делаем фон немного светлее
+            if (isHovered)
+            {
+                bgColor = bgColor.lighter(105);
+            }
+
+            // Мягкий градиент для объема
+            QLinearGradient gradient(opt.rect.topLeft(), opt.rect.bottomLeft());
+            gradient.setColorAt(0.0, bgColor.lighter(105)); // Светлее вверху
+            gradient.setColorAt(0.5, bgColor);               // Основной цвет
+            gradient.setColorAt(1.0, bgColor.darker(105));   // Темнее внизу
+
+            painter->fillRect(opt.rect, gradient);
+
+            // ========== АКЦЕНТНАЯ ЛИНИЯ СЛЕВА ==========
+            /*QColor accentLineColor;
+
+            if (isHovered)
+            {
+                // При наведении - синий цвет #0072C6
+                accentLineColor = QColor("#0072C6");
+            }
+            else
+            {
+                // Обычно - цвет группы
+                accentLineColor = PropertyTreeItem::groupColor(groupIndex);
+
+                // Делаем линию заметнее
+                if (accentLineColor.lightness() > 200)
+                    accentLineColor = accentLineColor.darker(130);
+                else
+                    accentLineColor = accentLineColor.darker(115);
+            }
+
+            // Рисуем акцентную линию
+            QRect accentRect(opt.rect.left(), opt.rect.top(), 3, opt.rect.height());
+            painter->fillRect(accentRect, accentLineColor);
+
+            // Белая линия справа от акцентной для объема
+            painter->setPen(QColor(255, 255, 255, 180));
+            painter->drawLine(opt.rect.left() + 3, opt.rect.top(),
+                              opt.rect.left() + 3, opt.rect.bottom());*/
+
+            // ========== ГРАНИЦЫ В СТИЛЕ OFFICE 2013 ==========
+            // Верхняя тонкая серая линия
+            QColor topBorderColor = isHovered ? QColor("#c5d2e0") : QColor(220, 220, 220);
+            painter->setPen(topBorderColor);
+            painter->drawLine(opt.rect.topLeft(), opt.rect.topRight());
+
+            // Нижняя линия
+            painter->setPen(QColor(210, 210, 210));
+            painter->drawLine(opt.rect.bottomLeft(), opt.rect.bottomRight());
+
+            // ========== ТЕКСТ ГРУППЫ ==========
+            QFont font = painter->font();
+            font.setBold(true);
+            font.setPointSize(font.pointSize());
+
+            // Используем Segoe UI если доступен
+            if (QFontDatabase().families().contains("Segoe UI"))
+                font.setFamily("Segoe UI");
+
+            painter->setFont(font);
+
+            // Цвет текста зависит от наведения
+            QColor textColor;
+            if (isHovered)
+            {
+                textColor = QColor("#0072C6"); // Синий при наведении
+            }
+            else
+            {
+                textColor = QColor(102, 102, 102); // Серый обычно (#666666)
+            }
+
+            // Легкая тень текста для объема (только если не наведен курсор)
+            if (!isHovered)
+            {
+                painter->setPen(QColor(255, 255, 255, 150));
+                painter->drawText(opt.rect.adjusted(13, 1, -7, 1),
+                                  Qt::AlignLeft | Qt::AlignVCenter, groupName);
+            }
+
+            // Основной текст
+            painter->setPen(textColor);
+
+            // Текст с отступом от акцентной линии
+            QRect textRect = opt.rect.adjusted(12, 0, -40, 0);
+            painter->drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, groupName);
+
+            // Светлая подсветка верхнего края
+            painter->setPen(QColor(255, 255, 255, 120));
+            painter->drawLine(opt.rect.topLeft() + QPoint(0, 1),
+                              opt.rect.topRight() + QPoint(0, 1));
+
+            // ========== ДОПОЛНИТЕЛЬНЫЙ ЭФФЕКТ ПРИ НАВЕДЕНИИ ==========
+            if (isHovered)
+            {
+                // Легкая голубая подсветка всей строки
+                painter->setPen(Qt::NoPen);
+                painter->setBrush(QColor(230, 242, 252, 30)); // Очень прозрачный голубой
+                painter->drawRect(opt.rect);
+
+                // Тонкая синяя линия снизу при наведении
+                painter->setPen(QPen(QColor("#0072C6"), 1));
+                painter->drawLine(opt.rect.bottomLeft(), opt.rect.bottomRight());
+            }
+            //painter->restore();
         }
-        QStyledItemDelegate::paint(painter, option, index);
+        else
+        {
+            // Элементы внутри группы - стандартная отрисовка
+            QStyledItemDelegate::paint(painter, opt, index);
+        }
     }
+
+    virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const Q_DECL_FINAL
+    {
+        if (!index.parent().isValid()) {
+            QSize size = QStyledItemDelegate::sizeHint(option, index);
+            size.setHeight(22); // Увеличиваем высоту для групп
+            return size;
+        }
+        return QStyledItemDelegate::sizeHint(option, index);
+    }
+
+private:
+    int m_hoveredRow; // Для отслеживания наведения мыши
 };
 
 ToolBoxTreeView::ToolBoxTreeView(QWidget *parent) :

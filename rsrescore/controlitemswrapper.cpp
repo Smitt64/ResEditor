@@ -149,6 +149,11 @@ bool ControlItemsWrapper::hasUniformValue(const char *propertyName) const
     {
         QVariant currentValue = prop.read(m_controlItems[i]);
 
+        /*if (qstrcmp(propertyName, "geometry"))
+        {
+            qDebug() << propertyName << firstValue << currentValue;
+        }*/
+
         if (currentValue != firstValue)
             return false;
     }

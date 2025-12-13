@@ -40,7 +40,7 @@ public:
     QSettings *settings();
     void setSettings(QSettings *settings);
 
-    void loadFromXml(QIODevice *device, ResPanel **panel) throw(std::runtime_error, std::logic_error);
+    void loadFromXml(QIODevice *device, ResPanel **panel, ErrorsModel *model) throw(std::runtime_error, std::logic_error);
 
     bool getResXmlXsd(QXmlSchema **schema, QAbstractMessageHandler **handler, ErrorsModel *errorMessage = nullptr);
     bool validateResXmlWithXsd(QIODevice *xmlDevice, ErrorsModel *errorMessage = nullptr);

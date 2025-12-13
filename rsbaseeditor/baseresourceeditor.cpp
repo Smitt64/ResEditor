@@ -10,6 +10,8 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QTextStream>
+#include <errorsmodel.h>
+#include <errordlg.h>
 #include <widgets/codeinputdialog.h>
 #include "SARibbon.h"
 //Q_IMPORT_PLUGIN(BaseResourceEditor)
@@ -60,11 +62,19 @@ bool BaseResourceEditor::newItemsActionAvalible(const QString &guid)
     return actions.contains(guid);
 }
 
+void BaseResourceEditor::ShowErrors(ErrorsModel *model, QWidget *parent)
+{
+    ErrorDlg dlg(parent);
+    dlg.setErrors(model);
+    dlg.exec();
+}
+
 ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, const QString &name, const QString &path, QWidget *parent)
 {
     ResourceEditorResult result;
     BaseEditorWindow *pNewEditor = nullptr;
 
+    ErrorsModel errors;
     if (guid == "{c7e4dbe9-cd8e-4eaf-bcd3-975f9fb6ba1e}")
     {
         // Создание новой библиотеки ресурсов
@@ -87,7 +97,11 @@ ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, con
         // Панель (двойная рамка)
         pNewEditor = LoadResFromXmlTemplate(":/templates/EMPTY_PANEL_DOUBLE.xml",
                                             name,
-                                            LbrObject::RES_PANEL);
+                                            LbrObject::RES_PANEL,
+                                            &errors);
+
+        if (!pNewEditor)
+            ShowErrors(&errors, parent);
     }
     else if (guid == "{c01bd070-a483-482c-9a30-2946a4317b71}")
     {
@@ -115,7 +129,11 @@ ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, con
         // Скролинг BSCROL (двойная рамка)
         pNewEditor = LoadResFromXmlTemplate(":/templates/EMPTY_BSCROL_DOUBLE.xml",
                                             name,
-                                            LbrObject::RES_BS);
+                                            LbrObject::RES_BS,
+                                            &errors);
+
+        if (!pNewEditor)
+            ShowErrors(&errors, parent);
     }
     else if (guid == "{eaeac9f8-3230-4015-a029-ac337c3d83e9}")
     {
@@ -128,7 +146,11 @@ ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, con
         {
             pNewEditor = LoadResFromXmlTemplate(&buffer,
                                                 name,
-                                                {LbrObject::RES_BS});
+                                                {LbrObject::RES_BS},
+                                                &errors);
+
+            if (!pNewEditor)
+                ShowErrors(&errors, parent);
         }
     }
     else if (guid == "{001b506e-4588-4810-a09a-d631fc0214d8}")
@@ -142,7 +164,11 @@ ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, con
         {
             pNewEditor = LoadResFromXmlTemplate(&buffer,
                                                 name,
-                                                {LbrObject::RES_PANEL});
+                                                {LbrObject::RES_PANEL},
+                                                &errors);
+
+            if (!pNewEditor)
+                ShowErrors(&errors, parent);
         }
     }
 
@@ -197,7 +223,7 @@ void BaseResourceEditor::SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &T
                         .arg(RsResCore::inst()->typeNameFromResType(Type), name, title));
 }
 
-BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(QIODevice *device, const QString &name, const std::initializer_list<quint16> &type)
+BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(QIODevice *device, const QString &name, const std::initializer_list<quint16> &type, ErrorsModel *model)
 {
     static const std::vector<quint16> ScrolTypes =
         {
@@ -234,7 +260,7 @@ BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(QIODevice *device, 
 
     try
     {
-        RsResCore::inst()->loadFromXml(device, &testPan);
+        RsResCore::inst()->loadFromXml(device, &testPan, model);
         if (testPan)
         {
             bool Create = false;
@@ -272,6 +298,10 @@ BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(QIODevice *device, 
                 testPan = nullptr;
             }
         }
+        else
+        {
+
+        }
     }
     catch(const std::exception& e)
     {
@@ -291,17 +321,18 @@ BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(QIODevice *device, 
 
 BaseEditorWindow *BaseResourceEditor::LoadResFromXmlTemplate(const QString &filename,
                                                              const QString &name,
-                                                             const quint16 &type)
+                                                             const quint16 &type,
+                                                             ErrorsModel *model)
 {
     BaseEditorWindow *pNewEditor = nullptr;
 
     try
     {
         QFile resxml(filename);
-        if (!resxml.open(QIODevice::ReadOnly))
+        if (!resxml.open(QIODevice::ReadOnly | QIODevice::Text))
             return nullptr;
 
-        pNewEditor = LoadResFromXmlTemplate(&resxml, name, {type});
+        pNewEditor = LoadResFromXmlTemplate(&resxml, name, {type}, model);
         resxml.close();
     }
     catch(...) {}

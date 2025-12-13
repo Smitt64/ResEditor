@@ -352,7 +352,7 @@ bool RsResCore::validateResXmlWithXsd(QIODevice *xmlDevice, ErrorsModel* errorMe
     return validator.validateXmlWithXsd(xmlDevice, errorMessage);
 }
 
-void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel) throw(std::runtime_error, std::logic_error)
+void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel, ErrorsModel *model) throw(std::runtime_error, std::logic_error)
 {
     static const QStringList RootTags =
     {
@@ -362,7 +362,7 @@ void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel) throw(std::runt
         "lscrol"
     };
 
-    if (!validateResXmlWithXsd(device))
+    if (!validateResXmlWithXsd(device, model))
         throw std::runtime_error("XML validation failed against XSD schema");
 
     device->seek(0);
