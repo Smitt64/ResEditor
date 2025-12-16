@@ -6,10 +6,13 @@
 #include <QMetaObject>
 #include <QMetaClassInfo>
 #include "customrectitem.h"
+#include "scrolitem.h"
 #include "textitem.h"
 #include "panelitem.h"
 #include "basescene.h"
 #include "controlitem.h"
+#include "rsrescore.h"
+#include "lbrobject.h"
 #include <QIcon>
 
 class TreeItem
@@ -95,13 +98,16 @@ public:
         else if (role == Qt::DecorationRole && column == fld_Element)
         {
             PanelItem *panelItem = qobject_cast<PanelItem*>(m_pItem);
+            ScrolItem *scrolItem = qobject_cast<ScrolItem*>(m_pItem);
             TextItem *textItem = qobject_cast<TextItem*>(m_pItem);
             ControlItem *controlItem = qobject_cast<ControlItem*>(m_pItem);
 
             if (textItem)
                 return QIcon(":/img/Label_24x.png");
+            else if (scrolItem)
+                return RsResCore::inst()->iconFromResType(scrolItem->scrolType());
             else if(panelItem)
-                return QIcon(":/img/Panel.png");
+                return RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL);
             else if (controlItem)
                 return IconForDataType(controlItem->dataType());
         }
@@ -173,7 +179,10 @@ void PanelStructModel::structChanged()
 
     for (auto element : qAsConst(rects))
     {
-        panel->appendChild(std::make_unique<TreeItem>(element, panel));
+        ScrolAreaRectItem *scrolArea = dynamic_cast<ScrolAreaRectItem*>(element);
+
+        if (!scrolArea)
+            panel->appendChild(std::make_unique<TreeItem>(element, panel));
     }
     endResetModel();
 }

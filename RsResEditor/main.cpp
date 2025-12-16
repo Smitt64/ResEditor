@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "rsrescore.h"
 #include "resapplication.h"
+#include "IconThemeManager.h"
 #include <QtPlugin>
 #include <QScopedPointer>
 #include <QCommandLineParser>
@@ -13,11 +14,11 @@
 
 static void InitIconTheme()
 {
-    QStringList themes = QIcon::themeSearchPaths();
-    themes.append("d:\\Work\\ResEditor\\RsResEditor\\res\\icons");
-    QIcon::setThemeSearchPaths(themes);
+    IconThemeManager::initialize("vs_theme");
 
-    QIcon::setThemeName("vs_theme");
+/*#ifdef QT_DEBUG
+    IconThemeManager::addCustomPath("d:\\Work\\ResEditor\\RsResEditor\\res\\icons");
+#endif*/
 }
 
 int main(int argc, char *argv[])
