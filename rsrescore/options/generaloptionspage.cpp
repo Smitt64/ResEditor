@@ -14,7 +14,7 @@ public:
     OptionsScene(QObject *parent = nullptr) :
         BaseScene(parent)
     {
-        m_GridSize = ResStyle::gridSizes()[0];
+        m_GridSize = ResStyle::gridSizes().at(0);
     }
 
     virtual ~OptionsScene()

@@ -9,6 +9,8 @@
 class ResPanel;
 class QTextDocument;
 class PanelPropertysDlg;
+class ToolboxCircularMenu;
+class QGraphicsSceneContextMenuEvent;
 class PanelItem : public ContainerItem
 {
     Q_OBJECT
@@ -110,10 +112,12 @@ protected:
 
     virtual void FillItemPanel(PanelPropertysDlg &dlg);
     virtual bool canResize(const QRectF &newRect, const ResizeCorners &corner) const Q_DECL_OVERRIDE;
+    virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) Q_DECL_OVERRIDE;
 
 private:
     virtual QVariant itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value) Q_DECL_OVERRIDE;
     void setChildsVisible(const bool &value);
+    QByteArray modifyFieldType(const QByteArray &jsonData, int newFieldType);
 
     ResPanel *m_Panel;
     ResStyle::PanelStyle m_PanelStyle;
@@ -125,6 +129,8 @@ private:
 
     QRectF m_DragHighlightedRect;
     QPixmap *m_DragPixmap, *m_DragControl;
+
+    ToolboxCircularMenu *m_pContextMenu;
 };
 
 Q_DECLARE_OPAQUE_POINTER(PanelItem)

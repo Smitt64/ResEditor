@@ -290,7 +290,7 @@ void ResListDockWidget::SetModel(QMainWindow *Container, QAbstractItemModel *mod
         QTreeView *m_List = Container->findChild<QTreeView*>("pList");
         m_pFiler->setSourceModel(model);
         m_List->header()->resizeSection(1, 50);
-        m_pFiler->sort(0);
+        m_pFiler->sort(1, Qt::AscendingOrder);
     }
 }
 

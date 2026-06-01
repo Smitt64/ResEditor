@@ -39,7 +39,7 @@ SARibbonStackedWidget {
   border: 1pt solid #c5d2e0;
   border-top-width: 0px;
   
-  border-right: 2px solid #0072C6;
+  /*border-right: 2px solid #0072C6;*/
   border-bottom: 1px solid #0072C6;
   padding: 0px
 }
@@ -142,7 +142,7 @@ SARibbonApplicationButton::menu-indicator {
 /*SARibbonTabBar*/
 SARibbonTabBar {
   background-color: transparent;
-  border-right: 2px solid #0072C6;
+  /*border-right: 2px solid #0072C6;*/
 }
 
 

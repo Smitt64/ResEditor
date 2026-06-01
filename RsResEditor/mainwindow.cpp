@@ -44,6 +44,7 @@
 #include "reslibwriter.h"
 #include "xmlvalidator.h"
 #include <toolsruntime.h>
+#include "resapplicationwidget.h"
 
 class UndoActionWidget : public QWidgetAction
 {
@@ -89,7 +90,8 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow),
     m_LastActiveWindow(nullptr),
     m_pLbrObj(nullptr),
-    m_FlagMassCloseMode(false)
+    m_FlagMassCloseMode(false),
+    m_pAppWidget(nullptr)
 {
     ResApplication *app = (ResApplication*)qApp;
     QSettings *Settings = app->settings();
@@ -105,13 +107,8 @@ MainWindow::MainWindow(QWidget *parent)
     SARibbonCategory *viewPage = new SARibbonCategory("Вид");
     ribbon->addCategoryPage(viewPage);
 
-    QAbstractButton* btn = ribbon->applicationButton();
-    if (!btn)
-    {
-        btn = new SARibbonApplicationButton(this);
-        ribbon->setApplicationButton(btn);
-    }
-    btn->setText(tr("Список ресурсов"));
+    ribbon->applicationButton()->setText(tr("Файл"));
+    ribbon->applicationButton()->setMinimumWidth(60);
 
     m_ResListDock = new ResListDockWidget(this);
     m_PropertyDock = new PropertyDockWidget(this);
@@ -142,10 +139,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_ToolBoxDock->setObjectName("ToolBoxDock");
 
     addDockWidget(Qt::LeftDockWidgetArea, m_ResListDock);
-    addDockWidget(Qt::LeftDockWidgetArea, m_ToolBoxDock);
+    //addDockWidget(Qt::LeftDockWidgetArea, m_ToolBoxDock);
     addDockWidget(Qt::RightDockWidgetArea, m_PropertyDock);
 
-    tabifyDockWidget(m_ToolBoxDock, m_ResListDock);
+    //tabifyDockWidget(m_ToolBoxDock, m_ResListDock);
     setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::West);
     setTabShape(QTabWidget::Triangular);
 
@@ -160,11 +157,23 @@ MainWindow::MainWindow(QWidget *parent)
 
     UpdateActions();
 
+    //m_pAppWidget->hide();
+    connect(ribbon->applicationButton(), &QAbstractButton::clicked, [this](bool c)
+    {
+        Q_UNUSED(c);
+
+        if (m_pAppWidget)
+            delete m_pAppWidget;
+
+        m_pAppWidget = new ResApplicationWidget(m_pLbrObj, this);
+        connect(m_pAppWidget, &ResApplicationWidget::openResource, this, &MainWindow::doubleResClicked);
+        m_pAppWidget->exec();
+    });
+
     connect(m_ResListKey, &QShortcut::activated, m_ResListDock, &QDockWidget::raise);
     connect(m_ToolsListKey, &QShortcut::activated, m_ToolBoxDock, &QDockWidget::raise);
     connect(m_ResListDock, &ResListDockWidget::doubleClicked, this, &MainWindow::doubleResClicked);
     connect(m_ResListDock, &ResListDockWidget::deleteRequest, this, &MainWindow::OnDeleteRequest);
-    connect(btn, &QAbstractButton::clicked, this, &MainWindow::onOpenRes);
 
     connect(m_ResListDock, &ResListDockWidget::selectionChanged, this, &MainWindow::OnResListSelectionChanged);
     connect(m_Mdi, &QMdiArea::subWindowActivated, this, &MainWindow::subWindowActivated);
@@ -299,25 +308,14 @@ void MainWindow::InitButtonBar()
     wbar->addWidget(pWindowsComboBox);
     wbar->addSeparator();
 
-    // Действие: Открытие диалога параметров приложения
-    QAction* optionsAction = createAction(tr("Параметры"), "Settings");
-    wbar->addAction(optionsAction);
-
-    wbar->addSeparator();
-
     // Действие: Открытие диалога "О программе"
     QAction* about = wbar->addAction(tr("О программе"), QIcon::fromTheme("HelpApplication"), Qt::ToolButtonIconOnly);
     wbar->addSeparator();
-
-    // Добавляем подсказки
-    toolAddActionWithTooltip(optionsAction,
-                             tr("Открывает диалог настроек и параметров приложения"));
 
     toolAddActionWithTooltip(about,
                              tr("Показывает информацию о программе, версии и авторских правах"));
 
     connect(about, &QAction::triggered, this, &MainWindow::onAbout);
-    connect(optionsAction, &QAction::triggered, this, &MainWindow::onOptions);
     connect(pWindowsComboBox, SIGNAL(currentIndexChanged(int)), SLOT(subWindowIndexChanged(int)));
 }
 
@@ -492,20 +490,20 @@ void MainWindow::InitLbrResourcePanel(SARibbonCategory *category)
                              QKeySequence::Delete);
 
     connect(m_pActionEditRes, &QAction::triggered, [=]()
-            {
-                QString name = m_pActionEditRes->property("Name").toString();
-                int type = m_pActionEditRes->property("Type").toInt();
+    {
+        QString name = m_pActionEditRes->property("Name").toString();
+        int type = m_pActionEditRes->property("Type").toInt();
 
-                doubleResClicked(name, type);
-            });
+        doubleResClicked(name, type);
+    });
 
     connect(m_pActionDeleteRes, &QAction::triggered, [=]()
-            {
-                QString name = m_pActionDeleteRes->property("Name").toString();
-                int type = m_pActionDeleteRes->property("Type").toInt();
+    {
+        QString name = m_pActionDeleteRes->property("Name").toString();
+        int type = m_pActionDeleteRes->property("Type").toInt();
 
-                OnDeleteRequest(name, type);
-            });
+        OnDeleteRequest(name, type);
+    });
 }
 
 void MainWindow::InitViewBar(SARibbonCategory *category)
@@ -681,6 +679,9 @@ void MainWindow::onOptions()
 
 void MainWindow::doubleResClicked(const QString &name, const int &type)
 {
+    if (m_pAppWidget)
+        m_pAppWidget->hide();
+
     QMdiSubWindow *wnd = IsExistsResWindow(name, type);
     if (wnd)
     {

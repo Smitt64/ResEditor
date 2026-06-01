@@ -1,4 +1,6 @@
 #include "panelitem.h"
+#include "StdEditorScene.h"
+#include <QJsonDocument>
 #include "respanel.h"
 #include "textitem.h"
 #include "controlitem.h"
@@ -7,6 +9,7 @@
 #include "undoredo/undoitemadd.h"
 #include "panelpropertysdlg.h"
 #include "toolsruntime.h"
+#include "widgets/toolboxmenu.h"
 #include <QGraphicsView>
 #include <QPainter>
 #include <QFont>
@@ -21,6 +24,8 @@
 #include <QGraphicsSceneDragDropEvent>
 #include <QKeyEvent>
 #include <algorithm>
+#include <QApplication>
+#include <widgets/CircularMenu.h>
 
 PanelItem::PanelItem(CustomRectItem *parent) :
     ContainerItem(parent),
@@ -38,11 +43,18 @@ PanelItem::PanelItem(CustomRectItem *parent) :
     setAcceptDrops(true);
     setFlag(QGraphicsItem::ItemIsPanel);
 
+    m_pContextMenu = new ToolboxCircularMenu();
+    m_pContextMenu->loadFromJson(QLatin1String(":/json/StdContextMenu.json"));
+    m_pContextMenu->setTitle("FET");
+
     m_PanelExclude = ExcludeAutoNum | ExcludeShadow;
 }
 
 PanelItem::~PanelItem()
 {
+    if (m_pContextMenu)
+        delete m_pContextMenu;
+
     if (m_DragPixmap)
         delete m_DragPixmap;
 
@@ -745,4 +757,113 @@ QVariant PanelItem::itemChange(QGraphicsItem::GraphicsItemChange change, const Q
     }*/
 
     return ContainerItem::itemChange(change, value);
+}
+
+QByteArray PanelItem::modifyFieldType(const QByteArray &jsonData, int newFieldType)
+{
+    // Парсим JSON
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData, &parseError);
+
+    if (parseError.error != QJsonParseError::NoError)
+    {
+        qDebug() << "JSON parse error:" << parseError.errorString();
+        return jsonData;
+    }
+
+    QJsonObject rootObj = doc.object();
+    if (!rootObj.contains("items") || !rootObj["items"].isArray())
+        return jsonData;
+
+    QJsonArray itemsArray = rootObj["items"].toArray();
+    for (int i = 0; i < itemsArray.size(); ++i)
+    {
+        QJsonObject itemObj = itemsArray[i].toObject();
+
+        if (itemObj.contains("properties") && itemObj["properties"].isArray())
+        {
+            QJsonArray propertiesArray = itemObj["properties"].toArray();
+
+            for (int j = 0; j < propertiesArray.size(); ++j)
+            {
+                QJsonObject propObj = propertiesArray[j].toObject();
+
+                if (propObj["property"].toString() == "fieldType")
+                {
+                    propObj["value"] = newFieldType;
+                    propertiesArray[j] = propObj;
+                    break;
+                }
+            }
+
+            itemObj["properties"] = propertiesArray;
+            itemsArray[i] = itemObj;
+        }
+    }
+
+    rootObj["items"] = itemsArray;
+    doc.setObject(rootObj);
+
+    return doc.toJson();
+}
+
+void PanelItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(scene());
+
+    if (!pScene || pScene->cursorPos().isNull() || !m_pContextMenu)
+    {
+        event->ignore();
+        return;
+    }
+
+    if (!m_pContextMenu->isHidden())
+        m_pContextMenu->hide();
+
+    Qt::KeyboardModifiers Modifiers = event->modifiers();
+    m_pContextMenu->setTitle("FET");
+
+    if (Modifiers.testFlag(Qt::ControlModifier))
+        m_pContextMenu->setTitle("FBT");
+    else if (Modifiers.testFlag(Qt::AltModifier))
+        m_pContextMenu->setTitle("FVT");
+    else if (Modifiers.testFlag(Qt::ShiftModifier))
+        m_pContextMenu->setTitle("FWR");
+
+    QPointF offset = pScene->cursorPos();
+    QPoint screenPos = event->screenPos();
+
+    event->accept();
+    QApplication::processEvents();
+    QMimeData *mimeData = m_pContextMenu->execForMimeData(screenPos);
+
+    if (!mimeData)
+        return;
+
+    CustomRectItem *topItem = pScene->findTopLevelItem();
+    if (!topItem)
+    {
+        delete mimeData;
+        return;
+    }
+
+    if (mimeData->hasFormat("application/toolboxitem"))
+    {
+        QByteArray data = mimeData->data("application/toolboxitem");
+
+        if (Modifiers.testFlag(Qt::ControlModifier))
+            data = modifyFieldType(data, ControlItem::FBT);
+        else if (Modifiers.testFlag(Qt::AltModifier))
+            data = modifyFieldType(data, ControlItem::FVT);
+        else if (Modifiers.testFlag(Qt::ShiftModifier))
+            data = modifyFieldType(data, ControlItem::FWR);
+
+        UndoItemAdd *pUndo = new UndoItemAdd(pScene);
+        pUndo->setData(data);
+        pUndo->setOffset(topItem->realCoordToEw(offset));
+        undoStack()->push(pUndo);
+    }
+
+    delete mimeData;
+    pScene->update();
 }

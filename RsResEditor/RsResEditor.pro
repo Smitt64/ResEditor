@@ -19,6 +19,8 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     newitemsdlg.cpp \
+    resapplicationwidget.cpp \
+    reslistcategorycontentwidget.cpp \
     resxmlloader.cpp \
     savefilesdlg.cpp \
     selectresourcedlg.cpp \
@@ -28,6 +30,8 @@ SOURCES += \
 HEADERS += \
     mainwindow.h \
     newitemsdlg.h \
+    resapplicationwidget.h \
+    reslistcategorycontentwidget.h \
     resxmlloader.h \
     savefilesdlg.h \
     selectresourcedlg.h \

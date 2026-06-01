@@ -67,7 +67,8 @@ SOURCES += \
     widgets/characterwidget.cpp \
     widgets/controltaborderedit.cpp \
     widgets/labeltexteditdlg.cpp \
-    widgets/resinfodlg.cpp
+    widgets/resinfodlg.cpp \
+    widgets/toolboxmenu.cpp
 
 HEADERS += \
     ResourceEditorInterface.h \
@@ -127,7 +128,8 @@ HEADERS += \
     widgets/characterwidget.h \
     widgets/controltaborderedit.h \
     widgets/labeltexteditdlg.h \
-    widgets/resinfodlg.h
+    widgets/resinfodlg.h \
+    widgets/toolboxmenu.h
 
 FORMS += \
     bankdistribselect.ui \

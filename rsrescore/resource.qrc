@@ -61,5 +61,6 @@
         <file>img/Close.svg</file>
         <file>img/CloseRed.svg</file>
         <file>img/CloseWhite.svg</file>
+        <file>json/StdContextMenu.json</file>
     </qresource>
 </RCC>

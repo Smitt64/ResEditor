@@ -6,14 +6,26 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>557</width>
-    <height>436</height>
+    <width>646</width>
+    <height>487</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
@@ -46,6 +58,12 @@
         </item>
         <item>
          <widget class="QComboBox" name="gridSizesComboBox">
+          <property name="minimumSize">
+           <size>
+            <width>150</width>
+            <height>0</height>
+           </size>
+          </property>
           <item>
            <property name="text">
             <string>Стандартный</string>
@@ -61,7 +79,7 @@
         <item>
          <spacer name="horizontalSpacer">
           <property name="orientation">
-           <enum>Qt::Orientation::Horizontal</enum>
+           <enum>Qt::Horizontal</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -83,10 +101,10 @@
       <item>
        <widget class="QGraphicsView" name="graphicsView">
         <property name="verticalScrollBarPolicy">
-         <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+         <enum>Qt::ScrollBarAlwaysOff</enum>
         </property>
         <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+         <enum>Qt::ScrollBarAlwaysOff</enum>
         </property>
        </widget>
       </item>
@@ -94,7 +112,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="autoUnloadGroup">
+    <widget class="QGroupBox" name="autoUnloadGroupBox">
      <property name="title">
       <string>Автоматическая выгрузка в xml при сохранении</string>
      </property>
@@ -102,7 +120,7 @@
       <bool>true</bool>
      </property>
      <property name="checkable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <property name="leftMargin">
@@ -117,6 +135,13 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
+      <item>
+       <widget class="QCheckBox" name="autoUnloadGroup">
+        <property name="text">
+         <string>Выгружать</string>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="StringListEditor" name="pathListWidget" native="true"/>
       </item>

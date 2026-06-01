@@ -188,8 +188,8 @@ void StdEditorScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
     BaseScene::mousePressEvent(mouseEvent);
 
-    if (mouseEvent->button() != Qt::LeftButton)
-        return;
+    /*if (mouseEvent->button() != Qt::LeftButton)
+        return;*/
 
     PanelItem* panelItem = findFirst<PanelItem>();
     if (!panelItem)

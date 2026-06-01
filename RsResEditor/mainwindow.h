@@ -30,6 +30,7 @@ class RecentLbrList;
 class SARibbonPannel;
 class ProxyAction;
 class UndoActionWidget;
+class ResApplicationWidget;
 class MainWindow : public SARibbonMainWindow
 {
     Q_OBJECT
@@ -152,5 +153,7 @@ private:
     QList<int> m_WindowsToSaveOnClose;
 
     VarLocker<QString> m_LastRibbonTabName;
+
+    ResApplicationWidget *m_pAppWidget;
 };
 #endif // MAINWINDOW_H

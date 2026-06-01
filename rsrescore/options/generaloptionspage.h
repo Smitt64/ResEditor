@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <optionsdlg/OptionsPage.h>
+#include "rsrescore_global.h"
 
 namespace Ui {
 class GeneralOptionsPage;
@@ -11,7 +12,7 @@ class GeneralOptionsPage;
 class PanelItem;
 class OptionsScene;
 class StdFolderListHandler;
-class GeneralOptionsPage : public OptionsPage
+class RSRESCORE_EXPORT GeneralOptionsPage : public OptionsPage
 {
     Q_OBJECT
 
