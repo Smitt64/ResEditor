@@ -112,7 +112,7 @@ void ControlItem::updateCorners()
     }
     else
     {
-        if (m_FieldType == FWR || m_FieldType == FVW)
+        if (m_FieldType == FWR || m_FieldType == FVW || m_FieldType == FBS)
         {
             flags.setFlag(BOTTOM, true);
             flags.setFlag(BOTTOM_RIGHT, true);

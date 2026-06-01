@@ -387,6 +387,9 @@ QString ResStyle::controlDefaultText(const ControlType &type)
     case Control_Panel:
     case Control_Button:
         break;
+    case Control_Frame:
+    case Control_ScrolArea:
+        break;
     }
     return text;
 }
@@ -574,17 +577,22 @@ void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleO
         painter->fillRect(rc, color(Color_Button, option));
 
         QColor shadowColor = color(Color_ButtonShadow, option);
-        QRectF botomShadow(option->rect.topLeft(), option->rect.size());
-        botomShadow.setTop(option->gridSize.height());
-        botomShadow.setLeft(option->gridSize.width());
-        botomShadow.setHeight(option->gridSize.height() / 2);
 
-        QRectF rightShadow(option->rect.topLeft(), option->rect.size());
-        rightShadow.setTop(option->gridSize.height() / 2);
-        rightShadow.setLeft(rc.width());
-        rightShadow.setHeight(option->gridSize.height() / 2);
+        // Нижняя тень - привязываем к нижней границе
+        QRectF bottomShadow;
+        bottomShadow.setRect(option->gridSize.width(),
+                             rc.height(),
+                             option->rect.width() - option->gridSize.width(),
+                             option->gridSize.height() / 2);
 
-        painter->fillRect(botomShadow, shadowColor);
+        // Правая тень - привязываем к правой границе
+        QRectF rightShadow;
+        rightShadow.setRect(rc.width(),
+                            option->gridSize.height() / 2,
+                            option->gridSize.width(),
+                            qMax<qreal>(rc.height() - option->gridSize.height() / 2, option->gridSize.height() / 2));
+
+        painter->fillRect(bottomShadow, shadowColor);
         painter->fillRect(rightShadow, shadowColor);
         drawText(painter, rc, option->text, option->alignment | Qt::AlignVCenter, color(Color_ButtonText, option));
         painter->restore();

@@ -30,6 +30,7 @@
 #include <QComboBox>
 #include <QFileDialog>
 #include <aboutdlg.h>
+#include <ribbon/ribbonaboutdlg.h>
 #include <QThreadPool>
 #include <QKeySequence>
 #include <QSettings>
@@ -659,7 +660,7 @@ void MainWindow::UpdateActions()
 
 void MainWindow::onAbout()
 {
-    AboutDlg dlg(":/json/AboutDlg.json", this);
+    RibbonAboutDlg dlg(":/json/AboutDlg.json", QColor(0x00, 0x72, 0xC6), this);
     dlg.exec();
 }
 
