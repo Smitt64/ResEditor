@@ -580,16 +580,11 @@ void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleO
 
         // Нижняя тень - привязываем к нижней границе
         QRectF bottomShadow;
-        bottomShadow.setRect(option->gridSize.width(),
-                             rc.height(),
-                             option->rect.width() - option->gridSize.width(),
-                             option->gridSize.height() / 2);
+        bottomShadow.setRect(option->gridSize.width(), rc.height(), option->rect.width() - option->gridSize.width(), option->gridSize.height() / 2);
 
         // Правая тень - привязываем к правой границе
         QRectF rightShadow;
-        rightShadow.setRect(rc.width(),
-                            option->gridSize.height() / 2,
-                            option->gridSize.width(),
+        rightShadow.setRect(rc.width(), option->gridSize.height() / 2, option->gridSize.width(),
                             qMax<qreal>(rc.height() - option->gridSize.height() / 2, option->gridSize.height() / 2));
 
         painter->fillRect(bottomShadow, shadowColor);
