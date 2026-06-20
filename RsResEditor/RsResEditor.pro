@@ -83,3 +83,5 @@ DEPENDPATH += $$PWD/../ToolsRuntimeProj/ToolsRuntime
 
 RESOURCES += \
     lbrres.qrc
+
+OTHER_FILES += rec/winfmt.rc
