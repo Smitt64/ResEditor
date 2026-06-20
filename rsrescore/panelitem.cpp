@@ -809,6 +809,12 @@ QByteArray PanelItem::modifyFieldType(const QByteArray &jsonData, int newFieldTy
 
 void PanelItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
+    if (wasRightButtonDragged())
+    {
+        event->ignore();
+        return;
+    }
+
     StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(scene());
 
     if (!pScene || pScene->cursorPos().isNull() || !m_pContextMenu)

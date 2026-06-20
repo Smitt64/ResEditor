@@ -56,6 +56,7 @@ void CustomRectItem::init()
     m_MousePressed = false;
     m_IsResizing = false;
     m_IsSelection = false;
+    m_RightButtonDragged = false;
     m_HasRubberBand = false;
     pRubberBand = nullptr;
     m_pUndoStack = nullptr;
@@ -291,6 +292,8 @@ void CustomRectItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
     }
     else if (event->button() == Qt::RightButton)
     {
+        m_RightButtonDragged = false;
+
         if (rubberBand())
         {
             QPointF mapped = scene()->views()[0]->mapFromScene(event->scenePos());
@@ -444,6 +447,10 @@ void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         {
             QPointF mapped = scene()->views()[0]->mapFromScene(event->scenePos());
             QPoint p(mapped.x(), mapped.y());
+
+            if (!m_RightButtonDragged)
+                m_RightButtonDragged = (p - startDrag).manhattanLength() > QApplication::startDragDistance();
+
             rubberBand()->setGeometry(QRect(startDrag, p).normalized());
 
             QRectF rc = mapRectFromScene(rubberBand()->geometry()).normalized();
@@ -1431,6 +1438,11 @@ const bool &CustomRectItem::isCanIntersects() const
 const bool &CustomRectItem::isMousePressed() const
 {
     return m_MousePressed;
+}
+
+const bool &CustomRectItem::wasRightButtonDragged() const
+{
+    return m_RightButtonDragged;
 }
 
 void CustomRectItem::setCanIntersects(const bool &flag)

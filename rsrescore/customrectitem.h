@@ -110,6 +110,7 @@ public:
 
     const bool &isCanIntersects() const;
     const bool &isMousePressed() const;
+    const bool &wasRightButtonDragged() const;
     void setCanIntersects(const bool &flag);
 
     bool setSkipUndoStack(const bool &value);
@@ -182,6 +183,7 @@ private:
     QRectF m_ActualRect;
     bool m_IsResizing, m_IsSelection;
     bool m_MousePressed;
+    bool m_RightButtonDragged;
     QPointF m_MousePressedPos;
     ResizeCorners m_ResizeCorner;
     QFlags<ResizeCorners> m_AvailableCorners;
