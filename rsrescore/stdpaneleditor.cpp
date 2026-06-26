@@ -45,6 +45,7 @@
 #include <QMenuBar>
 #include <QApplication>
 #include <QJsonArray>
+#include <QRegularExpression>
 #include <QClipboard>
 #include <QJsonDocument>
 #include <QTextLayout>
@@ -104,9 +105,48 @@ public:
 
 StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     BaseEditorWindow(parent),
+    m_pView(nullptr),
     m_pPanel(nullptr),
     panelItem(nullptr),
-    m_pPanelCategory(nullptr)
+    m_Type(Type),
+    m_SizeText(nullptr),
+    m_CursorText(nullptr),
+    m_pNameLineEdit(nullptr),
+    m_pDeleteShortcut(nullptr),
+    m_pCutShortcut(nullptr),
+    m_pCopyShortcut(nullptr),
+    m_pPasteShortcut(nullptr),
+    m_pContrst(nullptr),
+    m_pDelete(nullptr),
+    m_pProperty(nullptr),
+    m_pScrolAreaAction(nullptr),
+    m_pCutAction(nullptr),
+    m_pCopyAction(nullptr),
+    m_pPasteAction(nullptr),
+    m_pCheckAction(nullptr),
+    m_EwViewAction(nullptr),
+    m_ViewAction(nullptr),
+    m_Statistic(nullptr),
+    m_SaveToXml(nullptr),
+    m_pCreateControl(nullptr),
+    m_pSpellCheckAction(nullptr),
+    m_pFieldProperty(nullptr),
+    m_pFdmAction(nullptr),
+    m_pAsTextAction(nullptr),
+    m_pNoTabStop(nullptr),
+    m_pListSelect(nullptr),
+    m_pClipboard(nullptr),
+    m_pStructModel(nullptr),
+    m_pPanelCategory(nullptr),
+    m_pControlCategory(nullptr),
+    m_pBorderStyleGallery(nullptr),
+    m_pPanelStyleGallery(nullptr),
+    m_pControlStyleGallery(nullptr),
+    m_pBorderGroup1(nullptr),
+    m_pPanelStyleGroup(nullptr),
+    m_pControlStyleGroup(nullptr),
+    m_pFieledTypeGroup(nullptr),
+    m_pDataTypeGroup(nullptr)
 {
     PropertyModel::setGroupColors
     (
@@ -120,7 +160,6 @@ StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
         }
     );
 
-    m_Type = Type;
     if (Type == LbrObject::RES_PANEL)
         panelItem = new PanelItem();
     else
@@ -520,18 +559,92 @@ void StdPanelEditor::scenePasteItems()
         int yOffset = 0;
         while (!stream.atEnd())
         {
-            QString text = stream.readLine();
+            QString text = stream.readLine().trimmed();
 
-            TextItem *pTextItem = new TextItem();
-            pScene->addItem(pTextItem);
-            pTextItem->setText(text);
-            pTextItem->setCoord(QPoint(0, yOffset));
-            QJsonObject itemData;
+            QRegularExpression reStart("^(\\[|\\()\\s*(.)\\s*(\\]|\\))\\s*(.*)$");
+            QRegularExpression reEnd("^(.*?)\\s*(\\[|\\()\\s*(.)\\s*(\\]|\\))$");
+            QRegularExpressionMatch matchStart = reStart.match(text);
+            QRegularExpressionMatch matchEnd = reEnd.match(text);
 
-            pTextItem->serialize(itemData);
-            delete pTextItem;
+            bool hasMarker = false;
+            bool markerAtStart = false;
+            bool isCheck = false;
+            bool checked = false;
+            QString labelText;
 
-            items.append(itemData);
+            if (matchStart.hasMatch())
+            {
+                hasMarker = true;
+                markerAtStart = true;
+                isCheck = matchStart.captured(1) == "[";
+                checked = !matchStart.captured(2).trimmed().isEmpty();
+                labelText = matchStart.captured(4).trimmed();
+            }
+            else if (matchEnd.hasMatch())
+            {
+                hasMarker = true;
+                markerAtStart = false;
+                isCheck = matchEnd.captured(2) == "[";
+                checked = !matchEnd.captured(3).trimmed().isEmpty();
+                labelText = matchEnd.captured(1).trimmed();
+            }
+
+            if (hasMarker)
+            {
+                QString marker = isCheck ? "[ ]" : "( )";
+                QString displayText;
+                int controlX = 0;
+
+                if (markerAtStart)
+                {
+                    displayText = marker + QString(" ") + labelText;
+                    controlX = 1;
+                }
+                else
+                {
+                    displayText = labelText + QString(" ") + marker;
+                    controlX = displayText.length() - 2;
+                }
+
+                TextItem *pTextItem = new TextItem();
+                pScene->addItem(pTextItem);
+                pTextItem->setText(displayText);
+                pTextItem->setCoord(QPoint(0, yOffset));
+
+                ControlItem *pControlItem = new ControlItem();
+                pScene->addItem(pControlItem);
+                pControlItem->setCoord(QPoint(controlX, yOffset));
+                pControlItem->setSize(QSize(1, 1));
+                pControlItem->setFieldType(ControlItem::FBT);
+                pControlItem->setDataType(ControlItem::CHAR);
+                pControlItem->setDataLength(0);
+                if (checked)
+                    pControlItem->setValueTemplate("X");
+
+                QJsonObject textData;
+                pTextItem->serialize(textData);
+                items.append(textData);
+
+                QJsonObject controlData;
+                pControlItem->serialize(controlData);
+                items.append(controlData);
+
+                delete pTextItem;
+                delete pControlItem;
+            }
+            else
+            {
+                TextItem *pTextItem = new TextItem();
+                pScene->addItem(pTextItem);
+                pTextItem->setText(text);
+                pTextItem->setCoord(QPoint(0, yOffset));
+                QJsonObject itemData;
+
+                pTextItem->serialize(itemData);
+                delete pTextItem;
+
+                items.append(itemData);
+            }
 
             yOffset ++;
         }
@@ -562,6 +675,9 @@ void StdPanelEditor::scenePasteItems()
 
 void StdPanelEditor::clipboardChanged()
 {
+    if (!m_pPasteAction)
+        return;
+
     const QMimeData *mimeData = m_pClipboard->mimeData();
     if (mimeData->hasText() || mimeData->hasFormat(MIMETYPE_TOOLBOX))
         m_pPasteAction->setEnabled(true);
@@ -1288,25 +1404,28 @@ void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
     editpanel->addLargeAction(m_pScrolAreaAction);
     editpanel->addSeparator();
 
-    m_pCutAction = createAction(tr("Вырезать"), "Cut", QKeySequence::Cut);
+    m_pCutAction = createAction(tr("Вырезать"), "Cut");
     toolAddActionWithTooltip(m_pCutAction,
-                         tr("Вырезает выбранные элементы в буфер обмена"),
-                         QKeySequence::Cut);
+                         tr("Вырезает выбранные элементы в буфер обмена"));
     connect(m_pCutAction, &QAction::triggered, this, &StdPanelEditor::sceneCutItems);
+    m_pCutShortcut = new QShortcut(QKeySequence::Cut, this);
+    connect(m_pCutShortcut, &QShortcut::activated, this, &StdPanelEditor::sceneCutItems);
     editpanel->addSmallAction(m_pCutAction);
 
-    m_pCopyAction = createAction(tr("Копировать"), "Copy", QKeySequence::Copy);
+    m_pCopyAction = createAction(tr("Копировать"), "Copy");
     toolAddActionWithTooltip(m_pCopyAction,
-                         tr("Копирует выбранные элементы в буфер обмена"),
-                         QKeySequence::Copy);
+                         tr("Копирует выбранные элементы в буфер обмена"));
     connect(m_pCopyAction, &QAction::triggered, this, &StdPanelEditor::sceneCopyItems);
+    m_pCopyShortcut = new QShortcut(QKeySequence::Copy, this);
+    connect(m_pCopyShortcut, &QShortcut::activated, this, &StdPanelEditor::sceneCopyItems);
     editpanel->addSmallAction(m_pCopyAction);
 
-    m_pPasteAction = createAction(tr("Вставить"), "Paste", QKeySequence::Paste);
+    m_pPasteAction = createAction(tr("Вставить"), "Paste");
     toolAddActionWithTooltip(m_pPasteAction,
-                         tr("Вставляет элементы из буфера обмена"),
-                         QKeySequence::Paste);
+                         tr("Вставляет элементы из буфера обмена"));
     connect(m_pPasteAction, &QAction::triggered, this, &StdPanelEditor::scenePasteItems);
+    m_pPasteShortcut = new QShortcut(QKeySequence::Paste, this);
+    connect(m_pPasteShortcut, &QShortcut::activated, this, &StdPanelEditor::scenePasteItems);
     editpanel->addSmallAction(m_pPasteAction);
 
     QAction *centerAction = createAction(tr("Выводить панель по центру"), "AlignCenter");

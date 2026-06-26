@@ -125,6 +125,7 @@ private:
     SARibbonLineEdit *m_pNameLineEdit;
 
     QShortcut *m_pDeleteShortcut;
+    QShortcut *m_pCutShortcut, *m_pCopyShortcut, *m_pPasteShortcut;
     QAction *m_pContrst, *m_pDelete, *m_pProperty, *m_pScrolAreaAction;
     QAction *m_pCutAction, *m_pCopyAction, *m_pPasteAction;
     QAction *m_pCheckAction, *m_EwViewAction, *m_ViewAction, *m_Statistic;

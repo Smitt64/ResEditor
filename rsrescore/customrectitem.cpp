@@ -1428,6 +1428,8 @@ void CustomRectItem::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Return)
         userAction(ActionKeyEnter);
+    else
+        QGraphicsObject::keyPressEvent(event);
 }
 
 const bool &CustomRectItem::isCanIntersects() const

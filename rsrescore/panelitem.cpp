@@ -739,7 +739,7 @@ void PanelItem::updateChildControlsOrder()
 
 QVariant PanelItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value)
 {
-    /*if (change == QGraphicsItem::ItemChildAddedChange)
+    if (change == QGraphicsItem::ItemChildAddedChange)
     {
         QGraphicsItem *item = value.value<QGraphicsItem*>();
         if (item)
@@ -754,7 +754,7 @@ QVariant PanelItem::itemChange(QGraphicsItem::GraphicsItemChange change, const Q
             emit structChanged();
 
         return ContainerItem::itemChange(change, value);
-    }*/
+    }
 
     return ContainerItem::itemChange(change, value);
 }

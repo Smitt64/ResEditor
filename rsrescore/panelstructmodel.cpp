@@ -2,6 +2,8 @@
 #include <QVariant>
 #include <QList>
 #include <memory>
+#include <QPointer>
+#include <QTimer>
 #include <QGraphicsItem>
 #include <QMetaObject>
 #include <QMetaClassInfo>
@@ -50,6 +52,9 @@ public:
     }
     QVariant data(int column, int role) const
     {
+        if (!m_pItem)
+            return QVariant();
+
         if (role == Qt::DisplayRole)
         {
             const QMetaObject *obj = m_pItem->metaObject();
@@ -137,7 +142,7 @@ public:
     }
 
     std::vector<std::unique_ptr<TreeItem>> m_childItems;
-    CustomRectItem *m_pItem;
+    QPointer<CustomRectItem> m_pItem;
     TreeItem *m_parentItem;
 };
 
@@ -151,6 +156,7 @@ PanelStructModel::PanelStructModel(CustomRectItem *item, QObject *parent) :
     rootItem->appendChild(std::make_unique<TreeItem>(item, rootItem.get()));
 
     connect(item, SIGNAL(structChanged()), this, SLOT(structChanged()));
+    connect(item, &QObject::destroyed, this, &PanelStructModel::onItemDestroyed, Qt::UniqueConnection);
 }
 
 PanelStructModel::~PanelStructModel() = default;
@@ -158,6 +164,9 @@ PanelStructModel::~PanelStructModel() = default;
 void PanelStructModel::structChanged()
 {
     TreeItem *panel = rootItem->child(0);
+
+    if (!panel || !panel->m_pItem)
+        return;
 
     QModelIndex root = createIndex(0, 0, panel);
 
@@ -182,9 +191,18 @@ void PanelStructModel::structChanged()
         ScrolAreaRectItem *scrolArea = dynamic_cast<ScrolAreaRectItem*>(element);
 
         if (!scrolArea)
+        {
+            connect(element, &QObject::destroyed, this, &PanelStructModel::onItemDestroyed, Qt::UniqueConnection);
             panel->appendChild(std::make_unique<TreeItem>(element, panel));
+        }
     }
     endResetModel();
+}
+
+void PanelStructModel::onItemDestroyed(QObject *obj)
+{
+    Q_UNUSED(obj)
+    QTimer::singleShot(0, this, &PanelStructModel::structChanged);
 }
 
 int PanelStructModel::columnCount(const QModelIndex &parent) const
@@ -203,7 +221,11 @@ QVariant PanelStructModel::data(const QModelIndex &index, int role) const
     const auto *item = static_cast<const TreeItem*>(index.internalPointer());
 
     if (role == CustomRectItemRole)
+    {
+        if (!item->m_pItem)
+            return {};
         return QVariant::fromValue<CustomRectItem*>(item->m_pItem);
+    }
 
     return item->data(index.column(), role);
 }
