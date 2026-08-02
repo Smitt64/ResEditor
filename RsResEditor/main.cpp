@@ -23,7 +23,6 @@ static void InitIconTheme()
 
 int main(int argc, char *argv[])
 {
-    InitIconTheme();
     SARibbonBar::initHighDpi();
 
     QCommandLineParser parser;
@@ -48,6 +47,12 @@ int main(int argc, char *argv[])
         QCoreApplication::translate("main", "Lbr file to open (e.g. via shell association)"));
 
     ResApplication a(argc, argv);
+
+    // Только после создания QApplication: без экземпляра applicationDirPath()
+    // пуст, и тема иконок ищется относительно рабочего каталога (ломается
+    // при запуске через ассоциацию файлов - CWD становится папкой файла)
+    InitIconTheme();
+
     a.init();
 
     parser.process(a.arguments());
