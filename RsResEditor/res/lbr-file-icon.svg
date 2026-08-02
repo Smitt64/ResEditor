@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <!-- Библиотека на основе Library.svg из vs_theme, в фирменных тонах:
+       светло-синий контур (вместо белого) + синее заполнение (вместо тёмного) -->
+  <path fill="#B3D7F0" d="M16,2V15H0V2H5V1h6V2Z"/>
+  <path fill="#0072C6" fill-rule="evenodd" d="M11,3V14h4V3Z M12,4h2v2h-2Z M12,10h2v1h-2Z M12,12h2v1h-2Z
+    M6,14h4V2H6Z M7,3h2v1h-2Z M7,10h2v1h-2Z M7,12h2v1h-2Z
+    M1,14H5V3H1Z M2,4h2v2h-2Z M2,10h2v1h-2Z M2,12h2v1h-2Z"/>
+</svg>

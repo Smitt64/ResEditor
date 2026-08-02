@@ -42,6 +42,11 @@ int main(int argc, char *argv[])
     parser.addOption(lbrFileOption);
     parser.addOption(resUnloadDirOption);
 
+    // Позиционный аргумент - файл, переданный без ключа
+    // (так вызывает проводник по ассоциации *.lbr: WorkRes.exe "%1")
+    parser.addPositionalArgument("file",
+        QCoreApplication::translate("main", "Lbr file to open (e.g. via shell association)"));
+
     ResApplication a(argc, argv);
     a.init();
 
@@ -53,6 +58,14 @@ int main(int argc, char *argv[])
 
     if (parser.isSet(lbrFileOption))
         w.open(parser.value(lbrFileOption));
+    else
+    {
+        // Файл из позиционного аргумента (ассоциация *.lbr).
+        // Каждый файл открывается в отдельном экземпляре приложения.
+        const QStringList posArgs = parser.positionalArguments();
+        if (!posArgs.isEmpty())
+            w.open(posArgs.first());
+    }
 
     if (parser.isSet(resUnloadDirOption))
         w.setAutoUnloadDir(parser.value(resUnloadDirOption));

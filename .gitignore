@@ -46,3 +46,5 @@ build/Desktop_x86_windows_msvc2019_pe_32bit-Debug/rsbaseeditor/debug/
 ResEditor.pro.user.488e2ad
 
 *.hUzNzQ
+
+RsResEditor/res/__pycache__/
