@@ -6,6 +6,8 @@
 
 class QShortcut;
 class QActionGroup;
+class QPixmap;
+class QModelIndex;
 class ResPanel;
 class PanelItem;
 class BaseEditorView;
@@ -76,6 +78,10 @@ protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
     void addCodeWindow(const QString &title, const QString &text);
     virtual void initRibbonPanels() Q_DECL_OVERRIDE;
+    // Пользовательские элементы toolbox ищутся в <...>/toolbox/panels
+    virtual QString toolBoxId() const Q_DECL_OVERRIDE { return QStringLiteral("panels"); }
+    // Плашка перетаскивания из toolbox — в стиле панели (ячейки)
+    virtual QPixmap toolBoxDragPixmap(const QModelIndex &index) const Q_DECL_OVERRIDE;
 
 private:
     enum FillItemsChildMode

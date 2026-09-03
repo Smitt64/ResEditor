@@ -411,7 +411,8 @@ SARibbonSystemToolButton#SACloseWindowButton {
     background-position:center;
     background-repeat: no-repeat;
     background-image: url(:/SARibbon/image/resource/Titlebar_Close.svg);
-	border-right: 2px solid #A4373A;
+	margin-right: 2px;
+    /*border-right: 2px solid #A4373A;*/
 }
 SARibbonSystemToolButton#SACloseWindowButton:hover {
   background-color: #e81123;

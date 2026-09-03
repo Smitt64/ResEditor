@@ -24,10 +24,10 @@ ResApplication::ResApplication(int &argc, char **argv) :
     addLibraryPath(current.absoluteFilePath("sqldrivers"));
     addLibraryPath(current.absoluteFilePath("styles"));
 
-    m_pSettings->beginGroup("CodeEditor");
-    QString sHighlighterStyle = m_pSettings->value("theme", "Default").toString();
-    HighlighterStyle::inst()->setDefaultTheme(sHighlighterStyle);
-    m_pSettings->endGroup();
+    // Тема подсветки жёстко задана под офисный стиль приложения,
+    // настройка CodeEditor/theme из lbropt.ini игнорируется
+    HighlighterStyle::inst()->loadStyle(":/res/Office 2013 (Blue).json");
+    HighlighterStyle::inst()->setDefaultTheme("Office 2013 (Blue)");
 }
 
 ResApplication::~ResApplication()

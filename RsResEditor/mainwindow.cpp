@@ -3,6 +3,8 @@
 #include "newitemsdlg.h"
 #include "respanel.h"
 #include "resxmlloader.h"
+#include "resxmlloaderchain.h"
+#include <QXmlStreamReader>
 #include "ui_mainwindow.h"
 #include "reslistdockwidget.h"
 #include "resbuffer.h"
@@ -23,6 +25,7 @@
 #include "options/recentlbrlist.h"
 #include <QMdiSubWindow>
 #include <QMdiArea>
+#include <QLayout>
 #include <QDebug>
 #include <QDir>
 #include <QMessageBox>
@@ -109,7 +112,7 @@ MainWindow::MainWindow(QWidget *parent)
     ribbon->addCategoryPage(viewPage);
 
     ribbon->applicationButton()->setText(tr("Файл"));
-    ribbon->applicationButton()->setMinimumWidth(60);
+    ribbon->applicationButton()->setMinimumWidth(82);
 
     m_ResListDock = new ResListDockWidget(this);
     m_PropertyDock = new PropertyDockWidget(this);
@@ -199,6 +202,16 @@ void MainWindow::InitQuickAccessBar()
 
     SARibbonQuickAccessBar* quickAccessBar = ribbonBar()->quickAccessBar();
 
+    auto markSideMenuArrow = [quickAccessBar](QAction *menuAction)
+    {
+        if (SARibbonControlButton *btn = quickAccessBar->buttonGroupWidget()->actionToRibbonControlToolButton(menuAction))
+        {
+            btn->setProperty("sideMenuArrow", true);
+            btn->style()->unpolish(btn);
+            btn->style()->polish(btn);
+        }
+    };
+
     // Действие: Создание нового ресурса или файла
     QAction* actionNew = createAction(tr("Создать"), "NewFile");
     actionNew->setShortcut(QKeySequence::New);
@@ -250,14 +263,16 @@ void MainWindow::InitQuickAccessBar()
     toolAddActionWithTooltip(m_pUndoActionWidget,
                              tr("Показывает список выполненных операций для выбора отмены/повтора"));
 
-    quickAccessBar->addMenu(m_pUndoRedoMenu);
+    QAction *UndoRedoMenuAction = quickAccessBar->addMenu(m_pUndoRedoMenu);
+    markSideMenuArrow(UndoRedoMenuAction);
 
     QList<QAction*> actions = m_RecentLbrList->actions();
 
     if (!actions.empty())
     {
-        // Создаем меню "Недавние файлы"
+        // Создаем меню "Недавние файлы" sideMenuArrow
         QMenu* RecentLbrMenu = new QMenu(tr("Недавние файлы"), this);
+        RecentLbrMenu->setProperty("sideMenuArrow", true);
         RecentLbrMenu->setIcon(QIcon::fromTheme("History"));
 
         // Добавляем описание для меню "Недавние файлы"
@@ -280,7 +295,8 @@ void MainWindow::InitQuickAccessBar()
                                      tr("Открывает библиотеку ресурсов: %1").arg(fileName));
         }
 
-        quickAccessBar->addMenu(RecentLbrMenu, Qt::ToolButtonIconOnly, QToolButton::InstantPopup);
+        QAction *RecentLbrMenuAction = quickAccessBar->addMenu(RecentLbrMenu, Qt::ToolButtonIconOnly, QToolButton::InstantPopup);
+        markSideMenuArrow(RecentLbrMenuAction);
     }
 
     // Добавляем подсказки к основным действиям
@@ -301,6 +317,29 @@ void MainWindow::InitButtonBar()
     SARibbonSystemButtonBar* wbar = windowButtonBar();
     if (!wbar)
         return;
+
+    // Отступы у группы кнопок, чтобы подсветка при наведении
+    // не заезжала на границу окна (QSS margin тут не срабатывает)
+    if (QWidget *group = wbar->findChild<QWidget *>(QStringLiteral("SASystemButtonGroup")))
+    {
+        if (QLayout *groupLayout = group->layout())
+            groupLayout->setContentsMargins(0, 3, 0, 3);
+    }
+
+    // Кнопки закрытия окон перед комбобоксом выбора текущего окна
+    // (как в FmtRibbonMainWindow::InitWindowsCombo)
+    QAction* closeWindow = wbar->addAction(tr("Закрыть"), QIcon::fromTheme("CloseDocument"), Qt::ToolButtonIconOnly);
+    QAction* closeAllWindow = wbar->addAction(tr("Закрыть все"), QIcon::fromTheme("CloseDocumentGroup"), Qt::ToolButtonIconOnly);
+
+    toolAddActionWithTooltip(closeWindow,
+                             tr("Закрывает текущее активное окно редактирования"),
+                             QKeySequence("Ctrl+F4"));
+
+    toolAddActionWithTooltip(closeAllWindow,
+                             tr("Закрывает все открытые окна редактирования"));
+
+    connect(closeWindow, SIGNAL(triggered(bool)), m_Mdi, SLOT(closeActiveSubWindow()));
+    connect(closeAllWindow, SIGNAL(triggered(bool)), this, SLOT(closeAllSubWindows()));
 
     pWindowsComboBox = new SARibbonComboBox(this);
     pWindowsComboBox->setMinimumWidth(250);
@@ -392,87 +431,86 @@ void MainWindow::InitLbrResourcePanel(SARibbonCategory *category)
     NewItemsDlg dlg(tmpLbrInterface);
     dlg.buildStandartNewItems();
 
-    QStringList panels = dlg.ribbonPannels();
-    if (!panels.isEmpty())
+    // Секции ribbon из метаданных плагинов: для каждой — кнопка создания
+    // ресурса (если шаблонов несколько — large-кнопка с выпадающим меню)
+    struct RibbonNewSection
     {
-        if (panels.size() > 1)
-        {
-            QMenu *panelmenu = new QMenu(this);
-            panelmenu->setIcon(QIcon::fromTheme("NewDialog"));
-            panelmenu->setTitle(tr("Создать PANEL"));
+        QString key;     // ключ в "ribbon" метаданных (panels/scrols/menus/...)
+        QString title;   // заголовок кнопки
+        QString icon;    // иконка темы
+        QString tooltip;
+    };
 
-            for (const QString &guid : panels)
+    const QVector<RibbonNewSection> sections =
+    {
+        { QStringLiteral("panels"), tr("Создать PANEL"),  QStringLiteral("NewDialog"),
+          tr("Создает новый ресурс типа PANEL или его подтип") },
+        { QStringLiteral("scrols"), tr("Создать BSCROL"), QStringLiteral("NewTable"),
+          tr("Создает новый ресурс типа BSCROL (скролинговая панель)") },
+        { QStringLiteral("menus"),  tr("Создать MENU"),   QStringLiteral("ContextMenu"),
+          tr("Создает новое меню для библиотеки ресурсов") },
+    };
+
+    for (const RibbonNewSection &section : sections)
+    {
+        const QStringList guids = dlg.ribbonSection(section.key);
+        if (guids.isEmpty())
+            continue;
+
+        QAction *sectionAction = nullptr;
+        if (guids.size() > 1)
+        {
+            QMenu *sectionMenu = new QMenu(this);
+            sectionMenu->setIcon(QIcon::fromTheme(section.icon));
+            sectionMenu->setTitle(section.title);
+
+            for (const QString &guid : guids)
             {
                 GroupInfoMap info = dlg.getInfoForItem(guid);
 
-                QAction *action = panelmenu->addAction(info[RoleTitle].toString());
+                QAction *action = sectionMenu->addAction(info[RoleTitle].toString());
                 action->setData(guid);
 
-                if (guid == panels.at(0))
+                // иконка самого шаблона (theme:... или путь в ресурсах);
+                // пользовательские шаблоны — с бейджем
+                QString iconName = info[RoleIconName].toString();
+                QIcon icon;
+                if (iconName.startsWith(QLatin1String("theme:")))
+                    icon = QIcon::fromTheme(iconName.mid(6));
+                else if (!iconName.isEmpty())
+                    icon = QIcon(iconName);
+
+                const QString badge = info[RoleBadge].toString();
+                if (info[RoleUserTemplate].toBool() && !badge.isEmpty())
+                    icon = NewItemsDlg::badgedIcon(icon, badge);
+
+                if (!icon.isNull())
+                    action->setIcon(icon);
+
+                if (guid == guids.at(0))
                 {
-                    panelmenu->setDefaultAction(action);
-                    panelmenu->setActiveAction(action);
+                    sectionMenu->setDefaultAction(action);
+                    sectionMenu->setActiveAction(action);
                 }
             }
 
-            // Действие: Создание нового ресурса типа PANEL (меню с подтипами)
-            m_pActionNewPanel = resPannel->addLargeMenu(panelmenu, QToolButton::MenuButtonPopup);
-            m_pActionNewPanel->setData(panels[0]);
-
-            // Добавляем подсказку
-            toolAddActionWithTooltip(m_pActionNewPanel,
-                                     tr("Создает новый ресурс типа PANEL или его подтип"));
-
-            connect(resPannel, &SARibbonPannel::actionTriggered, this, &MainWindow::OnNewResActionEx);
+            sectionAction = resPannel->addLargeMenu(sectionMenu, QToolButton::MenuButtonPopup);
+            sectionAction->setData(guids[0]);
+            toolAddActionWithTooltip(sectionAction, section.tooltip);
         }
         else
         {
-            // Действие: Создание нового ресурса типа PANEL
-            m_pActionNewPanel = createAction(tr("Создать PANEL"), "NewDialog");
-            m_pActionNewPanel->setData(panels[0]);
-            resPannel->addLargeAction(m_pActionNewPanel);
-
-            // Добавляем подсказку
-            toolAddActionWithTooltip(m_pActionNewPanel,
-                                     tr("Создает новый ресурс типа PANEL"));
+            sectionAction = createAction(section.title, section.icon);
+            sectionAction->setData(guids[0]);
+            resPannel->addLargeAction(sectionAction);
+            toolAddActionWithTooltip(sectionAction, section.tooltip);
         }
+
+        if (sectionAction)
+            m_NewResActions.append(sectionAction);
     }
 
-    QStringList scrols = dlg.ribbonScrols();
-    if (!scrols.isEmpty())
-    {
-        if (scrols.size() > 1)
-        {
-            QMenu *panelmenu = new QMenu(this);
-            panelmenu->setIcon(QIcon::fromTheme("NewTable"));
-            panelmenu->setTitle(tr("Создать BSCROL"));
-
-            for (const QString &guid : scrols)
-            {
-                GroupInfoMap info = dlg.getInfoForItem(guid);
-
-                QAction *action = panelmenu->addAction(info[RoleTitle].toString());
-                action->setData(guid);
-
-                if (guid == scrols.at(0))
-                {
-                    panelmenu->setDefaultAction(action);
-                    panelmenu->setActiveAction(action);
-                }
-            }
-        }
-        else
-        {
-            // Действие: Создание нового ресурса типа BSCROL
-            m_pActionNewBScrol = createAction(tr("Создать BSCROL"), "NewTable");
-            m_pActionNewBScrol->setData(scrols[0]);
-            resPannel->addLargeAction(m_pActionNewBScrol);
-
-            // Добавляем подсказку
-            toolAddActionWithTooltip(m_pActionNewBScrol,
-                                     tr("Создает новый ресурс типа BSCROL (скролинговая панель)"));
-        }
-    }
+    connect(resPannel, &SARibbonPannel::actionTriggered, this, &MainWindow::OnNewResActionEx);
 
     // Действие: Редактирование выбранного ресурса
     m_pActionEditRes = createAction(tr("Редактировать"), "EditDocument");
@@ -540,8 +578,16 @@ void MainWindow::InitViewBar(SARibbonCategory *category)
     m_pFilterRibbonPanel = new SARibbonPannel(tr("Фильтр"));
     category->addPannel(m_pFilterRibbonPanel);
 
-    const QList<qint16> types = RsResCore::types();
+    const QSet<qint16> plugged = RsResCore::inst()->plugedTypes();
+    QList<qint16> types = RsResCore::types();
     const QList<qint16> stdtypes = RsResCore::stdTypes();
+
+    if (!plugged.isEmpty())
+    {
+        types.clear();
+        std::copy(plugged.begin(), plugged.end(), std::inserter(types, types.begin()));
+    }
+
     for (const qint16 &type : types)
     {
         QString name = RsResCore::typeNameFromResType(type);
@@ -649,8 +695,8 @@ void MainWindow::UpdateActions()
     m_pExportXmlFolder->setEnabled(EnableIfOpenLbr);
     m_pExportXmlFile->setEnabled(EnableIfOpenLbr);
 
-    m_pActionNewPanel->setEnabled(EnableIfOpenLbr);
-    m_pActionNewBScrol->setEnabled(EnableIfOpenLbr);
+    for (QAction *act : qAsConst(m_NewResActions))
+        act->setEnabled(EnableIfOpenLbr);
     m_pActionDeleteRes->setEnabled(EnableIfOpenLbrSelRes);
     m_pActionEditRes->setEnabled(EnableIfOpenLbrSelRes);
 
@@ -963,6 +1009,8 @@ void MainWindow::onNew()
 
             if (resulst.wnd)
                 AddEditorWindow(resulst.wnd);
+            else if (!resulst.fileName.isEmpty())
+                open(resulst.fileName); // действие создало файл (библиотеку) — открываем
         }
     }
 }
@@ -996,6 +1044,7 @@ void MainWindow::open(const QString &filename)
             m_RecentLbrList->addFile(filename);
 
             UpdateFilterResTypes();
+            UpdateFilterActionsVisibility();
             UpdateActions();
 
             setWindowTitle(QString("%1 - %2").arg(RecentLbrList::formatName(filename), WORKLBR_TITLE));
@@ -1061,11 +1110,10 @@ void MainWindow::onNewLbr()
 
         ResourceEditorResult result = interface->newItemsAction(guid, filename, fi.path());
 
-        if (result.succeed)
-        {
-            QDir d(fi.path());
-            open(d.absoluteFilePath(filename));
-        }
+        // Плагин возвращает реальный путь созданного файла (с учётом
+        // добавленного расширения .lbr) — открываем его
+        if (!result.fileName.isEmpty())
+            open(result.fileName);
     }
 }
 
@@ -1361,6 +1409,35 @@ void MainWindow::UpdateFilterResTypes(bool state)
     m_ResListDock->setFilterTypes(FilterTypes);
 }
 
+void MainWindow::UpdateFilterActionsVisibility()
+{
+    // Типы ресурсов, реально присутствующие в открытой библиотеке
+    QSet<qint16> present;
+    QAbstractItemModel *model = m_pLbrObj ? m_pLbrObj->list() : nullptr;
+
+    if (model)
+    {
+        for (int i = 0; i < model->rowCount(); i++)
+            present.insert(model->data(model->index(i, 1)).toInt());
+    }
+
+    const QList<qint16> stdtypes = RsResCore::stdTypes();
+    const QList<QAction*> actions = m_pFilterRibbonPanel->actions();
+
+    // Стандартные типы показываем всегда, типы из плагинов — только если
+    // такие ресурсы есть в библиотеке (например, меню)
+    for (QAction *typeAction : actions)
+    {
+        QVariant prop = typeAction->property("type");
+
+        if (!prop.isValid())
+            continue;
+
+        const qint16 type = prop.value<qint16>();
+        typeAction->setVisible(stdtypes.contains(type) || present.contains(type));
+    }
+}
+
 void MainWindow::closeAllSubWindows(bool *canceled)
 {
     QList<FileInfo> files;
@@ -1454,7 +1531,7 @@ void MainWindow::OnNewResActionEx(QAction *action)
     QString guid = action->data().toString();
     QUuid uuid = QUuid::fromString(guid);
 
-    if (m_pActionNewPanel == action || m_pActionNewBScrol == action || !uuid.isNull())
+    if (action && (m_NewResActions.contains(action) || !uuid.isNull()))
     {
         NewItemsDlg dlg(m_pLbrObj, this);
         dlg.buildStandartNewItems();
@@ -1473,12 +1550,38 @@ void MainWindow::OnNewResActionEx(QAction *action)
 
                 if (resulst.wnd)
                     AddEditorWindow(resulst.wnd);
+                else if (!resulst.fileName.isEmpty())
+                    open(resulst.fileName); // действие создало файл (библиотеку) — открываем
             }
         }
     }
 }
 
-bool MainWindow::processSingleImportXmlFile(const QString& filePath, ErrorsModel* errorsModel)
+// Быстрый проход по файлу: считаем корневые элементы ресурсов внутри
+// <reslib>, чтобы прогресс загрузки был детерминированным
+static int countXmlResources(QFile *file)
+{
+    int count = 0;
+    QXmlStreamReader reader(file);
+
+    while (!reader.atEnd() && !reader.hasError())
+    {
+        if (reader.readNext() == QXmlStreamReader::StartElement)
+        {
+            if (reader.name() == QLatin1String("reslib"))
+                continue;
+
+            count++;
+            reader.skipCurrentElement();
+        }
+    }
+
+    file->seek(0);
+    return count;
+}
+
+bool MainWindow::processSingleImportXmlFile(const QString& filePath, ErrorsModel* errorsModel,
+                                            QProgressDialog *progress)
 {
     QFileInfo fileInfo(filePath);
 
@@ -1490,8 +1593,47 @@ bool MainWindow::processSingleImportXmlFile(const QString& filePath, ErrorsModel
         return false;
     }
 
-    ResXmlLoader loader(m_pLbrObj, errorsModel);
-    loader.readXml(&file);
+    // Прогресс по ресурсам внутри файла: на больших файлах приложение
+    // иначе выглядит зависшим. loadXml пишет в ErrorsModel ровно одну
+    // запись на каждый обработанный ресурс — по ним и двигаем полосу
+    QMetaObject::Connection progressConnection;
+    int dialogMaximum = 0;
+    if (progress && errorsModel)
+    {
+        dialogMaximum = progress->maximum();
+        const int total = countXmlResources(&file);
+
+        progress->setRange(0, qMax(total, 1));
+        progress->setValue(0);
+        progress->setLabelText(tr("Загрузка ресурсов из <b>%1</b>").arg(fileInfo.fileName()));
+
+        progressConnection = connect(errorsModel, &ErrorsModel::rowsInserted, progress, [progress]()
+        {
+            // setValue у модального QProgressDialog сам крутит цикл
+            // событий — полоса и анимация не замирают
+            progress->setValue(progress->value() + 1);
+        });
+    }
+
+    // Файл может содержать ресурсы разных типов (panel/bscrol/.../menu) —
+    // собираем цепочку: панели читает exe, прочие типы — импортеры плагинов
+    ResXmlLoaderChain chain(errorsModel);
+
+    ResXmlLoader panelLoader(m_pLbrObj, errorsModel);
+    chain.addImporter(&panelLoader);
+
+    const QList<ResXmlReader*> pluginImporters = RsResCore::inst()->xmlImporters();
+    for (ResXmlReader *importer : pluginImporters)
+        chain.addImporter(importer);
+
+    chain.loadXml(m_pLbrObj, &file, errorsModel);
+
+    if (progress)
+    {
+        disconnect(progressConnection);
+        // вернуть диалог в режим "по файлам"
+        progress->setRange(0, dialogMaximum);
+    }
 
     file.close();
 
@@ -1521,7 +1663,7 @@ void MainWindow::processImportXmlWithProgress(const QStringList& filePaths, Erro
                                          .arg(filePaths.size())
                                          .arg(fi.fileName()));
 
-        processSingleImportXmlFile(filePaths[i], errorsModel);
+        processSingleImportXmlFile(filePaths[i], errorsModel, progressDialog);
         QApplication::processEvents();
     }
 
@@ -1540,6 +1682,10 @@ void MainWindow::OnImportXmlFile()
     ErrorsModel errors;
     processImportXmlWithProgress(filePaths, &errors, this,
                                  tr("Загрузка файлов"), tr("Загрузка XML файлов..."));
+
+    // в библиотеку могли добавиться ресурсы новых типов (меню и т.п.) —
+    // включить соответствующие кнопки фильтра
+    UpdateFilterActionsVisibility();
 
     ErrorDlg dlg(ErrorDlg::ModeInformation, this);
     dlg.setErrors(&errors);
@@ -1593,6 +1739,10 @@ void MainWindow::OnImportXmlDir()
             ErrorsModel errors;
             processImportXmlWithProgress(xmlFiles, &errors, this,
                                          tr("Загрузка файлов"), tr("Загрузка XML файлов..."));
+
+            // в библиотеку могли добавиться ресурсы новых типов (меню и т.п.) —
+            // включить соответствующие кнопки фильтра
+            UpdateFilterActionsVisibility();
 
             ErrorDlg dlg(ErrorDlg::ModeInformation, this);
             dlg.setErrors(&errors);

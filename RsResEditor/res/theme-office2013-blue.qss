@@ -238,6 +238,23 @@ SARibbonGalleryButton {
   border: 1px solid #cee8fc;
 }
 
+/* Кнопка с боковой стрелкой меню (свойство sideMenuArrow):
+   расширяем кнопку padding'ом справа, стрелку рисуем в этой области,
+   чтобы она не перекрывала иконку. Картинка стрелки общая для
+   InstantPopup и MenuButtonPopup - выглядят одинаково */
+SARibbonControlButton[sideMenuArrow="true"] {
+  padding-right: 16px;
+}
+
+SARibbonControlButton[sideMenuArrow="true"]::menu-indicator {
+  image: url(:/SARibbon/image/resource/ArrowDown.png);
+  subcontrol-position: right center;
+  subcontrol-origin: padding;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+}
+
 /*SARibbonMenu*/
 
 SARibbonMenu {
@@ -408,9 +425,8 @@ SARibbonSystemToolButton#SACloseWindowButton {
     background-position:center;
     background-repeat: no-repeat;
     background-image: url(:/SARibbon/image/resource/Titlebar_Close.svg);
-    border-right: 2px solid #0072C6;
-	/*padding-right: 4px;
-	margin-top: 2px;*/
+    margin-right: 2px;
+    /*border-right: 2px solid #0072C6;*/
 }
 
 SARibbonSystemToolButton#SACloseWindowButton:hover {
@@ -603,4 +619,220 @@ QMdiArea QTabBar::close-button:pressed {
 
 QMdiArea QTabBar::close-button:pressed {
     image: url(:/img/CloseWhite.svg);
+}
+
+/*
+Выпадающие меню (ленточные попапы, контекстные меню) — синий порт
+блока QMenu из FmtLib theme-office2013-green.qss (#217346 -> #0072C6).
+Стилизация идёт через stylesheet главного окна: меню - top-level окна,
+но parent-цепочка QObject у них ведёт к MainWindow, поэтому QSS до них
+доходит. Правила с image: для indicator (Checkmark.svg/Radio*.svg)
+из FmtLib пропущены - этих ресурсов нет в нашей сборке SARibbon,
+галочки рисует базовый стиль.
+*/
+
+/* Базовый стиль для всех контекстных меню */
+QMenu {
+    background-color: #ffffff;
+    border: 1px solid #c5d2e0;
+    color: #333333;
+    font-family: 'Segoe UI';
+    font-size: 9pt;
+    padding: 1px 0px;
+    margin: 0px;
+}
+
+/* Элементы меню */
+QMenu::item {
+    background-color: transparent;
+    color: #333333;
+    padding: 4px 25px 4px 25px;
+    margin: 0px 1px;
+    border: 1px solid transparent;
+    min-height: 20px;
+    font-weight: normal;
+}
+
+/* Элемент меню с иконкой - специальные отступы */
+QMenu::item:has-icon {
+    padding-left: 28px;
+}
+
+/* Элемент меню по умолчанию - ЖИРНЫЙ ШРИФТ */
+QMenu::item[default="true"] {
+    font-weight: bold;
+    color: #0072C6;
+}
+
+/* Элемент меню при наведении */
+QMenu::item:selected {
+    background-color: #DEEBF7;
+    color: #000000;
+    border: 1px solid #BDD7EE;
+}
+
+/* Элемент меню по умолчанию при наведении */
+QMenu::item[default="true"]:selected {
+    font-weight: bold;
+    color: #005A9E;
+    background-color: #DEEBF7;
+}
+
+/* Элемент меню с включенным состоянием */
+QMenu::item:enabled {
+    color: #333333;
+}
+
+/* Элемент меню с отключенным состоянием */
+QMenu::item:disabled {
+    color: #b2b2b2;
+    background-color: transparent;
+    font-weight: normal;
+}
+
+/* Элемент меню с отключенным состоянием и по умолчанию */
+QMenu::item[default="true"]:disabled {
+    color: #8FA6BC;
+    font-weight: normal;
+}
+
+/* Стиль для иконки в меню */
+QMenu::icon {
+    position: absolute;
+    left: 4px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Элемент меню с галочкой (checked) */
+QMenu::item:checked {
+    background-color: #E5F1FB;
+    border: 1px solid #BDD7EE;
+}
+
+/* Стиль для разделителя в меню */
+QMenu::separator {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 3px 10px;
+}
+
+/* Подменю (меню второго уровня) */
+QMenu::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+/* Стрелка подменю - позиционируем справа
+   (ArrowRight.png из FmtLib у нас нет, ArrowMore.png - в ресурсах SARibbon) */
+QMenu::right-arrow {
+    image: url(:/SARibbon/image/resource/ArrowMore.png);
+    width: 8px;
+    height: 8px;
+    margin-right: 5px;
+}
+
+/* Специальные стили для иконок в меню */
+QMenu::item:has-icon:checked {
+    padding-left: 28px;
+}
+
+/* Стили для подменю */
+QMenu QMenu {
+    background-color: #ffffff;
+    border: 1px solid #c5d2e0;
+    margin-left: 1px;
+}
+
+/* Стиль для заголовка меню (например, в каскадных меню) */
+QMenu::title {
+    background-color: #f0f0f0;
+    color: #666666;
+    padding: 4px 10px;
+    font-weight: bold;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Стиль для акселераторов (горячих клавиш) в меню */
+QMenu::item:selected QLabel {
+    color: #000000;
+}
+
+QMenu::item:!selected QLabel {
+    color: #666666;
+}
+
+/* Элемент меню по умолчанию - акселератор */
+QMenu::item[default="true"] QLabel {
+    color: #0072C6;
+    font-weight: bold;
+}
+
+QMenu::item[default="true"]:selected QLabel {
+    color: #005A9E;
+}
+
+QMenu::item:default {
+    font-weight: bold;
+}
+
+/* Стиль для меню в панелях инструментов */
+QToolBar > QMenu {
+    border: 1px solid #c5d2e0;
+    margin-top: 2px;
+}
+
+/* Стиль для меню в QComboBox */
+QComboBox QMenu {
+    min-width: 180px;
+}
+
+/* Стиль для меню в QPushButton */
+QPushButton::menu-indicator {
+    width: 14px;
+    height: 14px;
+    subcontrol-position: right center;
+}
+
+/* Стиль для меню в QMenuBar (основное меню приложения) */
+QMenuBar {
+    background-color: #f8f8f8;
+    border: none;
+    color: #333333;
+    font-family: 'Segoe UI';
+    font-size: 9pt;
+    padding: 2px 0px;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 4px 15px;
+    margin: 0px 1px;
+    border: 1px solid transparent;
+    min-height: 18px;
+}
+
+QMenuBar::item:selected {
+    background-color: #DEEBF7;
+    border: 1px solid #BDD7EE;
+    color: #000000;
+}
+
+QMenuBar::item:pressed {
+    background-color: #BDD7EE;
+    border: 1px solid #0072C6;
+}
+
+/* Элемент меню в QMenuBar по умолчанию */
+QMenuBar::item[default="true"] {
+    font-weight: bold;
+    color: #0072C6;
+}
+
+/* Стрелка вправо для каскадных меню в QMenuBar */
+QMenuBar::right-arrow {
+    image: url(:/SARibbon/image/resource/ArrowDown.png);
+    width: 8px;
+    height: 8px;
+    margin-left: 5px;
 }

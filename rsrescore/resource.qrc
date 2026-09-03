@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>baseeditor.json</file>
+        <file>res/Office 2013 (Blue).json</file>
         <file>json/CustomRectItem.json</file>
         <file>json/LabelItem.json</file>
         <file>json/Container.json</file>

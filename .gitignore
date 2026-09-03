@@ -50,3 +50,9 @@ ResEditor.pro.user.488e2ad
 RsResEditor/res/__pycache__/
 
 RsResEditor/res/RCa65020
+
+ResMenu/debug/
+
+ResMenu/tmp/
+
+ResMenu/fix_files.py

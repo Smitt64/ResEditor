@@ -693,8 +693,27 @@ int ResPanel::loadXmlStream(QXmlStreamReader &reader)
         {
             if (reader.name() == "stline")
                 m_Status = reader.readElementText();
+            else if (reader.name() == "stlineRd")
+                m_StatusRD = reader.readElementText();
+            else if (reader.name() == "comment")
+                m_Comment = reader.readElementText();
             else if (reader.name() == "headLine")
                 m_Title = reader.readElementText();
+            else if (reader.name() == "bord")
+            {
+                BordR bord;
+                QXmlStreamAttributes bordAttrs = reader.attributes();
+
+                bord.St = bordAttrs.value("St").toInt();
+                bord.x  = bordAttrs.value("x").toInt();
+                bord.y  = bordAttrs.value("y").toInt();
+                bord.l  = bordAttrs.value("l").toInt();
+                bord.h  = bordAttrs.value("h").toInt();
+                bord.fl = bordAttrs.value("fl").toInt();
+
+                reader.skipCurrentElement();
+                m_BordR.append(bord);
+            }
             else if (reader.name() == "text")
             {
                 TextStruct text;
@@ -718,8 +737,8 @@ int ResPanel::loadXmlStream(QXmlStreamReader &reader)
                 element._field->St = fieldAttrs.value("St").toInt();
                 element._field->FVt = fieldAttrs.value("FVt").toInt();
                 element._field->FVp = fieldAttrs.value("FVp").toInt();
-                element._field->x = fieldAttrs.value("x").toInt();
-                element._field->y = fieldAttrs.value("y").toInt();
+                element._field->x = fieldAttrs.value("x").toInt() + m_pPanel->x;
+                element._field->y = fieldAttrs.value("y").toInt() + m_pPanel->y;
                 element._field->l = fieldAttrs.value("l").toInt();
                 element._field->h = fieldAttrs.value("h").toInt();
                 element._field->kl = fieldAttrs.value("kl").toInt();
@@ -731,7 +750,30 @@ int ResPanel::loadXmlStream(QXmlStreamReader &reader)
                 element._field->flags = fieldAttrs.value("flags").toInt();
                 element._field->group = fieldAttrs.value("group").toInt();
 
-                reader.skipCurrentElement();
+                // Вложенные элементы поля (label/name/fmtname/tooltip),
+                // writeFields пишет их при непустых значениях
+                while (!reader.atEnd() && !reader.hasError())
+                {
+                    QXmlStreamReader::TokenType fieldToken = reader.readNext();
+
+                    if (fieldToken == QXmlStreamReader::EndElement && reader.name() == "field")
+                        break;
+
+                    if (fieldToken == QXmlStreamReader::StartElement)
+                    {
+                        if (reader.name() == "label")
+                            element.name2 = reader.readElementText();
+                        else if (reader.name() == "name")
+                            element.name = reader.readElementText();
+                        else if (reader.name() == "fmtname")
+                            element.formatStr = reader.readElementText();
+                        else if (reader.name() == "tooltip")
+                            element.toolTip = reader.readElementText();
+                        else
+                            reader.skipCurrentElement();
+                    }
+                }
+
                 m_Fields.append(element);
             }
             else
@@ -773,8 +815,23 @@ int ResPanel::loadXmlNode(const QDomElement &reslib)
 
         if (e.tagName() == "stline")
             m_Status = e.text();
+        else if (e.tagName() == "stlineRd")
+            m_StatusRD = e.text();
+        else if (e.tagName() == "comment")
+            m_Comment = e.text();
         else if (e.tagName() == "headLine")
             m_Title = e.text();
+        else if (e.tagName() == "bord")
+        {
+            BordR bord;
+            bord.St = e.attribute("St", "0").toInt();
+            bord.x  = e.attribute("x", "0").toInt();
+            bord.y  = e.attribute("y", "0").toInt();
+            bord.l  = e.attribute("l", "0").toInt();
+            bord.h  = e.attribute("h", "0").toInt();
+            bord.fl = e.attribute("fl", "0").toInt();
+            m_BordR.append(bord);
+        }
         else if (e.tagName() == "text")
         {
             TextStruct text;
@@ -794,7 +851,7 @@ int ResPanel::loadXmlNode(const QDomElement &reslib)
             element._field->FVt = e.attribute("FVt", "0").toInt();
             element._field->FVp = e.attribute("FVp", "0").toInt();
             element._field->x = e.attribute("x", "0").toInt() + m_pPanel->x;
-            element._field->y = e.attribute("y", "0").toInt() + m_pPanel->x;
+            element._field->y = e.attribute("y", "0").toInt() + m_pPanel->y;
             element._field->l = e.attribute("l", "0").toInt();
             element._field->h = e.attribute("h", "0").toInt();
             element._field->kl = e.attribute("kl", "0").toInt();
@@ -805,6 +862,25 @@ int ResPanel::loadXmlNode(const QDomElement &reslib)
             element._field->vfl = e.attribute("vfl", "0").toInt();
             element._field->flags = e.attribute("flags", "0").toInt();
             element._field->group = e.attribute("group", "0").toInt();
+
+            // Вложенные элементы поля (label/name/fmtname/tooltip),
+            // writeFields пишет их при непустых значениях
+            QDomNode fieldChild = e.firstChild();
+            while (!fieldChild.isNull())
+            {
+                QDomElement fe = fieldChild.toElement();
+
+                if (fe.tagName() == "label")
+                    element.name2 = fe.text();
+                else if (fe.tagName() == "name")
+                    element.name = fe.text();
+                else if (fe.tagName() == "fmtname")
+                    element.formatStr = fe.text();
+                else if (fe.tagName() == "tooltip")
+                    element.toolTip = fe.text();
+
+                fieldChild = fieldChild.nextSibling();
+            }
 
             m_Fields.append(element);
         }

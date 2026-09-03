@@ -1,0 +1,41 @@
+{
+    "groups": [
+        {
+            "id": 100,
+            "title": "Мои элементы"
+        }
+    ],
+
+    "templates": [
+        {
+            "alias": "Заголовок панели",
+            "icon": "theme:EditDocument",
+            "tooltip": "Пример пользовательского элемента ToolBox (статический текст)",
+            "mimetype": "application/toolboxitem",
+            "groups": [100],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "TextItem",
+                        "parent": "",
+                        "uuid": "{a1b2c3d4-1111-4000-8000-000000000001}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [12, 1]
+                            },
+                            {
+                                "property": "text",
+                                "value": "Заголовок"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

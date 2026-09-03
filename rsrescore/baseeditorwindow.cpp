@@ -3,6 +3,7 @@
 #include "qjsonobject.h"
 #include "qmetaobject.h"
 #include "rsrescore.h"
+#include "restemplateregistry.h"
 #include "toolbox/toolboxmodel.h"
 #include "SARibbon.h"
 #include <QUndoStack>
@@ -10,6 +11,8 @@
 #include <QToolButton>
 #include <QMenu>
 #include <QFile>
+#include <QDir>
+#include <QFileInfo>
 #include <QWidgetAction>
 #include <QUndoView>
 #include <QMetaClassInfo>
@@ -184,7 +187,7 @@ void BaseEditorWindow::OnPropertyModelChanged(QAbstractItemModel *model)
     ribbon()->setUpdatesEnabled(true);
 }
 
-void BaseEditorWindow::loadToolBarElement(GroupsMapType &GroupsMap, const QJsonObject &obj)
+void BaseEditorWindow::loadToolBarElement(GroupsMapType &GroupsMap, const QJsonObject &obj, const QDir &baseDir)
 {
     QString alias = obj["alias"].toString();
     QString iconSrc = obj["icon"].toString();
@@ -200,24 +203,71 @@ void BaseEditorWindow::loadToolBarElement(GroupsMapType &GroupsMap, const QJsonO
         category.append(categ);
     }
 
+    // Иконка: "theme:Имя" — из иконочной темы; относительный путь —
+    // резолвится от каталога json-файла (пользовательские элементы
+    // кладут свои svg рядом с json)
+    QIcon icon;
+    if (iconSrc.startsWith(QLatin1String("theme:")))
+        icon = QIcon::fromTheme(iconSrc.mid(6));
+    else if (!iconSrc.isEmpty() && !iconSrc.startsWith(QLatin1String(":/")) &&
+             !QDir::isAbsolutePath(iconSrc))
+        icon = QIcon(QDir::fromNativeSeparators(baseDir.absoluteFilePath(iconSrc)));
+    else
+        icon = QIcon(iconSrc);
+
     QJsonDocument doc(mimedata);
     QMimeData mdata;
     mdata.setData(mimetype, doc.toJson());
-    m_ToolBoxModel->addItem(category, alias, &mdata, QIcon(iconSrc));
+    m_ToolBoxModel->addItem(category, alias, &mdata, icon);
 }
 
 void BaseEditorWindow::loadToolBox()
 {
     int infoIndex = metaObject()->indexOfClassInfo(CLASSINFO_TOOLBOX_FILE);
 
-    if (infoIndex < 0)
-        return;
+    if (infoIndex >= 0)
+    {
+        QString fname = metaObject()->classInfo(infoIndex).value();
+        if (!fname.isEmpty())
+            loadToolBoxFile(fname);
+    }
 
-    QString fname = metaObject()->classInfo(infoIndex).value();
-    if (fname.isEmpty())
-        return;
+    // Пользовательские элементы toolbox: <user|working|program>/toolbox/<id>/*.json
+    // Грузятся после встроенного qrc-файла — могут ссылаться на его
+    // группы по title; семантика аддитивная (переопределения нет)
+    const QString id = toolBoxId();
+    if (!id.isEmpty())
+    {
+        const QStringList dirs =
+        {
+            ResTemplateRegistry::userToolBoxDir(id),
+            ResTemplateRegistry::workingToolBoxDir(id),
+            ResTemplateRegistry::programToolBoxDir(id)
+        };
 
-    loadToolBoxFile(fname);
+        for (const QString &dirPath : dirs)
+        {
+            QDir dir(dirPath);
+            if (!dir.exists())
+                continue;
+
+            const QFileInfoList files = dir.entryInfoList(QStringList() << QStringLiteral("*.json"),
+                                                          QDir::Files | QDir::Readable, QDir::Name);
+            for (const QFileInfo &fi : files)
+                loadToolBoxFile(fi.absoluteFilePath());
+        }
+    }
+}
+
+QString BaseEditorWindow::toolBoxId() const
+{
+    return QString();
+}
+
+QPixmap BaseEditorWindow::toolBoxDragPixmap(const QModelIndex &index) const
+{
+    Q_UNUSED(index);
+    return QPixmap();
 }
 
 void BaseEditorWindow::loadToolBoxFile(const QString &fname, const GroupsMapType &outergroups)
@@ -226,7 +276,13 @@ void BaseEditorWindow::loadToolBoxFile(const QString &fname, const GroupsMapType
     if (!file.open(QIODevice::ReadOnly))
         return;
 
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+    if (parseError.error != QJsonParseError::NoError)
+    {
+        qWarning("ToolBox: %s: %s", qPrintable(fname), qPrintable(parseError.errorString()));
+        return;
+    }
     QJsonObject root = doc.object();
 
     GroupsMapType GroupsMap = outergroups;
@@ -237,12 +293,18 @@ void BaseEditorWindow::loadToolBoxFile(const QString &fname, const GroupsMapType
         int id = groupobj["id"].toInt();
         QString name = groupobj["title"].toString();
         GroupsMap[id] = name;
-        m_ToolBoxModel->addCategory(name);
+
+        // Группа с таким названием уже есть (встроенная или из другого
+        // пользовательского файла) — переиспользуем, дубликат не создаём
+        if (!m_ToolBoxModel->category(name))
+            m_ToolBoxModel->addCategory(name);
     }
+
+    const QDir baseDir = QFileInfo(fname).absoluteDir();
 
     QJsonArray templates = root["templates"].toArray();
     for (const QJsonValue &templ : qAsConst(templates))
-        loadToolBarElement(GroupsMap, templ.toObject());
+        loadToolBarElement(GroupsMap, templ.toObject(), baseDir);
 
     QJsonArray includes = root["includes"].toArray();
     for (const QJsonValue &templ : qAsConst(includes))

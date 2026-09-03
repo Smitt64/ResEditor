@@ -18,6 +18,9 @@ LbrObjectInterface::LbrObjectInterface(LbrObjectInterfacePrivate *dd, QObject *p
 
 LbrObjectInterface::~LbrObjectInterface()
 {
+    // d_ptr — обычный указатель, деструктор private виртуальный:
+    // здесь же закроется файл библиотеки (LbrDllObjectPrivate::close)
+    delete d_ptr;
 }
 
 void LbrObjectInterface::createResBuffer(const QString &name, const int &type, QByteArray *data, ResBuffer **buffer)

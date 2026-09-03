@@ -2,6 +2,7 @@
 #include "rsrescore.h"
 #include "resapplication.h"
 #include "IconThemeManager.h"
+#include "styles/mdiofficestyle.h"
 #include <QtPlugin>
 #include <QScopedPointer>
 #include <QCommandLineParser>
@@ -59,6 +60,12 @@ int main(int argc, char *argv[])
     RsResCore::inst()->init();
 
     MainWindow w;
+
+    // Офисный стиль на всё приложение (как FmtRibbonMainWindow::ApplyRibbonProxy
+    // в FmtLib): выпадающие меню ленты - top-level окна, stylesheet главного
+    // окна их не достаёт, а палитру standardPalette() они получают отсюда
+    MdiOfficeStyle::applyToApplication();
+
     w.show();
 
     if (parser.isSet(lbrFileOption))

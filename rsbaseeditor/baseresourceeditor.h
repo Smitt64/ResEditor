@@ -2,6 +2,7 @@
 #define BASERESOURCEEDITOR_H
 
 #include "ResourceEditorInterface.h"
+#include "restemplateregistry.h"
 #include <QObject>
 
 class ErrorsModel;
@@ -29,6 +30,9 @@ private:
 
     BaseEditorWindow *LoadResFromXmlTemplate(const QString &filename, const QString &name, const quint16 &type, ErrorsModel *model);
     BaseEditorWindow *LoadResFromXmlTemplate(QIODevice *device, const QString &name, const std::initializer_list<quint16> &type, ErrorsModel *model);
+
+    // Пользовательские шаблоны панелей (xml + json-дескриптор)
+    ResTemplateRegistry m_templates;
 };
 
 #endif // BASERESOURCEEDITOR_H

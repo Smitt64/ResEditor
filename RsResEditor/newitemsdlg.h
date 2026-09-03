@@ -2,6 +2,8 @@
 #define NEWITEMSDLG_H
 
 #include <QDialog>
+#include <QIcon>
+#include <QStyledItemDelegate>
 #include <QValidator>
 
 namespace Ui {
@@ -19,10 +21,26 @@ enum
     RoleNameLen,
     RoleIconName,
     RoleTitle,
-    RoleValidator
+    RoleValidator,
+    RoleUserTemplate,
+    RoleBadge
 };
 
 using GroupInfoMap = QMap<int, QVariant>;
+
+// Рисует бейдж (RoleBadge) в правом верхнем углу элемента списка,
+// помеченного RoleUserTemplate (пользовательские шаблоны)
+class BadgeItemDelegate : public QStyledItemDelegate
+{
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+
+    void paint(QPainter *painter, const QStyleOptionViewItem &option,
+               const QModelIndex &index) const Q_DECL_OVERRIDE;
+
+private:
+    mutable QHash<QString, QIcon> m_BadgeCache;
+};
 
 class StdPanNameValidator : public QValidator
 {
@@ -67,22 +85,34 @@ public:
     const QStringList &ribbonScrols() const;
     const QStringList &ribbonPannels() const;
 
+    // Generic-доступ к секциям "ribbon" из метаданных (panels/scrols/menus/...)
+    const QStringList &ribbonSection(const QString &key) const;
+    QStringList ribbonSectionKeys() const;
+
     GroupInfoMap fillGroupInfoFromListItem(QListWidgetItem* item);
     GroupInfoMap getInfoForItem(const QString &guid);
 
     static QValidator *createValidator(const QString &className, QObject* parent = nullptr);
+
+    // Иконка с бейджем в правом нижнем углу (пометка пользовательских
+    // шаблонов). badgeName — имя иконки темы ("UserPurple" и т.п.)
+    static QIcon badgedIcon(const QIcon &base, const QString &badgeName);
 
 private slots:
     void itemUpdated(QListWidgetItem *item);
     void pathButton();
     void updateAcceptButton();
     void itemDoubleClicked();
+    void applyFilter(const QString &text);
 
 protected:
     virtual void showEvent(QShowEvent* event) Q_DECL_OVERRIDE;
+    virtual void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
+    virtual bool eventFilter(QObject *watched, QEvent *event) Q_DECL_OVERRIDE;
 
 private:
     void updateListSize(QListWidget *list);
+    void updateAllListSizes();
     QListWidget *CreateSubList();
     void addItemToGroupList(QListWidget *list, const QJsonObject &metadata);
 
@@ -91,7 +121,7 @@ private:
 
     LbrObjectInterface *m_pLbrObj;
 
-    QStringList m_RibbonScrols, m_RibbonPannels;
+    QMap<QString, QStringList> m_RibbonSections;
     QHash<QString, QTreeWidgetItem*> m_Groups;
     QHash<QString, GroupInfoMap> m_Templates;
 

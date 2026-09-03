@@ -24,6 +24,11 @@ LbrDllObjectPrivate::~LbrDllObjectPrivate()
 {
     if (m_LibDir)
         _FreeDirectory(m_LibDir);
+
+    // Файл библиотеки должен быть закрыт вместе с объектом — иначе хэндл
+    // остаётся занятым до конца процесса и повторное открытие этого же
+    // файла падает с "Ошибка разделения файла на запись" (sharing violation)
+    close();
 }
 
 bool LbrDllObjectPrivate::loadLib()
@@ -86,6 +91,9 @@ bool LbrDllObjectPrivate::loadLib()
 
 bool LbrDllObjectPrivate::close()
 {
+    if (!m_ResFile)
+        return true;
+
     bool hr = true;
     int stat = _ResClose(m_ResFile);
     if (stat)
@@ -93,6 +101,11 @@ bool LbrDllObjectPrivate::close()
         setLastErrorFromStat(stat);
         hr = false;
     }
+
+    // Структура ResFile выделена нами в open() — освобождаем здесь,
+    // чтобы повторный close() (из деструктора) был безопасен
+    free(m_ResFile);
+    m_ResFile = nullptr;
 
     return hr;
 }
@@ -118,13 +131,17 @@ bool LbrDllObjectPrivate::open(const QString &filename, const bool &isnew)
         if (!hr)
         {
             _ResClose(m_ResFile);
-            m_ResFile = nullptr;
             free(m_ResFile);
+            m_ResFile = nullptr;
         }
     }
     else
     {
         setLastErrorFromStat(stat);
+        // файл не открыт — структура не нужна, иначе деструктор
+        // попытается закрыть невалидный хэндл
+        free(m_ResFile);
+        m_ResFile = nullptr;
         hr = false;
     }
     return hr;
@@ -133,11 +150,12 @@ bool LbrDllObjectPrivate::open(const QString &filename, const bool &isnew)
 static int RLibDirElemFiltrFunc(RLibDirElem *rc)
 {
     static QList<int> ResTypes =
-        {
-            LbrObjectInterface::RES_PANEL,
-            LbrObjectInterface::RES_SCROL,
-            LbrObjectInterface::RES_BS
-        };
+    {
+        LbrObjectInterface::RES_PANEL,
+        LbrObjectInterface::RES_SCROL,
+        LbrObjectInterface::RES_BS,
+        LbrObjectInterface::RES_MENU2,
+    };
 
     if (ResTypes.contains(rc->type))
         return 0;

@@ -20,7 +20,11 @@ BaseResourceEditor::BaseResourceEditor() :
     QObject(nullptr),
     ResourceEditorInterface()
 {
-
+    // Пользовательские шаблоны панелей: пользовательский каталог
+    // в приоритете над рабочим и программным (добавлен первым)
+    m_templates.addSearchDir(ResTemplateRegistry::userTemplatesDir(QStringLiteral("panels")));
+    m_templates.addSearchDir(ResTemplateRegistry::workingTemplatesDir(QStringLiteral("panels")));
+    m_templates.addSearchDir(ResTemplateRegistry::programTemplatesDir(QStringLiteral("panels")));
 }
 
 BaseResourceEditor::~BaseResourceEditor()
@@ -44,7 +48,12 @@ QString BaseResourceEditor::newItemsMetaList()
 
     QTextStream stream(&f);
     stream.setCodec("UTF-8");
-    return stream.readAll();
+
+    // Диалог создания пересобирается каждый раз — перечитываем шаблоны,
+    // подложенные файлы видны без перезапуска приложения
+    m_templates.rescan();
+
+    return m_templates.appendToMetaList(stream.readAll());
 }
 
 bool BaseResourceEditor::newItemsActionAvalible(const QString &guid)
@@ -59,7 +68,7 @@ bool BaseResourceEditor::newItemsActionAvalible(const QString &guid)
         "{001b506e-4588-4810-a09a-d631fc0214d8}"
     };
 
-    return actions.contains(guid);
+    return actions.contains(guid) || m_templates.contains(guid);
 }
 
 void BaseResourceEditor::ShowErrors(ErrorsModel *model, QWidget *parent)
@@ -75,7 +84,30 @@ ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, con
     BaseEditorWindow *pNewEditor = nullptr;
 
     ErrorsModel errors;
-    if (guid == "{c7e4dbe9-cd8e-4eaf-bcd3-975f9fb6ba1e}")
+    if (m_templates.contains(guid))
+    {
+        // Пользовательский шаблон из файла: тип ресурса определится
+        // по корневому тегу xml при загрузке
+        QFile tpl(m_templates.templatePath(guid));
+
+        if (tpl.open(QIODevice::ReadOnly))
+        {
+            pNewEditor = LoadResFromXmlTemplate(&tpl, name,
+                                                {LbrObject::RES_PANEL, LbrObject::RES_BS,
+                                                 LbrObject::RES_SCROL, LbrObject::RES_LS},
+                                                &errors);
+
+            if (!pNewEditor)
+                ShowErrors(&errors, parent);
+        }
+        else
+        {
+            errors.appendError(tr("Не удалось открыть файл шаблона <b>%1</b>")
+                               .arg(m_templates.templatePath(guid)));
+            ShowErrors(&errors, parent);
+        }
+    }
+    else if (guid == "{c7e4dbe9-cd8e-4eaf-bcd3-975f9fb6ba1e}")
     {
         // Создание новой библиотеки ресурсов
         QDir dir(path);
@@ -91,6 +123,11 @@ ResourceEditorResult BaseResourceEditor::newItemsAction(const QString &guid, con
             filename += ".lbr";
 
         result.succeed = tmp->create(filename);
+
+        // Сообщаем главному окну путь к созданной библиотеке —
+        // оно откроет её в приложении
+        if (result.succeed)
+            result.fileName = filename;
     }
     else if (guid == "{57f88805-7474-42fb-bc00-24a90cd5e85d}")
     {

@@ -1,0 +1,12 @@
+{
+    "title": "Пример: меню из шаблона",
+    "icon": "theme:MenuItemGrey",
+    "group": "Меню",
+    "description": "Пользовательский шаблон меню из файла<br>example_menu.xml",
+    "template": "example_menu.xml",
+    "needname": true,
+    "needlbr": true,
+    "namelen": 8,
+    "validator": "StdPanNameValidator",
+    "ribbon": ["menus"]
+}

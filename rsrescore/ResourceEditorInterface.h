@@ -3,12 +3,17 @@
 
 #include "rsrescore_global.h"
 #include <QtPlugin>
+#include <QString>
 
 class BaseEditorWindow;
 typedef struct
 {
-    BaseEditorWindow *wnd;
-    bool succeed;
+    BaseEditorWindow *wnd = nullptr;
+    bool succeed = false;
+    // Путь к файлу, созданному действием (например, новая библиотека
+    // ресурсов): главное окно открывает его в приложении.
+    // Пусто, если действие файл не создавало
+    QString fileName;
 }ResourceEditorResult;
 
 class ResLib;
@@ -16,6 +21,7 @@ class LbrObjectInterface;
 class BaseEditorWindow;
 class SARibbonBar;
 class SARibbonContextCategory;
+class ResXmlReader;
 class RSRESCORE_EXPORT ResourceEditorInterface
 {
 public:
@@ -29,6 +35,11 @@ public:
     virtual ResourceEditorResult newItemsAction(const QString &guid, const QString &name, const QString &path, QWidget *parent = nullptr) = 0;
 
     virtual QList<SARibbonContextCategory*> contextCategoryes(SARibbonBar *ribbon) = 0;
+
+    // XML-импортер ресурсов плагина (элементы своих типов внутри <reslib>)
+    // для ResXmlLoaderChain. Экземпляром владеет плагин; nullptr —
+    // импортера нет
+    virtual ResXmlReader *xmlImporter() { return nullptr; }
 };
 
 #define ResourceEditorInterface_iid "org.rstyle.ResourceEditorInterface"

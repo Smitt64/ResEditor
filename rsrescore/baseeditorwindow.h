@@ -9,6 +9,9 @@
 
 class QAction;
 class QMenu;
+class QDir;
+class QPixmap;
+class QModelIndex;
 class QToolBar;
 class QUndoStack;
 class QToolButton;
@@ -56,6 +59,12 @@ public:
     virtual void updateRibbonTabs();
     virtual void clearRibbonTabs();
 
+    // Кастомная отрисовка плашки перетаскивания элемента ToolBox.
+    // Плагин рисует сам и возвращает pixmap; пустой QPixmap
+    // (по умолчанию) — стандартная отрисовка ToolBoxTreeView.
+    // Public: вызывается из ToolBoxTreeView
+    virtual QPixmap toolBoxDragPixmap(const QModelIndex &index) const;
+
     virtual QList<QWidget*> statusBarSections();
 
 signals:
@@ -74,10 +83,17 @@ protected:
     virtual void initRibbonPanels();
     void loadToolBoxFile(const QString &fname, const GroupsMapType &outergroups = GroupsMapType());
 
+    // Идентификатор toolbox редактора ("menu", "panels", ...): по нему
+    // ищутся пользовательские json-файлы элементов в стандартных
+    // каталогах (ResTemplateRegistry::userToolBoxDir и др.).
+    // Пустая строка (по умолчанию) — пользовательские файлы не ищутся
+    virtual QString toolBoxId() const;
+
+
     QAction* createAction(const QString& text, const QString& iconname = QString(), const QKeySequence &key = QKeySequence());
 
 private:
-    void loadToolBarElement(GroupsMapType &GroupsMap, const QJsonObject &obj);
+    void loadToolBarElement(GroupsMapType &GroupsMap, const QJsonObject &obj, const QDir &baseDir);
     QUndoStack *m_pUndoStack;
     QAction *m_pUndoAction, *m_pRedoAction;
     QToolButton *m_pRedoActionBtn;

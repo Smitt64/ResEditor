@@ -1,0 +1,12 @@
+{
+    "title": "Пример: панель (двойная рамка)",
+    "icon": "theme:Dialog",
+    "group": "Панели",
+    "description": "Пользовательский шаблон панели из файла<br>example_panel.xml",
+    "template": "example_panel.xml",
+    "needname": true,
+    "needlbr": true,
+    "namelen": 8,
+    "validator": "StdPanNameValidator",
+    "ribbon": ["panels"]
+}

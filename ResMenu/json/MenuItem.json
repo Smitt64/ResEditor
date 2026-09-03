@@ -1,0 +1,39 @@
+{
+    "propertylist": [
+        {
+            "name" : "text",
+            "alias" : "Название пункта"
+        },
+        {
+            "name" : "statusTip",
+            "alias" : "Статус строка"
+        },
+        {
+            "name" : "helpId",
+            "alias" : "Номер страницы помощи"
+        },
+        {
+            "name" : "commandId",
+            "alias" : "Идентификатор команды",
+            "viewclass" : "CommandIdPropertyTreeItem"
+        },
+        {
+            "name" : "iconID",
+            "alias" : "Идентификатор иконки",
+            "viewclass" : "IconPropertyTreeItem"
+        },
+        {
+            "name" : "actionFlags",
+            "alias" : "Флаги меню",
+            "enum" : [
+                { "key" : "None", "alias" : "Нет флагов" },
+                { "key" : "Toolbar", "alias" : "Попадает на ToolBar" },
+                { "key" : "Context", "alias" : "Попадает в контекстное меню" }
+            ]
+        },
+        {
+            "name" : "disabledInEmptyScroll",
+            "alias" : "Недоступен в пустом скроллинге"
+        }
+    ]
+}

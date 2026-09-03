@@ -104,6 +104,12 @@ const QString &ResBuffer::name() const
     return d->m_Name;
 }
 
+void ResBuffer::setName(const QString &value)
+{
+    Q_D(ResBuffer);
+    d->m_Name = value;
+}
+
 const QString &ResBuffer::comment() const
 {
     Q_D(const ResBuffer);
@@ -114,6 +120,12 @@ const qint16 &ResBuffer::type() const
 {
     Q_D(const ResBuffer);
     return d->m_Type;
+}
+
+void ResBuffer::setType(const qint16 &value)
+{
+    Q_D(ResBuffer);
+    d->m_Type = value;
 }
 
 void ResBuffer::setComment(const QString &comment)

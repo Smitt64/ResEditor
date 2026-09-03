@@ -1,0 +1,68 @@
+{
+    "items": [
+        {
+            "action": "{72c831e0-9269-11f1-b55a-0800200c9a66}",
+            "title": "Пустое меню",
+            "icon": "theme:MenuItemGrey",
+            "group": "Меню",
+            "description": "Создать новое пустое меню для библиотеки ресурсов",
+            "needname": true,
+            "needpath": false,
+            "needlbr": true
+        },
+        {
+            "action": "{a3f5c8d2-7e1b-4f6a-9c2d-5b8e0a1f3d47}",
+            "title": "Меню для BSCROL",
+            "icon": "theme:MenuBScrol",
+            "group": "Меню",
+            "description": "Стандартное меню для скролингов<br><b>Состав: </b>Действия (Поиск F4 / Удаление F8 / Ввод F9 / Корректировка Enter)",
+            "needname": true,
+            "needpath": false,
+            "needlbr": true,
+            "template": ":/templates/BScrolMenu.xml"
+        },
+        {
+            "action": "{7f3a9c2e-5b1d-4e8f-a6c3-9d2e8b4f1a75}",
+            "title": "Меню для BSCROL (с иконками)",
+            "icon": "theme:MenuBScrolIcons",
+            "group": "Меню",
+            "description": "Стандартное меню для скролингов с иконками на действиях<br><b>Состав: </b>Действия (Поиск F4 / Удаление F8 / Ввод F9 / Корректировка Enter)",
+            "needname": true,
+            "needpath": false,
+            "needlbr": true,
+            "template": ":/templates/BScrolMenuIcons.xml"
+        },
+        {
+            "action": "{4c8d1e6a-2f7b-4a9c-b3e5-8d1f6a2c4e90}",
+            "title": "Меню для панели",
+            "icon": "theme:MenuPanel",
+            "group": "Меню",
+            "description": "Стандартное меню для панели<br><b>Состав: </b>Действия (Переключить Space / Справочник F3 / Сохранить F9)",
+            "needname": true,
+            "needpath": false,
+            "needlbr": true,
+            "template": ":/templates/PanelMenu.xml"
+        },
+        {
+            "action": "{9e5b2d8c-6a4f-4c1e-a7d3-5f9b2e8c1a63}",
+            "title": "Меню для панели (с иконками)",
+            "icon": "theme:MenuPanelIcons",
+            "group": "Меню",
+            "description": "Стандартное меню для панели с иконками на действиях<br><b>Состав: </b>Действия (Переключить Space / Справочник F3 / Сохранить F9)",
+            "needname": true,
+            "needpath": false,
+            "needlbr": true,
+            "template": ":/templates/PanelMenuIcons.xml"
+        }
+    ],
+
+    "ribbon": {
+        "menus": [
+            "{72c831e0-9269-11f1-b55a-0800200c9a66}",
+            "{a3f5c8d2-7e1b-4f6a-9c2d-5b8e0a1f3d47}",
+            "{7f3a9c2e-5b1d-4e8f-a6c3-9d2e8b4f1a75}",
+            "{4c8d1e6a-2f7b-4a9c-b3e5-8d1f6a2c4e90}",
+            "{9e5b2d8c-6a4f-4c1e-a7d3-5f9b2e8c1a63}"
+        ]
+    }
+}

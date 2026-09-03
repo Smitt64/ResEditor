@@ -10,7 +10,9 @@ ResOptions::ResOptions(QSettings *settings, QWidget *parent) :
     m_pGeneral = new GeneralOptionsPage();
     addPage(tr("Общие"), QIcon(":/img/explorer.exe_14_103-6.png"), m_pGeneral);
     //addStylePage(QString(), "style");
-    addCodeEditorPage("CodeEditor", "theme");
+    // Тема подсветки жёстко задана в ResApplication ("Office 2013 (Blue)"),
+    // страницу выбора темы не показываем
+    //addCodeEditorPage("CodeEditor", "theme");
     //addRslPage();
 
     //addCommandsPage();

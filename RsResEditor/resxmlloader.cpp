@@ -4,61 +4,74 @@
 #include "errorsmodel.h"
 #include <QObject>
 #include <QApplication>
+#include <QXmlStreamReader>
+
+// Корневые теги ресурсов, которые читает этот загрузчик
+static const QStringList &panelRootTags()
+{
+    static const QStringList tags =
+    {
+        QStringLiteral("panel"),
+        QStringLiteral("bscrol"),
+        QStringLiteral("scrol"),
+        QStringLiteral("lscrol")
+    };
+    return tags;
+}
 
 ResXmlLoader::ResXmlLoader(LbrObjectInterface *pLbrObj, ErrorsModel *pErrorsModel) :
     m_pLbrObj(pLbrObj),
-    m_pErrorsModel(pErrorsModel)
+    m_pErrorsModel(pErrorsModel),
+    m_BeginOk(false)
 {
 
 }
 
-void ResXmlLoader::OnResPanelReaded(ResPanel *panel)
+QStringList ResXmlLoader::xmlTags() const
 {
-    bool exists = false;
-    bool deleted = true;
-    if (m_pLbrObj->isResExists(panel->name(), panel->type()))
+    return panelRootTags();
+}
+
+void ResXmlLoader::OnResRead(QXmlStreamReader *reader)
+{
+    if (panelRootTags().contains(reader->name().toString()))
     {
-        QApplication::processEvents();
-        exists = true;
-        if (!m_pLbrObj->deleteResource(panel->name(), panel->type()))
-        {
-            deleted = false;
-            if (m_pErrorsModel)
-                m_pErrorsModel->appendError(QObject::tr("Не удалось перезаписать ресурс <b>%1</b>").arg(panel->name()));
-        }
+        QScopedPointer<ResPanel> _currentPanel(new ResPanel());
+        _currentPanel->loadXmlStream(*reader);
+    }
+}
+
+bool ResXmlLoader::BeginLoadXml(QXmlStreamReader *reader, QString &name, qint16 &type)
+{
+    // loadXml/цепочка дёргают нас на каждом стартовом элементе внутри
+    // <reslib> — пропускаем всё, что не является панельным ресурсом
+    if (!panelRootTags().contains(reader->name().toString()))
+    {
+        reader->skipCurrentElement();
+        return false;
     }
 
-    if (deleted)
-    {
-        QString errorMsg;
-        ResBuffer *resBuffer = nullptr;
+    currentPanel.reset(new ResPanel());
+    // Элемент наш, поэтому true даже при ошибке разбора — об ошибке
+    // отрапортует SaveXmlToBuffer (иначе ресурс молча пропадёт из импорта)
+    m_BeginOk = !currentPanel->loadXmlStream(*reader);
 
-        if (m_pLbrObj->beginSaveRes(panel->name(), panel->type(), &resBuffer))
-        {
-            if (!panel->save(resBuffer))
-            {
-                if (m_pErrorsModel)
-                {
-                    if (!exists)
-                        m_pErrorsModel->appendMessage(QObject::tr("Ресурс <b>%1</b> успешно загружен").arg(panel->name()));
-                    else
-                        m_pErrorsModel->appendMessage(QObject::tr("Ресурс <b>%1</b> успешно перезаписан").arg(panel->name()));
-                }
+    name = currentPanel->name();
+    type = currentPanel->type();
 
-                m_pLbrObj->endSaveRes(&resBuffer);
-            }
-            else
-            {
-                if (m_pErrorsModel)
-                    m_pErrorsModel->appendError(QObject::tr("Не удалось загрузить ресурс <b>%1</b>").arg(panel->name()));
-            }
-        }
-        else
-        {
-            if (m_pErrorsModel)
-                m_pErrorsModel->appendError(QObject::tr("Не удалось загрузить ресурс <b>%1</b>").arg(panel->name()));
-        }
-    }
+    return true;
+}
 
-    QApplication::processEvents();
+bool ResXmlLoader::SaveXmlToBuffer(ResBuffer *resBuffer)
+{
+    if (!m_BeginOk || !currentPanel)
+        return false;
+
+    return !currentPanel->save(resBuffer);
+}
+
+void ResXmlLoader::EndLoadXml()
+{
+    currentPanel.reset();
+    m_BeginOk = false;
 }

@@ -40,6 +40,10 @@
 #include <QFontMetrics>
 #include <QPalette>
 #include <QPainter>
+#include <QPixmap>
+#include <QModelIndex>
+#include <QIcon>
+#include "toolbox/toolboxmodel.h"
 #include <QGraphicsItem>
 #include <QUndoStack>
 #include <QMenuBar>
@@ -257,6 +261,25 @@ void StdPanelEditor::setupEditor()
         ApplyControlStyleToGallary();
         m_pControlStyleGallery->blockSignals(false);
     });
+}
+
+QPixmap StdPanelEditor::toolBoxDragPixmap(const QModelIndex &index) const
+{
+    // Как было до office-плашки (см. историю toolboxtreeview.cpp):
+    // плашка перетаскивания — просто иконка элемента 24x24
+    QIcon icon = index.data(ToolBoxModel::DragIconRole).value<QIcon>();
+    if (icon.isNull())
+        icon = index.data(Qt::DecorationRole).value<QIcon>();
+
+    if (!icon.isNull())
+        return icon.pixmap(QSize(24, 24));
+
+    // Старый вариант без иконки не показывал плашку вовсе
+    // (setPixmap не вызывался) — возвращаем прозрачный 1x1, т.к.
+    // пустой QPixmap здесь означает "отрисовка по умолчанию"
+    QPixmap pm(1, 1);
+    pm.fill(Qt::transparent);
+    return pm;
 }
 
 void StdPanelEditor::setupNameLine()

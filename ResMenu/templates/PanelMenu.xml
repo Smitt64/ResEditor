@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<reslib xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.softlab.ru reslib.xsd"
+    xmlns="http://www.softlab.ru">
+ <menu name="TEMPLATE" dt="2026-08-22T00:00:00" comment="Стандартное меню для панели">
+  <popup label="~Д~ействия" help="0" comment="">
+   <item label="~П~ереключить    ~Space~" cmd="32" help="0" comment=""/>
+   <item label="~С~правочник    ~F3~" cmd="317" help="0" comment=""/>
+   <item label="С~о~хранить    ~F9~" cmd="323" help="0" comment=""/>
+  </popup>
+ </menu>
+</reslib>

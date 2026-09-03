@@ -1,6 +1,7 @@
 #include "toolboxtreeview.h"
 #include "qmimedata.h"
 #include "toolbox/toolboxmodel.h"
+#include "baseeditorwindow.h"
 #include <QMouseEvent>
 #include <QDrag>
 #include <QGuiApplication>
@@ -191,6 +192,69 @@ ToolBoxTreeView::~ToolBoxTreeView()
 
 }
 
+QPixmap ToolBoxTreeView::dragPixmap(const QModelIndex &index) const
+{
+    // Редактор может переопределить отрисовку плашки
+    // (BaseEditorWindow::toolBoxDragPixmap). Модель toolbox создаётся с
+    // parent = редактор (BaseEditorWindow), поэтому достаём его оттуда.
+    // Пустой pixmap — отрисовка по умолчанию
+    if (QAbstractItemModel *m = model())
+    {
+        if (BaseEditorWindow *wnd = qobject_cast<BaseEditorWindow*>(m->parent()))
+        {
+            const QPixmap custom = wnd->toolBoxDragPixmap(index);
+            if (!custom.isNull())
+                return custom;
+        }
+    }
+
+    // Если редактор задал отдельную иконку для перетаскивания
+    // (DragIconRole) — берем её, иначе иконку элемента из списка
+    QIcon icon = index.data(ToolBoxModel::DragIconRole).value<QIcon>();
+    if (icon.isNull())
+        icon = index.data(Qt::DecorationRole).value<QIcon>();
+
+    const QString text = index.data(Qt::DisplayRole).toString();
+
+    const int iconSize = 16;
+    const int hMargin = 6;
+    const int vMargin = 4;
+    const int spacing = 4;
+
+    const QFontMetrics fm(font());
+    const QString elided = fm.elidedText(text, Qt::ElideRight, 220);
+
+    int w = hMargin + fm.horizontalAdvance(elided) + hMargin;
+    if (!icon.isNull())
+        w += iconSize + spacing;
+
+    const int h = qMax(iconSize, fm.height()) + 2 * vMargin;
+
+    QPixmap pm(w, h);
+    pm.fill(Qt::transparent);
+
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    // Плашка в стиле office: голубая заливка, синяя рамка
+    p.setPen(QColor("#0072C6"));
+    p.setBrush(QColor("#E5F1FB"));
+    p.drawRoundedRect(pm.rect().adjusted(0, 0, -1, -1), 3, 3);
+
+    int x = hMargin;
+    if (!icon.isNull())
+    {
+        icon.paint(&p, x, (h - iconSize) / 2, iconSize, iconSize);
+        x += iconSize + spacing;
+    }
+
+    p.setPen(QColor("#1E1E1E"));
+    p.drawText(QRect(x, 0, w - x - hMargin, h),
+               Qt::AlignLeft | Qt::AlignVCenter, elided);
+
+    return pm;
+}
+
 void ToolBoxTreeView::mousePressEvent(QMouseEvent *event)
 {
     if (!model())
@@ -215,8 +279,6 @@ void ToolBoxTreeView::mousePressEvent(QMouseEvent *event)
 
     if (event->button() == Qt::LeftButton)
     {
-        QIcon icon = index.data(Qt::DecorationRole).value<QIcon>();
-
         QDrag *drag = new QDrag(this);
         QMimeData *mimeData = new QMimeData();
 
@@ -224,8 +286,9 @@ void ToolBoxTreeView::mousePressEvent(QMouseEvent *event)
         QByteArray mimidata = model()->data(index, ToolBoxModel::MimeDataRole).toByteArray();
         mimeData->setData(mimetype, mimidata);
 
-        if (!icon.isNull())
-            drag->setPixmap(icon.pixmap(QSize(24, 24)));
+        const QPixmap pm = dragPixmap(index);
+        drag->setPixmap(pm);
+        drag->setHotSpot(QPoint(8, pm.height() / 2));
 
         drag->setMimeData(mimeData);
         //qDebug() << mimetype << mimidata;

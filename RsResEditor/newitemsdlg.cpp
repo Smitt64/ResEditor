@@ -8,6 +8,9 @@
 #include <QJsonArray>
 #include <QJsonValue>
 #include <QJsonParseError>
+#include <QPainter>
+#include <QPen>
+#include <QTimer>
 
 #define isSeted(item,role) item->data(role).toBool()
 
@@ -48,6 +51,9 @@ NewItemsDlg::NewItemsDlg(LbrObjectInterface *lbr, QWidget *parent) :
 
     ui->setupUi(this);
     ui->treeWidget->header()->setVisible(false);
+    // колонка на всю ширину — иначе списки шаблонов сжимаются
+    // до sizeHintForColumn (2 иконки в строке)
+    ui->treeWidget->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
     int typeId = QMetaType::type("StdPanNameValidator*");
     if (typeId == QMetaType::UnknownType)
@@ -117,6 +123,12 @@ NewItemsDlg::NewItemsDlg(LbrObjectInterface *lbr, QWidget *parent) :
 
     connect(ui->pathButton, &QPushButton::clicked, this, &NewItemsDlg::pathButton);
     connect(ui->nameEdit, &QLineEdit::textChanged, this, &NewItemsDlg::updateAcceptButton);
+    connect(ui->searchEdit, &QLineEdit::textChanged, this, &NewItemsDlg::applyFilter);
+    connect(ui->nameEdit, &QLineEdit::returnPressed, this, [this]()
+    {
+        if (ui->buttonBox->button(QDialogButtonBox::Ok)->isEnabled())
+            accept();
+    });
 }
 
 NewItemsDlg::~NewItemsDlg()
@@ -170,24 +182,83 @@ void NewItemsDlg::itemUpdated(QListWidgetItem *item)
     updateAcceptButton();
 }
 
+// -----------------------------------------------------------------------------
+
+void BadgeItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
+                              const QModelIndex &index) const
+{
+    QStyledItemDelegate::paint(painter, option, index);
+
+    if (!index.data(RoleUserTemplate).toBool())
+        return;
+
+    const QString badgeName = index.data(RoleBadge).toString();
+    if (badgeName.isEmpty())
+        return;
+
+    QIcon badge = m_BadgeCache.value(badgeName);
+    if (badge.isNull())
+    {
+        badge = QIcon::fromTheme(badgeName);
+        m_BadgeCache.insert(badgeName, badge);
+    }
+
+    if (badge.isNull())
+        return;
+
+    const int bs = 18;
+    const QRect r(option.rect.right() - bs - 3, option.rect.top() + 3, bs, bs);
+
+    // контрастная подложка, чтобы бейдж читался поверх иконки/текста
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(QPen(QColor(0xc0, 0xc0, 0xc0)));
+    painter->setBrush(Qt::white);
+    painter->drawEllipse(r.adjusted(-1, -1, 1, 1));
+    painter->restore();
+
+    badge.paint(painter, r);
+}
+
+// -----------------------------------------------------------------------------
+
 QListWidget *NewItemsDlg::CreateSubList()
 {
     QListWidget *list = new QListWidget(this);
     list->setViewMode(QListView::IconMode);
     list->setIconSize(QSize(32, 32));
+    // бейдж пользовательских шаблонов рисует делегат
+    list->setItemDelegate(new BadgeItemDelegate(list));
     list->setFrameShape(QFrame::NoFrame);
     list->setSortingEnabled(true);
     list->setWordWrap(true);
-    list->setResizeMode(QListView::Fixed);
+    // Adjust, а не Fixed: Fixed раскладывает итемы один раз (при узкой
+    // начальной ширине) и не перестраивает ряды при ресайзе — получалось
+    // 2 иконки в строке до первого фильтра
+    list->setResizeMode(QListView::Adjust);
     list->setMovement(QListView::Static);
     list->setUniformItemSizes(true);
     //list->setSpacing(4);
     //list->setGridSize(QSize(68, 68));
-    //list->setResizeMode(QListView::Fixed);
 
     list->updateGeometry();
 
-    connect(list, &QListWidget::itemClicked, this, &NewItemsDlg::itemUpdated);
+    // пересчёт высоты при изменении ширины списка (eventFilter)
+    list->setProperty("newItemsList", true);
+    list->installEventFilter(this);
+
+    // currentItemChanged, а не itemClicked: реагируем и на клавиатурную
+    // навигацию (стрелки), иначе описание/кнопка OK не обновлялись
+    connect(list, &QListWidget::currentItemChanged, this,
+            [this](QListWidgetItem *current, QListWidgetItem *)
+    {
+        if (current && !current->isHidden())
+            itemUpdated(current);
+    });
+    connect(list, &QListWidget::itemActivated, this, [this](QListWidgetItem *)
+    {
+        itemDoubleClicked();
+    });
     connect(list, &QListWidget::itemDoubleClicked, this, &NewItemsDlg::itemDoubleClicked);
 
     return list;
@@ -243,14 +314,17 @@ void NewItemsDlg::buildStandartNewItems()
     }
 
     ui->treeWidget->expandAll();
+
+    // visualItemRect валиден только после раскладки представления —
+    // пересчитываем высоты отложенно
+    QTimer::singleShot(0, this, &NewItemsDlg::updateAllListSizes);
 }
 
 void NewItemsDlg::addFromMetaDataList(const QString &metadata)
 {
     QJsonParseError errors;
 
-    QByteArray tmp = metadata.toStdString().c_str();
-    QJsonDocument doc = QJsonDocument::fromJson(tmp, &errors);
+    QJsonDocument doc = QJsonDocument::fromJson(metadata.toUtf8(), &errors);
 
     if (errors.error != QJsonParseError::NoError)
     {
@@ -268,13 +342,14 @@ void NewItemsDlg::addFromMetaDataList(const QString &metadata)
         addFromMetaData(obj);
     }
 
-    QJsonArray panels = ribbon["panels"].toArray();
-    for (const auto &value : qAsConst(panels))
-        m_RibbonPannels.append(value.toString());
-
-    QJsonArray scrols = ribbon["scrols"].toArray();
-    for (const auto &value : qAsConst(scrols))
-        m_RibbonScrols.append(value.toString());
+    // Все секции ribbon (panels/scrols/menus/...) — generic, чтобы плагины
+    // могли добавлять свои кнопки создания без правки диалога
+    for (auto it = ribbon.begin(); it != ribbon.end(); ++it)
+    {
+        const QJsonArray guids = it.value().toArray();
+        for (const auto &value : guids)
+            m_RibbonSections[it.key()].append(value.toString());
+    }
 }
 
 void NewItemsDlg::addFromMetaData(const QJsonObject &metadata)
@@ -300,13 +375,15 @@ GroupInfoMap NewItemsDlg::fillGroupInfoFromListItem(QListWidgetItem* item)
     infoMap[RoleIconName] = item->data(RoleIconName);
     infoMap[RoleTitle] = item->data(RoleTitle);
     infoMap[RoleValidator] = item->data(RoleValidator);
+    infoMap[RoleUserTemplate] = item->data(RoleUserTemplate);
+    infoMap[RoleBadge] = item->data(RoleBadge);
 
     return infoMap;
 }
 
 GroupInfoMap NewItemsDlg::getInfoForItem(const QString &guid)
 {
-    return m_Templates[guid];
+    return m_Templates.value(guid);
 }
 
 void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metadata)
@@ -328,6 +405,11 @@ void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metad
     else
         icon = QIcon(iconname);
 
+    // бейдж пользовательского шаблона рисует BadgeItemDelegate
+    // поверх элемента списка, иконку не трогаем
+    const bool userTemplate = metadata["usertemplate"].toBool();
+    const QString badgeName = metadata["badge"].toString();
+
     item->setIcon(icon);
     item->setText(metadata["title"].toString());
     item->setData(RoleDescription, metadata["description"].toString());
@@ -340,6 +422,8 @@ void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metad
     item->setData(RoleIconName, metadata["icon"].toString());
     item->setData(RoleTitle, metadata["title"].toString());
     item->setData(RoleValidator, metadata["validator"].toString());
+    item->setData(RoleUserTemplate, userTemplate);
+    item->setData(RoleBadge, badgeName);
     item->setSizeHint(QSize(90, 120));
 
     GroupInfoMap infoMap = fillGroupInfoFromListItem(item);
@@ -351,55 +435,69 @@ void NewItemsDlg::addItemToGroupList(QListWidget *list, const QJsonObject &metad
 
 void NewItemsDlg::updateListSize(QListWidget *list)
 {
-    int count = list->count();
-
-    QSize sz;
-    for (int i = 0; i < count; i++)
+    // Высота по нижней кромке самого нижнего ВИДИМОГО элемента
+    // (скрытые фильтром не учитываем)
+    int maxBottom = 0;
+    for (int i = 0; i < list->count(); ++i)
     {
         QListWidgetItem *item = list->item(i);
-        QRect rect = list->visualItemRect(item);
+        if (item->isHidden())
+            continue;
 
-        sz.setHeight(rect.top() + rect.height());
+        const QRect rect = list->visualItemRect(item);
+        if (rect.isValid())
+            maxBottom = qMax(maxBottom, rect.bottom() + 1);
     }
 
-    list->setFixedHeight(sz.height() + list->spacing() * 5);
+    if (maxBottom <= 0)
+        maxBottom = list->sizeHintForRow(0);
+
+    const int height = maxBottom + list->spacing() + 4;
+    list->setFixedHeight(height);
+
+    // Явно сообщаем строке дерева высоту содержимого: QTreeView подгоняет
+    // строку под item-widget только при собственной перекладке
+    for (auto it = m_Groups.begin(); it != m_Groups.end(); ++it)
+    {
+        if (ui->treeWidget->itemWidget(it.value(), 0) == list)
+        {
+            it.value()->setSizeHint(0, QSize(-1, height));
+            break;
+        }
+    }
+
+    // форсируем перекладку дерева, иначе строка остаётся высокой
+    // и под списком висит пустая область
+    ui->treeWidget->doItemsLayout();
+
     list->updateGeometry();
-    /*if (list->count() == 0) {
-        list->setFixedHeight(50);
-        return;
+}
+
+void NewItemsDlg::updateAllListSizes()
+{
+    for (auto it = m_Groups.constBegin(); it != m_Groups.constEnd(); ++it)
+    {
+        QListWidget *lst = qobject_cast<QListWidget*>(ui->treeWidget->itemWidget(it.value(), 0));
+        if (lst)
+            updateListSize(lst);
+    }
+}
+
+bool NewItemsDlg::eventFilter(QObject *watched, QEvent *event)
+{
+    // Список шаблонов изменил ширину (первый показ, ресайз диалога,
+    // растяжение колонки) — пересчитать высоту. Отложенно, чтобы
+    // QListView успел перестроить ряды (Adjust) и visualItemRect стал валиден
+    if (event->type() == QEvent::Resize && watched->property("newItemsList").toBool())
+    {
+        QListWidget *list = static_cast<QListWidget*>(watched);
+        QTimer::singleShot(0, list, [this, list]()
+        {
+            updateListSize(list);
+        });
     }
 
-    // Находим максимальные ширину и высоту среди всех элементов
-    int maxWidth = 0;
-    int maxHeight = 0;
-
-    for (int i = 0; i < list->count(); i++) {
-        QListWidgetItem *item = list->item(i);
-        QRect rect = list->visualItemRect(item);
-
-        if (rect.width() > maxWidth) {
-            maxWidth = rect.width();
-        }
-        if (rect.height() > maxHeight) {
-            maxHeight = rect.height();
-        }
-    }
-
-    list->setGridSize(QSize(maxWidth, maxHeight));
-
-    // Устанавливаем одинаковый размер для всех элементов
-    for (int i = 0; i < list->count(); i++) {
-        QListWidgetItem *item = list->item(i);
-        item->setSizeHint(QSize(maxWidth, maxHeight));
-    }
-
-    // Рассчитываем общую высоту списка
-    int visibleItems = list->count();
-    int spacing = list->spacing();
-    int totalHeight = (maxHeight + spacing) * visibleItems + spacing * 2;
-
-    list->setFixedHeight(totalHeight);
-    list->updateGeometry();*/
+    return QDialog::eventFilter(watched, event);
 }
 
 void NewItemsDlg::pathButton()
@@ -419,7 +517,8 @@ void NewItemsDlg::updateAcceptButton()
     if (result && isSeted(m_pSelectedItem,RoleNeedPath) && ui->pathEdit->text().isEmpty())
         result = false;
 
-    if (result && isSeted(m_pSelectedItem,RoleNeedName) && ui->nameEdit->text().isEmpty())
+    if (result && isSeted(m_pSelectedItem,RoleNeedName) &&
+            (ui->nameEdit->text().isEmpty() || !ui->nameEdit->hasAcceptableInput()))
         result = false;
 
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(result);
@@ -427,7 +526,7 @@ void NewItemsDlg::updateAcceptButton()
 
 QString NewItemsDlg::action() const
 {
-    return m_pSelectedItem->data(RoleAction).toString();
+    return m_pSelectedItem ? m_pSelectedItem->data(RoleAction).toString() : QString();
 }
 
 QString NewItemsDlg::name() const
@@ -445,7 +544,7 @@ void NewItemsDlg::itemDoubleClicked()
     updateAcceptButton();
 
     if (ui->buttonBox->button(QDialogButtonBox::Ok)->isEnabled())
-        emit ui->buttonBox->accepted();
+        accept();
 }
 
 QStringList NewItemsDlg::getGroups() const
@@ -455,12 +554,25 @@ QStringList NewItemsDlg::getGroups() const
 
 const QStringList &NewItemsDlg::ribbonScrols() const
 {
-    return m_RibbonScrols;
+    return ribbonSection(QStringLiteral("scrols"));
 }
 
 const QStringList &NewItemsDlg::ribbonPannels() const
 {
-    return m_RibbonPannels;
+    return ribbonSection(QStringLiteral("panels"));
+}
+
+const QStringList &NewItemsDlg::ribbonSection(const QString &key) const
+{
+    static const QStringList empty;
+    auto it = m_RibbonSections.constFind(key);
+
+    return it != m_RibbonSections.constEnd() ? it.value() : empty;
+}
+
+QStringList NewItemsDlg::ribbonSectionKeys() const
+{
+    return m_RibbonSections.keys();
 }
 
 #define AddInfoToElement(key) element[key] = item->data(key)
@@ -487,6 +599,8 @@ QList<GroupInfoMap> NewItemsDlg::groupInfo(const QString &name)
         AddInfoToElement(RoleIconName);
         AddInfoToElement(RoleTitle);
         AddInfoToElement(RoleValidator);
+        AddInfoToElement(RoleUserTemplate);
+        AddInfoToElement(RoleBadge);
 
         lst.append(element);
     }
@@ -526,6 +640,50 @@ void NewItemsDlg::filterByAction(const QString& action)
     }
 
     ui->treeWidget->expandAll();
+
+    // после скрытия элементов пересчитать высоты списков
+    QTimer::singleShot(0, this, &NewItemsDlg::updateAllListSizes);
+}
+
+void NewItemsDlg::applyFilter(const QString &text)
+{
+    const QString needle = text.trimmed();
+
+    for (int i = 0; i < ui->treeWidget->topLevelItemCount(); ++i)
+    {
+        QTreeWidgetItem *groupItem = ui->treeWidget->topLevelItem(i);
+        if (groupItem->childCount() <= 0)
+            continue;
+
+        QListWidget *list = qobject_cast<QListWidget*>(ui->treeWidget->itemWidget(groupItem->child(0), 0));
+        if (!list)
+            continue;
+
+        bool anyVisible = false;
+        for (int j = 0; j < list->count(); ++j)
+        {
+            QListWidgetItem *item = list->item(j);
+            const bool matches = needle.isEmpty()
+                || item->text().contains(needle, Qt::CaseInsensitive)
+                || item->data(RoleDescription).toString().contains(needle, Qt::CaseInsensitive);
+
+            item->setHidden(!matches);
+            anyVisible |= matches;
+        }
+
+        groupItem->setHidden(!anyVisible);
+    }
+
+    QTimer::singleShot(0, this, &NewItemsDlg::updateAllListSizes);
+}
+
+void NewItemsDlg::resizeEvent(QResizeEvent *event)
+{
+    QDialog::resizeEvent(event);
+
+    // ширина колонки зависит от ширины диалога — ряды иконок перестраиваются,
+    // пересчитываем высоты списков
+    QTimer::singleShot(0, this, &NewItemsDlg::updateAllListSizes);
 }
 
 void NewItemsDlg::showEvent(QShowEvent* event)
@@ -535,11 +693,30 @@ void NewItemsDlg::showEvent(QShowEvent* event)
     if (ui->nameEdit->isEnabled())
         ui->nameEdit->setFocus();
     else
+        ui->searchEdit->setFocus();
+}
+
+QIcon NewItemsDlg::badgedIcon(const QIcon &base, const QString &badgeName)
+{
+    const QIcon badge = QIcon::fromTheme(badgeName);
+
+    if (badge.isNull() || base.isNull())
+        return base;
+
+    QIcon result;
+    for (int size : {16, 24, 32, 48})
     {
-        QWidget* nextFocus = ui->nameEdit->nextInFocusChain();
-        if (nextFocus && nextFocus->isEnabled())
-            nextFocus->setFocus();
+        QPixmap pm = base.pixmap(QSize(size, size));
+        const int bs = size / 2; // бейдж — половина иконки в правом нижнем углу
+
+        QPainter p(&pm);
+        badge.paint(&p, QRect(size - bs, size - bs, bs, bs));
+        p.end();
+
+        result.addPixmap(pm);
     }
+
+    return result;
 }
 
 QValidator *NewItemsDlg::createValidator(const QString &className, QObject* parent)

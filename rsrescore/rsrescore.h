@@ -20,10 +20,14 @@ class SARibbonBar;
 class ErrorsModel;
 class QXmlSchema;
 class QAbstractMessageHandler;
+class QPluginLoader;
+class ResXmlReader;
+
 class RSRESCORE_EXPORT RsResCore
 {
 public:
     RsResCore();
+    ~RsResCore();
     static RsResCore *inst();
 
     static QString iconNameFromResType(const qint16 &Type);
@@ -48,21 +52,34 @@ public:
     const char *resTypePrefix(int tp);
 
     QString saveResToXml(const qint16 &Type,
-                      const QString &name,
-                      LbrObjectInterface *lbr,
-                      const QString &dirtemplate,
-                      const QString &encode = QString("UTF-8"));
+                         const QString &name,
+                         LbrObjectInterface *lbr,
+                         const QString &dirtemplate,
+                         const QString &encode = QString("UTF-8"));
 
     QList<SARibbonContextCategory*> contextCategoryes(SARibbonBar *ribbon);
 
+    QSet<qint16> plugedTypes() const;
+
+    // XML-импортеры всех загруженных плагинов
+    // (ResourceEditorInterface::xmlImporter) — для ResXmlLoaderChain
+    QList<ResXmlReader*> xmlImporters() const;
+
 private:
     void loadPlugins();
+    bool loadPluginFromFile(const QString &filePath);
+    void findPluginsInDirectory(const QString &path, int depth = 2);
+    bool checkPluginMetadata(const QJsonObject &metaData);
+    void cleanupPlugins();
+    QStringList getPluginSearchPaths() const;
 
     static RsResCore *m_Inst;
 
     QSettings *m_pSettings;
     QList<ResourceEditorInterface*> m_Plugins;
     QMultiHash<qint16,ResourceEditorInterface*> m_PluginTypes;
+    QList<QPluginLoader*> m_PluginLoaders;
+    QStringList m_LoadedPluginIds;
 };
 
 //Q_GLOBAL_STATIC(RsResCore, staticResCore)

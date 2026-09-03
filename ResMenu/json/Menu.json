@@ -1,0 +1,12 @@
+{
+    "propertylist": [
+        {
+            "name" : "title",
+            "alias" : "Название пункта"
+        },
+        {
+            "name" : "helpId",
+            "alias" : "Номер страницы помощи"
+        }
+    ]
+}

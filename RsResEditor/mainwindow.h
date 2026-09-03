@@ -31,6 +31,7 @@ class SARibbonPannel;
 class ProxyAction;
 class UndoActionWidget;
 class ResApplicationWidget;
+class QProgressDialog;
 class MainWindow : public SARibbonMainWindow
 {
     Q_OBJECT
@@ -67,6 +68,7 @@ private slots:
     void onOpenRecent();
 
     void UpdateFilterResTypes(bool state = false);
+    void UpdateFilterActionsVisibility();
 
     void closeAllSubWindows(bool *canceled = nullptr);
     void UpdateActions();
@@ -104,7 +106,8 @@ private:
         return action;
     }
 
-    bool processSingleImportXmlFile(const QString& filePath, ErrorsModel* errorsModel);
+    bool processSingleImportXmlFile(const QString& filePath, ErrorsModel* errorsModel,
+                                    QProgressDialog *progress = nullptr);
     void processImportXmlWithProgress(const QStringList& filePaths, ErrorsModel* errorsModel,
                                       QWidget* parent, const QString& dialogTitle,
                                       const QString& dialogLabel);
@@ -134,9 +137,11 @@ private:
 
     QAction *m_pActionNew, *m_pActionOpen, *m_pActionSave;
     QAction *m_pImportXmlFolder, *m_ImportXml, *m_pExportXmlFolder, *m_pExportXmlFile;
-    QAction *m_pActionNewPanel, *m_pActionNewBScrol, *m_pActionDeleteRes, *m_pActionEditRes;
+    QAction *m_pActionDeleteRes, *m_pActionEditRes;
 
-    //QObject *m_pActionNewPanel;
+    // Кнопки создания ресурсов из секций ribbon метаданных
+    // (panels/scrols/menus/...) — для UpdateActions/OnNewResActionEx
+    QList<QAction*> m_NewResActions;
 
     QMenu *m_pUndoRedoMenu;
     //QToolButton *m_pRedoButton;

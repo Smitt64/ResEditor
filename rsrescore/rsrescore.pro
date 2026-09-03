@@ -45,6 +45,8 @@ SOURCES += \
     reslistdockwidget.cpp \
     respanel.cpp \
     resxmlreader.cpp \
+    resxmlloaderchain.cpp \
+    restemplateregistry.cpp \
     rsrescore.cpp \
     scrolitem.cpp \
     spelling/resspellstringsdlg.cpp \
@@ -52,6 +54,7 @@ SOURCES += \
     stdeditorscene.cpp \
     stdpaneleditor.cpp \
     styles/extextstyle.cpp \
+    styles/mdiofficestyle.cpp \
     styles/resstyle.cpp \
     textitem.cpp \
     toolbox/toolboxdockwidget.cpp \
@@ -104,6 +107,8 @@ HEADERS += \
     reslistdockwidget.h \
     respanel.h \
     resxmlreader.h \
+    resxmlloaderchain.h \
+    restemplateregistry.h \
     rscoreheader.h \
     rsrescore_global.h \
     rsrescore.h \
@@ -113,6 +118,7 @@ HEADERS += \
     stdeditorscene.h \
     stdpaneleditor.h \
     styles/extextstyle.h \
+    styles/mdiofficestyle.h \
     styles/resstyle.h \
     textitem.h \
     toolbox/toolboxdockwidget.h \

@@ -1,0 +1,33 @@
+<RCC>
+    <qresource prefix="/">
+        <file>json/MenuNewItems.json</file>
+        <file>json/MenuItem.json</file>
+        <file>json/Menu.json</file>
+        <file>json/ActionFlagEnum.json</file>
+        <file>json/IconTags.json</file>
+        <file>json/MenuToolBox.json</file>
+        <file>json/KeyCodes.json</file>
+        <file>templates/BScrolMenu.xml</file>
+        <file>templates/BScrolMenuIcons.xml</file>
+        <file>templates/PanelMenu.xml</file>
+        <file>templates/PanelMenuIcons.xml</file>
+        <file>res/MenuItem.svg</file>
+        <file>res/MenuSeparator.svg</file>
+        <file>res/MenuSubmenu.svg</file>
+        <file>res/ActionEdit.svg</file>
+        <file>res/ActionDelete.svg</file>
+        <file>res/ActionNewRow.svg</file>
+        <file>res/ActionSearch.svg</file>
+        <file>res/ActionFilter.svg</file>
+        <file>res/ActionPrint.svg</file>
+        <file>res/ActionSave.svg</file>
+        <file>res/ActionView.svg</file>
+        <file>res/ActionNote.svg</file>
+        <file>res/ActionUserFunc.svg</file>
+        <file>res/ActionHistory.svg</file>
+        <file>res/ActionAccounts.svg</file>
+        <file>res/ActionBook.svg</file>
+        <file>res/ActionRun.svg</file>
+        <file>res/ActionPortfolio.svg</file>
+    </qresource>
+</RCC>

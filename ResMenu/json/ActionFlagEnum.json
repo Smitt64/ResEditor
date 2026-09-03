@@ -1,0 +1,7 @@
+{
+    "enum" : [
+        { "key" : "None", "alias" : "Нет флагов" },
+        { "key" : "Toolbar", "alias" : "Попадает на ToolBar" },
+        { "key" : "Context", "alias" : "Попадает в контекстное меню" }
+    ]
+}
