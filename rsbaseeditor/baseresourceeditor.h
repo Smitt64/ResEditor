@@ -2,8 +2,10 @@
 #define BASERESOURCEEDITOR_H
 
 #include "ResourceEditorInterface.h"
+#include "restemplateregistry.h"
 #include <QObject>
 
+class ErrorsModel;
 class BaseResourceEditor : public QObject, public ResourceEditorInterface
 {
     Q_OBJECT
@@ -18,13 +20,19 @@ public:
 
     virtual QString newItemsMetaList() Q_DECL_FINAL;
     virtual bool newItemsActionAvalible(const QString &guid) Q_DECL_FINAL;
-    virtual BaseEditorWindow *newItemsAction(const QString &guid, const QString &name, const QString &path, QWidget *parent) Q_DECL_FINAL;
+    virtual ResourceEditorResult newItemsAction(const QString &guid, const QString &name, const QString &path, QWidget *parent) Q_DECL_FINAL;
 
+    QList<SARibbonContextCategory*> contextCategoryes(SARibbonBar *ribbon) Q_DECL_FINAL;
 private:
+    void ShowErrors(ErrorsModel *model, QWidget *parent);
     void SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
                           const QString &name, const QString &title);
 
-    BaseEditorWindow *LoadResFromXmlTemplate(const QString &filename, const QString &name, const quint16 &type);
+    BaseEditorWindow *LoadResFromXmlTemplate(const QString &filename, const QString &name, const quint16 &type, ErrorsModel *model);
+    BaseEditorWindow *LoadResFromXmlTemplate(QIODevice *device, const QString &name, const std::initializer_list<quint16> &type, ErrorsModel *model);
+
+    // Пользовательские шаблоны панелей (xml + json-дескриптор)
+    ResTemplateRegistry m_templates;
 };
 
 #endif // BASERESOURCEEDITOR_H

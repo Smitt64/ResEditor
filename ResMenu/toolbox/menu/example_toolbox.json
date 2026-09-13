@@ -1,0 +1,53 @@
+{
+    "groups": [
+        {
+            "id": 100,
+            "title": "Мои элементы"
+        },
+        {
+            "id": 1,
+            "title": "Стандартные команды"
+        }
+    ],
+
+    "templates": [
+        {
+            "alias": "Моя команда",
+            "icon": "theme:Execute",
+            "tooltip": "Пример пользовательского элемента ToolBox (группа 'Мои элементы')",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [100],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Моя команда",
+                    "statusTip": "Пользовательская команда",
+                    "helpId": 0,
+                    "commandId": 0,
+                    "cmdEx": 0,
+                    "iconID": 0,
+                    "flags": 0
+                }
+            }
+        },
+        {
+            "alias": "Моя команда на ToolBar",
+            "icon": "theme:Create",
+            "tooltip": "Пункт с флагом dFMENU_TOOLBAR; группа 'Стандартные команды' переиспользует встроенную",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Моя команда",
+                    "statusTip": "Пользовательская команда на панели инструментов",
+                    "helpId": 0,
+                    "commandId": 0,
+                    "cmdEx": 0,
+                    "iconID": 0,
+                    "flags": 1
+                }
+            }
+        }
+    ]
+}

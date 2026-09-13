@@ -2,12 +2,13 @@
 #define CONTROLPROPERTYSDLG_H
 
 #include <QDialog>
+#include <QMap>
 
 namespace Ui {
 class ControlPropertysDlg;
 }
 
-class ControlItem;
+class CustomRectItem;
 class EnumListModel;
 class ControlPropertysDlg : public QDialog
 {
@@ -17,7 +18,7 @@ public:
     explicit ControlPropertysDlg(QWidget *parent = nullptr);
     ~ControlPropertysDlg();
 
-    void setControlItem(ControlItem *item);
+    void setControlItem(CustomRectItem *item);
 
     quint16 dataLength() const;
     quint16 length() const;
@@ -38,14 +39,22 @@ public:
 
     qint32 controlFlags() const;
 
+    QMap<QString, QVariant> getChangedProperties() const;
+
 private:
+    bool hasUniformValue(QObject *obj, const char *propertyName) const;
     void setWidgetData(QWidget *widget, const QString &propertyName);
     void setIntWidgetLimit(QWidget *widget);
 
+    void saveInitialUIState(); // Сохраняем начальное состояние UI
+    QVariant getUIPropertyValue(const QString &propertyName) const; // Получаем текущее значение из UI
+
     Ui::ControlPropertysDlg *ui;
 
-    ControlItem *m_pItem;
+    CustomRectItem *m_pItem;
     EnumListModel *m_pFieldType, *m_DataType, *m_pStyle;
+
+    QMap<QString, QVariant> m_initialUIState;
 };
 
 #endif // CONTROLPROPERTYSDLG_H

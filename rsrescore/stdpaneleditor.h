@@ -4,6 +4,10 @@
 #include "baseeditorwindow.h"
 #include <QProcess>
 
+class QShortcut;
+class QActionGroup;
+class QPixmap;
+class QModelIndex;
 class ResPanel;
 class PanelItem;
 class BaseEditorView;
@@ -20,14 +24,21 @@ class QTemporaryDir;
 class PanelStructModel;
 class ErrorsModel;
 class ResSpellStringsDlg;
+class PropertyWidgetMapper;
+class SARibbonCategory;
+class SARibbonGallery;
+class SARibbonGalleryGroup;
+class SARibbonLineEdit;
 class StdPanelEditor : public BaseEditorWindow
 {
     Q_OBJECT
     Q_CLASSINFO(CLASSINFO_TOOLBOX_FILE, ":/json/StdPanelEditorToolBox.json")
 public:
     StdPanelEditor(const qint16 &Type, QWidget *parent = nullptr);
+    virtual ~StdPanelEditor();
 
     virtual void setupEditor() Q_DECL_FINAL;
+    virtual QList<QWidget*> statusBarSections() Q_DECL_FINAL;
     void setPanel(ResPanel *panel, const QString &comment = QString());
 
     virtual bool save(ResBuffer *res, QString *error) Q_DECL_OVERRIDE;
@@ -37,6 +48,11 @@ public:
 
     virtual QAbstractItemModel *propertyModel() Q_DECL_OVERRIDE;
     virtual QAbstractItemModel *structModel() Q_DECL_OVERRIDE;
+
+    virtual void updateRibbonTabs() Q_DECL_OVERRIDE;
+    virtual void clearRibbonTabs() Q_DECL_OVERRIDE;
+
+    //virtual QList<SARibbonContextCategory*> contextCategoryes() Q_DECL_OVERRIDE;
 
 private slots:
     void sceneSelectionChanged();
@@ -54,9 +70,18 @@ private slots:
     void ViewerFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void CheckSpelling();
 
+    void OnBorderStyleSelected(QAction *pAction);
+    void OnPanelStyleSelected(QAction *pAction);
+    void OnControlStyleSelected(QAction *pAction);
+
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
     void addCodeWindow(const QString &title, const QString &text);
+    virtual void initRibbonPanels() Q_DECL_OVERRIDE;
+    // Пользовательские элементы toolbox ищутся в <...>/toolbox/panels
+    virtual QString toolBoxId() const Q_DECL_OVERRIDE { return QStringLiteral("panels"); }
+    // Плашка перетаскивания из toolbox — в стиле панели (ячейки)
+    virtual QPixmap toolBoxDragPixmap(const QModelIndex &index) const Q_DECL_OVERRIDE;
 
 private:
     enum FillItemsChildMode
@@ -65,16 +90,12 @@ private:
         FICMode_ParentBeforeChild
     };
 
+    void setCursorToFirstFreeCell();
     void CheckSpellingUpdateTexts(ResSpellStringsDlg *dlg);
-    QAction *addAction(const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());
-    QAction *addAction(QMenu *menu, const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());
+    /*QAction *addAction(const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());
+    QAction *addAction(QMenu *menu, const QIcon &icon, const QString &text, const QKeySequence &key = QKeySequence());*/
     void updateSizeStatus();
     void setupNameLine();
-    void setupContrastAction();
-    void setupScrolAreaAction();
-    void setupPropertyAction();
-    void setupCopyPaste();
-    void setupMenus();
     void showCheckError(int stat, ErrorsModel *model);
 
     void fillResPanel(ResPanel *resPanel);
@@ -84,35 +105,58 @@ private:
     const char *resTypeStr(int tp);
     void ViewResource(bool EwFlag);
 
+    void MakeResRibbonCategory(SARibbonCategory* category);
+    void MakeBorderRaibbonGallary(SARibbonGallery* gallery);
+    void MakeStyleRaibbonGallary(SARibbonGallery* gallery, const char *slotName, SARibbonGalleryGroup **pGroup, bool inheritable = false);
+
+    void MakeControlRibbonCategory(SARibbonCategory* category);
+
+    void ApplyBorderStyleToGallary();
+    void ApplyPanelStyleToGallary();
+    void ApplyControlStyleToGallary();
+    void UpdateGallarysIcons();
+
+    QString getFieldTypeDescription(const qint16 &fieldType, QString &description) const;
+    QString getDataTypeDescription(const qint16 &dataType) const;
+    /* QString getDataTypeDescription(ControlItem::DataType dataType) const;*/
+
     BaseEditorView *m_pView;
-    QTabWidget *m_TabContainer;
+    //QTabWidget *m_TabContainer;
 
     ResPanel *m_pPanel;
     PanelItem* panelItem;
     qint16 m_Type;
 
-    QStatusBar *m_StatusBar;
     StatusBarElement *m_SizeText, *m_CursorText;
-    QWidget *m_pStatusContainer;
-    QHBoxLayout *m_pStatusContainerLayout;
-    QLineEdit *m_pNameLineEdit;
+    SARibbonLineEdit *m_pNameLineEdit;
 
-    QAction *m_pSave;
+    QShortcut *m_pDeleteShortcut;
+    QShortcut *m_pCutShortcut, *m_pCopyShortcut, *m_pPasteShortcut;
     QAction *m_pContrst, *m_pDelete, *m_pProperty, *m_pScrolAreaAction;
     QAction *m_pCutAction, *m_pCopyAction, *m_pPasteAction;
     QAction *m_pCheckAction, *m_EwViewAction, *m_ViewAction, *m_Statistic;
     QAction *m_SaveToXml;
     QAction *m_pCreateControl, *m_pSpellCheckAction;
 
-    QMenuBar *m_pMenuBar;
-    QMenu *m_pEditMenu, *m_pViewMenu, *m_pResMenu, *m_pElements;
+    QAction *m_pFieldProperty, *m_pFdmAction, *m_pAsTextAction;
+    QAction *m_pNoTabStop, *m_pListSelect;
 
-    QToolBar *m_pToolBar;
+    //QToolBar *m_pToolBar;
     QClipboard *m_pClipboard;
 
     PanelStructModel *m_pStructModel;
 
     QScopedPointer<QTemporaryDir> m_ViewerDir;
+    SARibbonCategory* m_pPanelCategory, *m_pControlCategory;
+    SARibbonGallery* m_pBorderStyleGallery;
+    SARibbonGallery* m_pPanelStyleGallery, *m_pControlStyleGallery;
+    SARibbonGalleryGroup* m_pBorderGroup1;
+    SARibbonGalleryGroup* m_pPanelStyleGroup, *m_pControlStyleGroup;
+
+    QActionGroup *m_pFieledTypeGroup, *m_pDataTypeGroup;
+
+    QScopedPointer<PropertyWidgetMapper> m_RibbonMapper;
+    QScopedPointer<PropertyWidgetMapper> m_RibbonControlMapper;
 };
 
 #endif // STDPANELEDITOR_H

@@ -1,0 +1,789 @@
+{
+    "userCodeBase": 1000,
+    "keys": [
+        {
+            "code": 1,
+            "seq": "Ctrl+A"
+        },
+        {
+            "code": 2,
+            "seq": "Ctrl+B"
+        },
+        {
+            "code": 3,
+            "seq": "Ctrl+C"
+        },
+        {
+            "code": 4,
+            "seq": "Ctrl+D"
+        },
+        {
+            "code": 5,
+            "seq": "Ctrl+E"
+        },
+        {
+            "code": 6,
+            "seq": "Ctrl+F"
+        },
+        {
+            "code": 7,
+            "seq": "Ctrl+G"
+        },
+        {
+            "code": 8,
+            "seq": "Backspace"
+        },
+        {
+            "code": 8,
+            "seq": "Ctrl+H"
+        },
+        {
+            "code": 9,
+            "seq": "Tab"
+        },
+        {
+            "code": 9,
+            "seq": "Ctrl+I"
+        },
+        {
+            "code": 10,
+            "seq": "Ctrl+Return"
+        },
+        {
+            "code": 10,
+            "seq": "Ctrl+J"
+        },
+        {
+            "code": 10,
+            "seq": "Ctrl+Enter"
+        },
+        {
+            "code": 11,
+            "seq": "Ctrl+K"
+        },
+        {
+            "code": 12,
+            "seq": "Ctrl+L"
+        },
+        {
+            "code": 13,
+            "seq": "Return"
+        },
+        {
+            "code": 13,
+            "seq": "Ctrl+M"
+        },
+        {
+            "code": 13,
+            "seq": "Enter"
+        },
+        {
+            "code": 14,
+            "seq": "Ctrl+N"
+        },
+        {
+            "code": 15,
+            "seq": "Ctrl+O"
+        },
+        {
+            "code": 16,
+            "seq": "Ctrl+P"
+        },
+        {
+            "code": 17,
+            "seq": "Ctrl+Q"
+        },
+        {
+            "code": 18,
+            "seq": "Ctrl+R"
+        },
+        {
+            "code": 19,
+            "seq": "Ctrl+S"
+        },
+        {
+            "code": 20,
+            "seq": "Ctrl+T"
+        },
+        {
+            "code": 21,
+            "seq": "Ctrl+U"
+        },
+        {
+            "code": 22,
+            "seq": "Ctrl+V"
+        },
+        {
+            "code": 23,
+            "seq": "Ctrl+W"
+        },
+        {
+            "code": 24,
+            "seq": "Ctrl+X"
+        },
+        {
+            "code": 25,
+            "seq": "Ctrl+Y"
+        },
+        {
+            "code": 26,
+            "seq": "Ctrl+Z"
+        },
+        {
+            "code": 27,
+            "seq": "Esc"
+        },
+        {
+            "code": 30,
+            "seq": "Ctrl+6"
+        },
+        {
+            "code": 31,
+            "seq": "Ctrl+-"
+        },
+        {
+            "code": 127,
+            "seq": "Ctrl+Backspace"
+        },
+        {
+            "code": 232,
+            "seq": "Ctrl+<"
+        },
+        {
+            "code": 233,
+            "name": "K_ALTCOL"
+        },
+        {
+            "code": 234,
+            "name": "K_ALTCBR"
+        },
+        {
+            "code": 236,
+            "name": "K_ALTOBR"
+        },
+        {
+            "code": 237,
+            "seq": "Alt+,"
+        },
+        {
+            "code": 239,
+            "seq": "Ctrl+>"
+        },
+        {
+            "code": 257,
+            "seq": "Ctrl+0"
+        },
+        {
+            "code": 258,
+            "seq": "Ctrl+1"
+        },
+        {
+            "code": 259,
+            "seq": "Ctrl+2"
+        },
+        {
+            "code": 260,
+            "seq": "Ctrl+3"
+        },
+        {
+            "code": 261,
+            "seq": "Ctrl+4"
+        },
+        {
+            "code": 262,
+            "seq": "Ctrl+5"
+        },
+        {
+            "code": 263,
+            "seq": "Ctrl+7"
+        },
+        {
+            "code": 264,
+            "seq": "Ctrl+8"
+        },
+        {
+            "code": 265,
+            "seq": "Ctrl+9"
+        },
+        {
+            "code": 266,
+            "seq": "Ctrl++"
+        },
+        {
+            "code": 270,
+            "seq": "Alt+Backspace"
+        },
+        {
+            "code": 271,
+            "seq": "Shift+Tab"
+        },
+        {
+            "code": 272,
+            "seq": "Alt+Q"
+        },
+        {
+            "code": 273,
+            "seq": "Alt+W"
+        },
+        {
+            "code": 274,
+            "seq": "Alt+E"
+        },
+        {
+            "code": 275,
+            "seq": "Alt+R"
+        },
+        {
+            "code": 276,
+            "seq": "Alt+T"
+        },
+        {
+            "code": 277,
+            "seq": "Alt+Y"
+        },
+        {
+            "code": 278,
+            "seq": "Alt+U"
+        },
+        {
+            "code": 279,
+            "seq": "Alt+I"
+        },
+        {
+            "code": 280,
+            "seq": "Alt+O"
+        },
+        {
+            "code": 281,
+            "seq": "Alt+P"
+        },
+        {
+            "code": 282,
+            "seq": "Alt+["
+        },
+        {
+            "code": 283,
+            "seq": "Alt+]"
+        },
+        {
+            "code": 286,
+            "seq": "Alt+A"
+        },
+        {
+            "code": 287,
+            "seq": "Alt+S"
+        },
+        {
+            "code": 288,
+            "seq": "Alt+D"
+        },
+        {
+            "code": 289,
+            "seq": "Alt+F"
+        },
+        {
+            "code": 290,
+            "seq": "Alt+G"
+        },
+        {
+            "code": 291,
+            "seq": "Alt+H"
+        },
+        {
+            "code": 292,
+            "seq": "Alt+J"
+        },
+        {
+            "code": 293,
+            "seq": "Alt+K"
+        },
+        {
+            "code": 294,
+            "seq": "Alt+L"
+        },
+        {
+            "code": 300,
+            "seq": "Alt+Z"
+        },
+        {
+            "code": 301,
+            "seq": "Alt+X"
+        },
+        {
+            "code": 302,
+            "seq": "Alt+C"
+        },
+        {
+            "code": 303,
+            "seq": "Alt+V"
+        },
+        {
+            "code": 304,
+            "seq": "Alt+B"
+        },
+        {
+            "code": 305,
+            "seq": "Alt+N"
+        },
+        {
+            "code": 306,
+            "seq": "Alt+M"
+        },
+        {
+            "code": 307,
+            "seq": "Alt+<"
+        },
+        {
+            "code": 308,
+            "seq": "Alt+>"
+        },
+        {
+            "code": 311,
+            "name": "K_ALTGRAST"
+        },
+        {
+            "code": 315,
+            "seq": "F1"
+        },
+        {
+            "code": 316,
+            "seq": "F2"
+        },
+        {
+            "code": 317,
+            "seq": "F3"
+        },
+        {
+            "code": 318,
+            "seq": "F4"
+        },
+        {
+            "code": 319,
+            "seq": "F5"
+        },
+        {
+            "code": 320,
+            "seq": "F6"
+        },
+        {
+            "code": 321,
+            "seq": "F7"
+        },
+        {
+            "code": 322,
+            "seq": "F8"
+        },
+        {
+            "code": 323,
+            "seq": "F9"
+        },
+        {
+            "code": 324,
+            "seq": "F10"
+        },
+        {
+            "code": 327,
+            "seq": "Home"
+        },
+        {
+            "code": 328,
+            "seq": "Up"
+        },
+        {
+            "code": 329,
+            "seq": "PgUp"
+        },
+        {
+            "code": 330,
+            "name": "K_ALTGRMIN"
+        },
+        {
+            "code": 331,
+            "seq": "Left"
+        },
+        {
+            "code": 333,
+            "seq": "Right"
+        },
+        {
+            "code": 334,
+            "name": "K_ALTGRPLUS"
+        },
+        {
+            "code": 335,
+            "seq": "End"
+        },
+        {
+            "code": 336,
+            "seq": "Down"
+        },
+        {
+            "code": 337,
+            "seq": "PgDown"
+        },
+        {
+            "code": 338,
+            "seq": "Ins"
+        },
+        {
+            "code": 339,
+            "seq": "Del"
+        },
+        {
+            "code": 340,
+            "seq": "Shift+F1"
+        },
+        {
+            "code": 341,
+            "seq": "Shift+F2"
+        },
+        {
+            "code": 342,
+            "seq": "Shift+F3"
+        },
+        {
+            "code": 343,
+            "seq": "Shift+F4"
+        },
+        {
+            "code": 344,
+            "seq": "Shift+F5"
+        },
+        {
+            "code": 345,
+            "seq": "Shift+F6"
+        },
+        {
+            "code": 346,
+            "seq": "Shift+F7"
+        },
+        {
+            "code": 347,
+            "seq": "Shift+F8"
+        },
+        {
+            "code": 348,
+            "seq": "Shift+F9"
+        },
+        {
+            "code": 349,
+            "seq": "Shift+F10"
+        },
+        {
+            "code": 350,
+            "seq": "Ctrl+F1"
+        },
+        {
+            "code": 351,
+            "seq": "Ctrl+F2"
+        },
+        {
+            "code": 352,
+            "seq": "Ctrl+F3"
+        },
+        {
+            "code": 353,
+            "seq": "Ctrl+F4"
+        },
+        {
+            "code": 354,
+            "seq": "Ctrl+F5"
+        },
+        {
+            "code": 355,
+            "seq": "Ctrl+F6"
+        },
+        {
+            "code": 356,
+            "seq": "Ctrl+F7"
+        },
+        {
+            "code": 357,
+            "seq": "Ctrl+F8"
+        },
+        {
+            "code": 358,
+            "seq": "Ctrl+F9"
+        },
+        {
+            "code": 359,
+            "seq": "Ctrl+F10"
+        },
+        {
+            "code": 360,
+            "seq": "Alt+F1"
+        },
+        {
+            "code": 361,
+            "seq": "Alt+F2"
+        },
+        {
+            "code": 362,
+            "seq": "Alt+F3"
+        },
+        {
+            "code": 363,
+            "seq": "Alt+F4"
+        },
+        {
+            "code": 364,
+            "seq": "Alt+F5"
+        },
+        {
+            "code": 365,
+            "seq": "Alt+F6"
+        },
+        {
+            "code": 366,
+            "seq": "Alt+F7"
+        },
+        {
+            "code": 367,
+            "seq": "Alt+F8"
+        },
+        {
+            "code": 368,
+            "seq": "Alt+F9"
+        },
+        {
+            "code": 369,
+            "seq": "Alt+F10"
+        },
+        {
+            "code": 371,
+            "seq": "Ctrl+Left"
+        },
+        {
+            "code": 372,
+            "seq": "Ctrl+Right"
+        },
+        {
+            "code": 373,
+            "seq": "Ctrl+End"
+        },
+        {
+            "code": 374,
+            "seq": "Ctrl+PgDown"
+        },
+        {
+            "code": 375,
+            "seq": "Ctrl+Home"
+        },
+        {
+            "code": 376,
+            "seq": "Alt+1"
+        },
+        {
+            "code": 377,
+            "seq": "Alt+2"
+        },
+        {
+            "code": 378,
+            "seq": "Alt+3"
+        },
+        {
+            "code": 379,
+            "seq": "Alt+4"
+        },
+        {
+            "code": 380,
+            "seq": "Alt+5"
+        },
+        {
+            "code": 381,
+            "seq": "Alt+6"
+        },
+        {
+            "code": 382,
+            "seq": "Alt+7"
+        },
+        {
+            "code": 383,
+            "seq": "Alt+8"
+        },
+        {
+            "code": 384,
+            "seq": "Alt+9"
+        },
+        {
+            "code": 385,
+            "seq": "Alt+0"
+        },
+        {
+            "code": 386,
+            "seq": "Alt+-"
+        },
+        {
+            "code": 387,
+            "seq": "Alt++"
+        },
+        {
+            "code": 388,
+            "seq": "Ctrl+PgUp"
+        },
+        {
+            "code": 389,
+            "seq": "F11"
+        },
+        {
+            "code": 390,
+            "seq": "F12"
+        },
+        {
+            "code": 391,
+            "seq": "Shift+F11"
+        },
+        {
+            "code": 392,
+            "seq": "Shift+F12"
+        },
+        {
+            "code": 393,
+            "seq": "Ctrl+F11"
+        },
+        {
+            "code": 394,
+            "seq": "Ctrl+F12"
+        },
+        {
+            "code": 395,
+            "seq": "Alt+F11"
+        },
+        {
+            "code": 396,
+            "seq": "Alt+F12"
+        },
+        {
+            "code": 397,
+            "seq": "Ctrl+Up"
+        },
+        {
+            "code": 398,
+            "name": "K_CTRLGRMIN"
+        },
+        {
+            "code": 400,
+            "name": "K_CTRLGRPLUS"
+        },
+        {
+            "code": 401,
+            "seq": "Ctrl+Down"
+        },
+        {
+            "code": 402,
+            "seq": "Ctrl+Ins"
+        },
+        {
+            "code": 403,
+            "seq": "Ctrl+Del"
+        },
+        {
+            "code": 404,
+            "seq": "Ctrl+Tab"
+        },
+        {
+            "code": 405,
+            "name": "K_CTRLGRSLASH"
+        },
+        {
+            "code": 406,
+            "name": "K_CTRLGRAST"
+        },
+        {
+            "code": 407,
+            "seq": "Alt+Home"
+        },
+        {
+            "code": 408,
+            "seq": "Alt+Up"
+        },
+        {
+            "code": 409,
+            "seq": "Alt+PgUp"
+        },
+        {
+            "code": 411,
+            "seq": "Alt+Left"
+        },
+        {
+            "code": 413,
+            "seq": "Alt+Right"
+        },
+        {
+            "code": 415,
+            "seq": "Alt+End"
+        },
+        {
+            "code": 416,
+            "seq": "Alt+Down"
+        },
+        {
+            "code": 417,
+            "seq": "Alt+PgDown"
+        },
+        {
+            "code": 418,
+            "seq": "Alt+Ins"
+        },
+        {
+            "code": 419,
+            "seq": "Alt+Del"
+        },
+        {
+            "code": 420,
+            "name": "K_ALTGRSLASH"
+        },
+        {
+            "code": 762,
+            "seq": "Ctrl+Alt+F1"
+        },
+        {
+            "code": 763,
+            "seq": "Ctrl+Alt+F2"
+        },
+        {
+            "code": 764,
+            "seq": "Ctrl+Alt+F3"
+        },
+        {
+            "code": 765,
+            "seq": "Ctrl+Alt+F4"
+        },
+        {
+            "code": 766,
+            "seq": "Ctrl+Alt+F5"
+        },
+        {
+            "code": 767,
+            "seq": "Ctrl+Alt+F6"
+        },
+        {
+            "code": 768,
+            "seq": "Ctrl+Alt+F7"
+        },
+        {
+            "code": 769,
+            "seq": "Ctrl+Alt+F8"
+        },
+        {
+            "code": 770,
+            "name": "K_EDIT"
+        },
+        {
+            "code": 772,
+            "seq": "Ctrl+Alt+F11"
+        },
+        {
+            "code": 773,
+            "seq": "Ctrl+Alt+F12"
+        },
+        {
+            "code": 774,
+            "name": "K_REFRESH"
+        },
+        {
+            "code": 775,
+            "name": "K_REPEAT"
+        }
+    ]
+}

@@ -1,4 +1,4 @@
-QT += widgets uitools xml
+QT += widgets uitools xml xmlpatterns
 
 TEMPLATE = lib
 DEFINES += RSRESCORE_LIBRARY
@@ -21,6 +21,7 @@ SOURCES += \
     basescene.cpp \
     containeritem.cpp \
     controlitem.cpp \
+    controlitemswrapper.cpp \
     controlpropertysdlg.cpp \
     controtaborder.cpp \
     customrectitem.cpp \
@@ -36,16 +37,24 @@ SOURCES += \
     propertymodel/labeltextpropertyitem.cpp \
     propertymodel/propertydockwidget.cpp \
     propertymodel/textstyledlg.cpp \
+    propertywidgetmapper.cpp \
+    proxyaction.cpp \
     resapplication.cpp \
     reslibdirmodel.cpp \
+    reslibwriter.cpp \
     reslistdockwidget.cpp \
     respanel.cpp \
+    resxmlreader.cpp \
+    resxmlloaderchain.cpp \
+    restemplateregistry.cpp \
     rsrescore.cpp \
     scrolitem.cpp \
     spelling/resspellstringsdlg.cpp \
     statusbarelement.cpp \
+    stdeditorscene.cpp \
     stdpaneleditor.cpp \
     styles/extextstyle.cpp \
+    styles/mdiofficestyle.cpp \
     styles/resstyle.cpp \
     textitem.cpp \
     toolbox/toolboxdockwidget.cpp \
@@ -61,7 +70,8 @@ SOURCES += \
     widgets/characterwidget.cpp \
     widgets/controltaborderedit.cpp \
     widgets/labeltexteditdlg.cpp \
-    widgets/resinfodlg.cpp
+    widgets/resinfodlg.cpp \
+    widgets/toolboxmenu.cpp
 
 HEADERS += \
     ResourceEditorInterface.h \
@@ -73,6 +83,7 @@ HEADERS += \
     basescene.h \
     containeritem.h \
     controlitem.h \
+    controlitemswrapper.h \
     controlpropertysdlg.h \
     controtaborder.h \
     customrectitem.h \
@@ -88,18 +99,26 @@ HEADERS += \
     propertymodel/labeltextpropertyitem.h \
     propertymodel/propertydockwidget.h \
     propertymodel/textstyledlg.h \
+    propertywidgetmapper.h \
+    proxyaction.h \
     resapplication.h \
     reslibdirmodel.h \
+    reslibwriter.h \
     reslistdockwidget.h \
     respanel.h \
+    resxmlreader.h \
+    resxmlloaderchain.h \
+    restemplateregistry.h \
     rscoreheader.h \
     rsrescore_global.h \
     rsrescore.h \
     scrolitem.h \
     spelling/resspellstringsdlg.h \
     statusbarelement.h \
+    stdeditorscene.h \
     stdpaneleditor.h \
     styles/extextstyle.h \
+    styles/mdiofficestyle.h \
     styles/resstyle.h \
     textitem.h \
     toolbox/toolboxdockwidget.h \
@@ -115,7 +134,8 @@ HEADERS += \
     widgets/characterwidget.h \
     widgets/controltaborderedit.h \
     widgets/labeltexteditdlg.h \
-    widgets/resinfodlg.h
+    widgets/resinfodlg.h \
+    widgets/toolboxmenu.h
 
 FORMS += \
     bankdistribselect.ui \
@@ -177,3 +197,26 @@ else:unix: LIBS += -L$$OUT_PWD/../ToolsRuntimeProj/ToolsRuntime/ -lToolsRuntime
 
 INCLUDEPATH += $$PWD/../ToolsRuntimeProj/ToolsRuntime $$PWD/../ToolsRuntimeProj/ToolsRuntime/optionsdlg $$PWD/../ToolsRuntimeProj/ToolsRuntime/widgets
 DEPENDPATH += $$PWD/../ToolsRuntimeProj/ToolsRuntime
+
+ICONS_SRC =  \
+    $$PWD/../RsResEditor/res/icons \
+    $$PWD/../ToolsRuntimeProj/ToolsRuntime/icons
+
+defineTest(copyToDestDir) {
+    files = $$1
+    dir = $$2
+    # replace slashes in destination path for Windows
+    win32:dir ~= s,/,\\,g
+
+    for(file, files) {
+        # replace slashes in source path for Windows
+        win32:file ~= s,/,\\,g
+        QMAKE_POST_LINK += $$QMAKE_COPY_DIR $$shell_quote($$file) $$shell_quote($$dir) $$escape_expand(\\n\\t)
+    }
+
+    export(QMAKE_POST_LINK)
+}
+
+copyToDestDir($$ICONS_SRC, $$OUT_PWD/../bin/resources/icons)
+
+OTHER_FILES += com.rs.lbr.worklbr.xml

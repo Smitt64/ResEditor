@@ -36,6 +36,7 @@ public:
 
     Q_INVOKABLE virtual bool open(const QString &filename) = 0;
     Q_INVOKABLE virtual bool create(const QString &filename) = 0;
+    Q_INVOKABLE virtual bool close() = 0;
 
     virtual QString fileName() const;
 
@@ -51,10 +52,14 @@ public:
 
     virtual bool beginSaveRes(const QString &name, const int &type, ResBuffer **buffer) = 0;
     virtual bool endSaveRes(ResBuffer **buffer) = 0;
+
+    const QString &lastError() const;
+
 signals:
 
 protected:
     LbrObjectInterfacePrivate * const d_ptr;
+    void setLastError(const QString &err);
 
 private:
     Q_DECLARE_PRIVATE(LbrObjectInterface);

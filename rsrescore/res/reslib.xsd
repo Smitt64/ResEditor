@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns="http://www.softlab.ru"
+            targetNamespace="http://www.softlab.ru"
+            elementFormDefault="qualified">
+  <xsd:element name="reslib">
+    <xsd:annotation>
+      <xsd:documentation>R-Style RESLIB format defenition</xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexType>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element name="panel" type="panelDef"></xsd:element>
+        <xsd:element name="bscrol" type="scrolDef"/>
+        <xsd:element name="scrol" type="scrolDef"/>
+        <xsd:element name="lscrol" type="scrolDef"/>
+        <xsd:element name="report">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element name="rline" maxOccurs="unbounded">
+                <xsd:complexType>
+                  <xsd:sequence>
+                    <xsd:element name="rfield" minOccurs="0" maxOccurs="unbounded">
+                      <xsd:complexType>
+                        <xsd:simpleContent>
+                          <xsd:extension base="xsd:string">
+                            <xsd:attribute name="RVt"/>
+                            <xsd:attribute name="RVp"/>
+                            <xsd:attribute name="x"/>
+                            <xsd:attribute name="y"/>
+                            <xsd:attribute name="l"/>
+                            <xsd:attribute name="h"/>
+                            <xsd:attribute name="vfl"/>
+                          </xsd:extension>
+                        </xsd:simpleContent>
+                      </xsd:complexType>
+                    </xsd:element>
+                  </xsd:sequence>
+                  <xsd:attribute name="Lspace"/>
+                  <xsd:attribute name="Lcentr"/>
+                  <xsd:attribute name="h"/>
+                </xsd:complexType>
+              </xsd:element>
+            </xsd:sequence>
+            <xsd:attribute name="wd"/>
+            <xsd:attribute name="np"/>
+            <xsd:attribute name="ps"/>
+            <xsd:attributeGroup ref="resAttrs"/>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element name="menu">
+          <xsd:complexType>
+            <xsd:choice maxOccurs="unbounded">
+              <xsd:element name="popup" type="popup"/>
+              <xsd:element name="item" type="item"/>
+            </xsd:choice>
+            <xsd:attribute name="comment"/>
+            <xsd:attributeGroup ref="resAttrs"/>
+          </xsd:complexType>
+        </xsd:element>
+      </xsd:choice>
+      <xsd:attribute name="num"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="popup">
+    <xsd:choice minOccurs="1" maxOccurs="unbounded">
+      <xsd:element name="popup" type="popup"/>
+      <xsd:element name="item" type="item"/>
+      <xsd:element name="delim"/>
+    </xsd:choice>
+    <xsd:attribute name="label" use="required"/>
+    <xsd:attribute name="comment"/>
+    <xsd:attribute name="help"/>
+  </xsd:complexType>
+  <xsd:complexType name="item">
+    <xsd:attribute name="cmd" use="required"/>
+    <xsd:attribute name="label" use="required"/>
+    <xsd:attribute name="comment"/>
+    <xsd:attribute name="help"/>
+    <xsd:attribute name="cmdEx"/>
+    <xsd:attribute name="iconID"/>
+    <xsd:attribute name="flags"/>
+  </xsd:complexType>
+  <xsd:complexType name="panelDef">
+    <xsd:sequence>
+      <xsd:element name="comment" minOccurs="0" maxOccurs="135"/>
+      <xsd:element name="stline" minOccurs="0" maxOccurs="135"/>
+      <xsd:element name="stlineRd" minOccurs="0" maxOccurs="135"/>
+      <xsd:element name="headLine" minOccurs="0" maxOccurs="80"/>
+      <xsd:element name="bord" minOccurs="0" maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:attribute name="St"/>
+          <xsd:attribute name="x"/>
+          <xsd:attribute name="y"/>
+          <xsd:attribute name="l"/>
+          <xsd:attribute name="h"/>
+          <xsd:attribute name="fl"/>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="text" minOccurs="0" maxOccurs="200">
+        <xsd:complexType>
+          <xsd:simpleContent>
+            <xsd:extension base="xsd:string">
+              <xsd:attribute name="St"/>
+              <xsd:attribute name="x"/>
+              <xsd:attribute name="y"/>
+            </xsd:extension>
+          </xsd:simpleContent>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="field" minOccurs="0" maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="label" minOccurs="0" maxOccurs="40"/>
+            <xsd:element name="name" minOccurs="0" maxOccurs="40"/>
+            <xsd:element name="fmtname" minOccurs="0" maxOccurs="255"/>
+            <xsd:element name="tooltip" minOccurs="0" maxOccurs="80"/>
+          </xsd:sequence>
+          <xsd:attribute name="Ftype"/>
+          <xsd:attribute name="St"/>
+          <xsd:attribute name="FVt"/>
+          <xsd:attribute name="FVp"/>
+          <xsd:attribute name="x"/>
+          <xsd:attribute name="y"/>
+          <xsd:attribute name="l"/>
+          <xsd:attribute name="h"/>
+          <xsd:attribute name="kl"/>
+          <xsd:attribute name="kr"/>
+          <xsd:attribute name="ku"/>
+          <xsd:attribute name="kd"/>
+          <xsd:attribute name="FHelp"/>
+          <xsd:attribute name="vfl"/>
+          <xsd:attribute name="flags"/>
+          <xsd:attribute name="group"/>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:sequence>
+    <xsd:attribute name="St"/>
+    <xsd:attribute name="x1"/>
+    <xsd:attribute name="y1"/>
+    <xsd:attribute name="x2"/>
+    <xsd:attribute name="y2"/>
+    <xsd:attribute name="PHelp"/>
+    <xsd:attribute name="Pff"/>
+    <xsd:attribute name="flags"/>
+    <xsd:attributeGroup ref="resAttrs"/>
+  </xsd:complexType>
+  <xsd:complexType name="scrolDef">
+    <xsd:complexContent>
+      <xsd:extension base="panelDef">
+        <xsd:attribute name="Mn" use="required"/>
+        <xsd:attribute name="x"/>
+        <xsd:attribute name="y"/>
+        <xsd:attribute name="l"/>
+        <xsd:attribute name="h"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:attributeGroup name="resAttrs">
+    <xsd:attribute name="name" use="required" type="resName"/>
+    <xsd:attribute name="dt" type="xsd:dateTime"/>
+  </xsd:attributeGroup>
+  <xsd:simpleType name="resName">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="1"/>
+      <xsd:maxLength value="8"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

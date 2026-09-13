@@ -1,4 +1,6 @@
 #include "panelitem.h"
+#include "StdEditorScene.h"
+#include <QJsonDocument>
 #include "respanel.h"
 #include "textitem.h"
 #include "controlitem.h"
@@ -6,6 +8,8 @@
 #include "basescene.h"
 #include "undoredo/undoitemadd.h"
 #include "panelpropertysdlg.h"
+#include "toolsruntime.h"
+#include "widgets/toolboxmenu.h"
 #include <QGraphicsView>
 #include <QPainter>
 #include <QFont>
@@ -20,6 +24,8 @@
 #include <QGraphicsSceneDragDropEvent>
 #include <QKeyEvent>
 #include <algorithm>
+#include <QApplication>
+#include <widgets/CircularMenu.h>
 
 PanelItem::PanelItem(CustomRectItem *parent) :
     ContainerItem(parent),
@@ -37,11 +43,23 @@ PanelItem::PanelItem(CustomRectItem *parent) :
     setAcceptDrops(true);
     setFlag(QGraphicsItem::ItemIsPanel);
 
+    m_pContextMenu = new ToolboxCircularMenu();
+    m_pContextMenu->loadFromJson(QLatin1String(":/json/StdContextMenu.json"));
+    m_pContextMenu->setTitle("FET");
+
     m_PanelExclude = ExcludeAutoNum | ExcludeShadow;
 }
 
 PanelItem::~PanelItem()
 {
+    if (m_pContextMenu)
+        delete m_pContextMenu;
+
+    if (m_DragPixmap)
+        delete m_DragPixmap;
+
+    if (m_DragControl)
+        delete m_DragControl;
 }
 
 bool PanelItem::event(QEvent *e)
@@ -71,6 +89,7 @@ void PanelItem::FillItemPanel(PanelPropertysDlg &dlg)
     setHelpPage(dlg.helpPage());
     setIsCentered(dlg.alignPanelCenter());
     setIsRightText(dlg.alignTextRight());
+    setComment(dlg.comment());
 }
 
 QVariant PanelItem::userAction(const qint32 &action, const QVariant &param)
@@ -218,17 +237,21 @@ QString PanelItem::title() const
 
 void PanelItem::setTitle(const QString &text)
 {
-    checkPropSame("title", text);
+    QString processedText = toolReplaceUnicodeSymToOem(text);
+    if (processedText.length() > MAX_RES_SIZE)
+        processedText = processedText.left(MAX_RES_SIZE);
+
+    checkPropSame("title", processedText);
 
     if (isSkipUndoStack() || !undoStack())
     {
-        m_Title = text;
+        m_Title = processedText;
         emit titleChanged();
         update();
         scene()->update();
     }
     else
-        pushUndoPropertyData("title", text);
+        pushUndoPropertyData("title", processedText);
 }
 
 QString PanelItem::status() const
@@ -238,17 +261,21 @@ QString PanelItem::status() const
 
 void PanelItem::setStatus(const QString &text)
 {
-    checkPropSame("status", text);
+    QString processedText = toolReplaceUnicodeSymToOem(text);
+    if (processedText.length() > MAX_RES_SIZE)
+        processedText = processedText.left(MAX_RES_SIZE);
+
+    checkPropSame("status", processedText);
 
     if (isSkipUndoStack() || !undoStack())
     {
-        m_Status = text;
+        m_Status = processedText;
         emit statusChanged();
         update();
         scene()->update();
     }
     else
-        pushUndoPropertyData("status", text);
+        pushUndoPropertyData("status", processedText);
 }
 
 QString PanelItem::status2() const
@@ -258,17 +285,21 @@ QString PanelItem::status2() const
 
 void PanelItem::setStatus2(const QString &text)
 {
-    checkPropSame("status2", text);
+    QString processedText = toolReplaceUnicodeSymToOem(text);
+    if (processedText.length() > MAX_RES_SIZE)
+        processedText = processedText.left(MAX_RES_SIZE);
+
+    checkPropSame("status2", processedText);
 
     if (isSkipUndoStack() || !undoStack())
     {
-        m_Status2 = text;
+        m_Status2 = processedText;
         emit status2Changed();
         update();
         scene()->update();
     }
     else
-        pushUndoPropertyData("status2", text);
+        pushUndoPropertyData("status2", processedText);
 }
 
 const bool &PanelItem::isCentered() const
@@ -311,6 +342,45 @@ void PanelItem::setIsRightText(const bool &val)
         pushUndoPropertyData("isRightText", val);
 }
 
+bool PanelItem::isExcludeNavigation() const
+{
+    return m_PanelExclude & ExcludeNavigation;
+}
+
+void PanelItem::setExcludeNavigation(const bool &val)
+{
+    PanelItem::PanelExcludeFlags flags = m_PanelExclude;
+    flags.setFlag(ExcludeNavigation, val);
+
+    setPanelExclude(flags);
+}
+
+bool PanelItem::isExcludeAutoNum() const
+{
+    return m_PanelExclude & ExcludeAutoNum;
+}
+
+void PanelItem::setExcludeAutoNum(const bool &val)
+{
+    PanelItem::PanelExcludeFlags flags = m_PanelExclude;
+    flags.setFlag(ExcludeAutoNum, val);
+
+    setPanelExclude(flags);
+}
+
+bool PanelItem::isExcludeShadow() const
+{
+    return m_PanelExclude & ExcludeShadow;
+}
+
+void PanelItem::setExcludeShadow(const bool &val)
+{
+    PanelItem::PanelExcludeFlags flags = m_PanelExclude;
+    flags.setFlag(ExcludeShadow, val);
+
+    setPanelExclude(flags);
+}
+
 PanelItem::PanelExcludeFlags PanelItem::panelExclude() const
 {
     return m_PanelExclude;
@@ -338,17 +408,21 @@ QString PanelItem::comment() const
 
 void PanelItem::setComment(const QString &text)
 {
-    checkPropSame("comment", text);
+    QString processedText = toolReplaceUnicodeSymToOem(text);
+    if (processedText.length() > MAX_RES_SIZE)
+        processedText = processedText.left(MAX_RES_SIZE);
+
+    checkPropSame("comment", processedText);
 
     if (isSkipUndoStack() || !undoStack())
     {
-        m_Comment = text;
+        m_Comment = processedText;
         emit commentChanged();
         update();
         scene()->update();
     }
     else
-        pushUndoPropertyData("comment", text);
+        pushUndoPropertyData("comment", processedText);
 }
 
 const quint16 &PanelItem::helpPage() const
@@ -484,6 +558,26 @@ void PanelItem::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
 
     update();
     scene()->update();
+}
+
+bool PanelItem::canResize(const QRectF &newRect, const ResizeCorners &corner) const
+{
+    bool fResize = ContainerItem::canResize(newRect, corner);
+
+    if (fResize)
+    {
+        BaseScene* customScene = qobject_cast<BaseScene*> (scene());
+        QSize gridSize = customScene->getGridSize();
+
+        int newWidth = round(newRect.width() / gridSize.width());
+        int newHeight = round(newRect.height() / gridSize.height());
+
+        // Проверка на максимальный размер для панели
+        if (newWidth > MAX_RES_SIZE || newHeight > MAX_RES_SIZE)
+            return false;
+    }
+
+    return fResize;
 }
 
 void PanelItem::setChildsVisible(const bool &value)
@@ -645,7 +739,7 @@ void PanelItem::updateChildControlsOrder()
 
 QVariant PanelItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant &value)
 {
-    /*if (change == QGraphicsItem::ItemChildAddedChange)
+    if (change == QGraphicsItem::ItemChildAddedChange)
     {
         QGraphicsItem *item = value.value<QGraphicsItem*>();
         if (item)
@@ -660,7 +754,122 @@ QVariant PanelItem::itemChange(QGraphicsItem::GraphicsItemChange change, const Q
             emit structChanged();
 
         return ContainerItem::itemChange(change, value);
-    }*/
+    }
 
     return ContainerItem::itemChange(change, value);
+}
+
+QByteArray PanelItem::modifyFieldType(const QByteArray &jsonData, int newFieldType)
+{
+    // Парсим JSON
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData, &parseError);
+
+    if (parseError.error != QJsonParseError::NoError)
+    {
+        qDebug() << "JSON parse error:" << parseError.errorString();
+        return jsonData;
+    }
+
+    QJsonObject rootObj = doc.object();
+    if (!rootObj.contains("items") || !rootObj["items"].isArray())
+        return jsonData;
+
+    QJsonArray itemsArray = rootObj["items"].toArray();
+    for (int i = 0; i < itemsArray.size(); ++i)
+    {
+        QJsonObject itemObj = itemsArray[i].toObject();
+
+        if (itemObj.contains("properties") && itemObj["properties"].isArray())
+        {
+            QJsonArray propertiesArray = itemObj["properties"].toArray();
+
+            for (int j = 0; j < propertiesArray.size(); ++j)
+            {
+                QJsonObject propObj = propertiesArray[j].toObject();
+
+                if (propObj["property"].toString() == "fieldType")
+                {
+                    propObj["value"] = newFieldType;
+                    propertiesArray[j] = propObj;
+                    break;
+                }
+            }
+
+            itemObj["properties"] = propertiesArray;
+            itemsArray[i] = itemObj;
+        }
+    }
+
+    rootObj["items"] = itemsArray;
+    doc.setObject(rootObj);
+
+    return doc.toJson();
+}
+
+void PanelItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+    if (wasRightButtonDragged())
+    {
+        event->ignore();
+        return;
+    }
+
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(scene());
+
+    if (!pScene || pScene->cursorPos().isNull() || !m_pContextMenu)
+    {
+        event->ignore();
+        return;
+    }
+
+    if (!m_pContextMenu->isHidden())
+        m_pContextMenu->hide();
+
+    Qt::KeyboardModifiers Modifiers = event->modifiers();
+    m_pContextMenu->setTitle("FET");
+
+    if (Modifiers.testFlag(Qt::ControlModifier))
+        m_pContextMenu->setTitle("FBT");
+    else if (Modifiers.testFlag(Qt::AltModifier))
+        m_pContextMenu->setTitle("FVT");
+    else if (Modifiers.testFlag(Qt::ShiftModifier))
+        m_pContextMenu->setTitle("FWR");
+
+    QPointF offset = pScene->cursorPos();
+    QPoint screenPos = event->screenPos();
+
+    event->accept();
+    QApplication::processEvents();
+    QMimeData *mimeData = m_pContextMenu->execForMimeData(screenPos);
+
+    if (!mimeData)
+        return;
+
+    CustomRectItem *topItem = pScene->findTopLevelItem();
+    if (!topItem)
+    {
+        delete mimeData;
+        return;
+    }
+
+    if (mimeData->hasFormat("application/toolboxitem"))
+    {
+        QByteArray data = mimeData->data("application/toolboxitem");
+
+        if (Modifiers.testFlag(Qt::ControlModifier))
+            data = modifyFieldType(data, ControlItem::FBT);
+        else if (Modifiers.testFlag(Qt::AltModifier))
+            data = modifyFieldType(data, ControlItem::FVT);
+        else if (Modifiers.testFlag(Qt::ShiftModifier))
+            data = modifyFieldType(data, ControlItem::FWR);
+
+        UndoItemAdd *pUndo = new UndoItemAdd(pScene);
+        pUndo->setData(data);
+        pUndo->setOffset(topItem->realCoordToEw(offset));
+        undoStack()->push(pUndo);
+    }
+
+    delete mimeData;
+    pScene->update();
 }

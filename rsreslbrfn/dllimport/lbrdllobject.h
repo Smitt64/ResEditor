@@ -13,6 +13,7 @@ public:
 
     Q_INVOKABLE bool open(const QString &filename) Q_DECL_OVERRIDE;
     Q_INVOKABLE bool create(const QString &filename) Q_DECL_OVERRIDE;
+    Q_INVOKABLE bool close() Q_DECL_OVERRIDE;
 
     QAbstractItemModel *list() Q_DECL_OVERRIDE;
     void getResource(const QString &name, const int &type, ResBuffer **buffer) Q_DECL_OVERRIDE;

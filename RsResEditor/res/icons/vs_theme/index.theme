@@ -1,0 +1,13 @@
+[Icon Theme]
+Name=Visual Studio
+Comment=Visual Studio icon theme
+
+[actions/svg]
+Size=48
+Context=Actions
+Type=Scalable
+
+[objects/svg]
+Size=48
+Context=Objects
+Type=Scalable

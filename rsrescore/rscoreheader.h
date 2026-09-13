@@ -232,4 +232,63 @@ typedef struct FieldR
 #define  isAsTextFld(f)   (((f)->FFlags & RF_ASTEXT))*/
 //#define  isActiveFld(f)   (isActF((f)->Ftype) && !isHideF((f)->Ftype) && !isAsTextFld(f))
 
+#define  RES_MITEM        1
+#define  RES_MPOPUP       2
+#define  RES_DELIM        3
+
+// Битовые флаги для пункта меню
+#define  dFMENU_TOOLBAR   0x00000001     // Пункт меню попадает на ToolBar (ТБ)
+#define  dFMENU_CONTEXT   0x00000002     // Пункт меню попадает в контекстное меню (КМ)
+
+// -----------------------------------------------
+// Сокращенные алиасы
+#define  dFMENU_TB        dFMENU_TOOLBAR
+#define  dFMENU_CM        dFMENU_CONTEXT
+
+#include <packpsh1.h>
+typedef struct tagMENU
+{
+    const char    *name;     // Название пункта.
+    void          *v;        // Подменю или программа. Иначе NULL.
+    unsigned char  n;        // Количество пунктов подменю или 0 для конечного пункта.
+    int            x;        // Для горизонтального меню положение пункта.
+    // Для вертикального - код выбора, при условии v == NULL.
+    void          *par;      // Статус строка.
+    int            Help;     // Номер страницы помощи.
+    short          fl;       // Флаг (0/DISABLE/HIDDEN/DISINEMPTSCRL)
+    ResUChar          ChPos;    // Позиция подсвеченного символа
+    ResUChar          Reserv;
+    void          *parm;     // Параметры пользователя
+
+    ResUInt32         iconID;   // Идентификатор иконки для ToolBar'а
+    ResUInt32         flags;    // Набор битовых флагов dFMENU_
+
+    ResUInt32         cmdEx;    // Расширение команды (набор флагов вида Alt, Shift, Ctrl для x).
+
+    void          *ewdata;   // Данные для EasyWin-режима (см. EWMenuData). Используются только в нем.
+
+#ifdef USE_HANDLE32
+    void     *res0;
+    uint32    key;
+
+    uint32    res1;
+    uint32    res2;
+    uint32    res3;
+    uint32    res4;
+    uint32    res5;
+#endif
+} MENU;
+
+typedef struct
+{
+    void          *p; // PANEL
+    unsigned short  n;
+    char           *com;
+    const char     *name;    // ═ршьхэютрэшх ЁхёєЁёр
+    const char     *lbr;     // ═ршьхэютрэшх сшсышюЄхъш ЁхёєЁёют
+    MENU            mn[1];
+} TMenu;
+
+#include <packpop.h>
+
 #endif // RSCOREHEADER_H

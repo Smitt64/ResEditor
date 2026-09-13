@@ -1,0 +1,300 @@
+{
+    "groups": [
+        {
+            "id": 1,
+            "title": "Стандартные команды"
+        },
+        {
+            "id": 2,
+            "title": "Операции"
+        }
+    ],
+
+    "templates": [
+        {
+            "alias": "Редактировать",
+            "icon": ":/res/ActionEdit.svg",
+            "tooltip": "Редактировать / Просмотр (ICON_7119)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Редактировать",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 13,
+                    "cmdEx": 0,
+                    "iconID": 7119,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Удалить",
+            "icon": ":/res/ActionDelete.svg",
+            "tooltip": "Удалить строку / Удаление (ICON_7113)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Удалить",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 322,
+                    "cmdEx": 0,
+                    "iconID": 7113,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Новая строка",
+            "icon": ":/res/ActionNewRow.svg",
+            "tooltip": "Новая строка / Ввод (ICON_7013)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Новая строка",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 323,
+                    "cmdEx": 0,
+                    "iconID": 7013,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Поиск",
+            "icon": ":/res/ActionSearch.svg",
+            "tooltip": "Поиск по значению текущего поля (ICON_7112)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Поиск",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 318,
+                    "cmdEx": 0,
+                    "iconID": 7112,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Фильтр",
+            "icon": ":/res/ActionFilter.svg",
+            "tooltip": "Фильтр / Параметры фильтра (ICON_7032)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Фильтр",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 319,
+                    "cmdEx": 0,
+                    "iconID": 7032,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Печать",
+            "icon": ":/res/ActionPrint.svg",
+            "tooltip": "Печать (ICON_7052)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Печать",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 321,
+                    "cmdEx": 0,
+                    "iconID": 7052,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Сохранить",
+            "icon": ":/res/ActionSave.svg",
+            "tooltip": "Сохранить изменения (ICON_7127)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Сохранить",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 323,
+                    "cmdEx": 0,
+                    "iconID": 7127,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Просмотр",
+            "icon": ":/res/ActionView.svg",
+            "tooltip": "Просмотр записи (ICON_7028)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Просмотр",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 10,
+                    "cmdEx": 0,
+                    "iconID": 7028,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Примечания",
+            "icon": ":/res/ActionNote.svg",
+            "tooltip": "Примечания (ICON_7151)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Примечания",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 0,
+                    "cmdEx": 0,
+                    "iconID": 7151,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Функция пользователя",
+            "icon": ":/res/ActionUserFunc.svg",
+            "tooltip": "Пользовательская функция (ICON_7152)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Функция пользователя",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 0,
+                    "cmdEx": 0,
+                    "iconID": 7152,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Просмотр истории",
+            "icon": ":/res/ActionHistory.svg",
+            "tooltip": "Просмотр истории изменений (ICON_7175)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Просмотр истории",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 291,
+                    "cmdEx": 0,
+                    "iconID": 7175,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Счета",
+            "icon": ":/res/ActionAccounts.svg",
+            "tooltip": "Балансовые счета (ICON_7091)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Счета",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 0,
+                    "cmdEx": 0,
+                    "iconID": 7091,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Выполнение операции",
+            "icon": ":/res/ActionRun.svg",
+            "tooltip": "Выполнение операции (ICON_7023)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [2],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Выполнение операции",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 316,
+                    "cmdEx": 0,
+                    "iconID": 7023,
+                    "flags": 1
+                }
+            }
+        },
+        {
+            "alias": "Шаги операции F6",
+            "icon": ":/res/ActionBook.svg",
+            "tooltip": "Шаги операции (ICON_7120)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [2],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Шаги операции",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 320,
+                    "cmdEx": 0,
+                    "iconID": 7120,
+                    "flags": 5
+                }
+            }
+        },
+        {
+            "alias": "Категории",
+            "icon": ":/res/ActionPortfolio.svg",
+            "tooltip": "Категории (ICON_7153)",
+            "mimetype": "application/x-menueditor-template",
+            "groups": [1],
+            "mimedata": {
+                "type": "item",
+                "action": {
+                    "text": "Категории",
+                    "statusTip": "",
+                    "helpId": 0,
+                    "commandId": 380,
+                    "cmdEx": 0,
+                    "iconID": 7153,
+                    "flags": 1
+                }
+            }
+        }
+    ]
+}

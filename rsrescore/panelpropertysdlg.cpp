@@ -138,6 +138,11 @@ QString PanelPropertysDlg::status2() const
     return ui->statusEdit2->text();
 }
 
+QString PanelPropertysDlg::comment() const
+{
+    return ui->commentEdit->text();
+}
+
 quint16 PanelPropertysDlg::helpPage() const
 {
     return ui->helpPage->value();

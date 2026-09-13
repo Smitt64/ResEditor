@@ -7,9 +7,12 @@
 #include <QUuid>
 #include <QJsonArray>
 
+#define MAX_RES_SIZE 255  // Максимальная длина строковых свойств
+
 #define CLASSINFO_UNDOREDO "UNDOREDO"
 #define CLASSINFO_PROPERTYLIST "PROPERTYLIST"
 #define CLASSINFO_PROPERTYGROUP "PROPERTYGROUP"
+#define CLASSINFO_UNIFORMVALUEFUNC "UNIFORMVALUEFUNC"
 
 #define checkPropSame(name,value) if (checkPropSameValue(name,value)) return
 
@@ -60,6 +63,7 @@ public:
 
     Q_INVOKABLE CustomRectItem(QGraphicsItem* parent = nullptr);
     CustomRectItem(const QRect& rect, QGraphicsItem* parent = nullptr);
+    virtual ~CustomRectItem();
     QRectF boundingRect() const Q_DECL_OVERRIDE;
 
     void setBrush(const QBrush &brush);
@@ -106,6 +110,7 @@ public:
 
     const bool &isCanIntersects() const;
     const bool &isMousePressed() const;
+    const bool &wasRightButtonDragged() const;
     void setCanIntersects(const bool &flag);
 
     bool setSkipUndoStack(const bool &value);
@@ -117,6 +122,8 @@ signals:
     void geometryChanged();
 
 protected:
+    bool mousePosOnHandles(QPointF pos);
+
     void pushUndoPropertyData(const QString &propertyName, const QVariant &_newValue);
     virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) Q_DECL_OVERRIDE;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
@@ -125,6 +132,8 @@ protected:
     virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
     virtual void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
+    virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *event) Q_DECL_OVERRIDE;
+    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) Q_DECL_OVERRIDE;
 
     virtual bool childCanMove(const QPointF &newPos, CustomRectItem *item);
     virtual bool canResize(const QRectF &newRect, const ResizeCorners &corner) const;
@@ -140,6 +149,7 @@ protected:
     const bool &isResizing() const;
     const QRectF &actualRect() const;
     void setBoundingRect(const QRectF &bound);
+    void updateCursor();
 
     void drawIntersects(QPainter *painter);
     bool setSkipRenderIntersects(bool value);
@@ -159,7 +169,6 @@ private:
     void serializeProperty(QJsonObject &obj, const QMetaObject *meta, const QString &propertyName);
     void deserializeProperty(QJsonObject &obj);
     QRubberBand *rubberBand();
-    bool mousePosOnHandles(QPointF pos);
 
     QVector<QRectF> m_ResizeHandles;
     QRubberBand *pRubberBand;
@@ -174,6 +183,7 @@ private:
     QRectF m_ActualRect;
     bool m_IsResizing, m_IsSelection;
     bool m_MousePressed;
+    bool m_RightButtonDragged;
     QPointF m_MousePressedPos;
     ResizeCorners m_ResizeCorner;
     QFlags<ResizeCorners> m_AvailableCorners;

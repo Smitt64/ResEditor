@@ -15,6 +15,8 @@ public:
     void addFile(const QString &fileName);
     QList<QAction*> actions();
 
+    static QString formatName(const QString &absolutePath);
+
 signals:
     void actionsChanged();
 

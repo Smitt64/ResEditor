@@ -18,6 +18,7 @@ class RSRESCORE_EXPORT BaseScene : public QGraphicsScene
 public:
     typedef QMap<CustomRectItem*, QPointF> CustomRectItemPoints;
     explicit BaseScene(QObject *parent = nullptr);
+    virtual ~BaseScene();
     virtual QSize getGridSize() const;
 
     ResStyle *style();
@@ -115,6 +116,7 @@ signals:
 protected:
     virtual void drawBackground (QPainter* painter, const QRectF &rect) Q_DECL_OVERRIDE;
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent) Q_DECL_OVERRIDE;
+    virtual void handleSelectionChanged(const QList<QGraphicsItem*> &selectedItems);
 
 private:
     ResStyle *m_pStyle;

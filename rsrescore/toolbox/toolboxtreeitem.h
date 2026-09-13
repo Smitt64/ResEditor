@@ -22,7 +22,8 @@ public:
     enum ToolBoxTreeItemRole
     {
         RoleTypeItem = ToolBoxModel::TypeItemRole,
-        RoleGroup = ToolBoxModel::GroupRole
+        RoleGroup = ToolBoxModel::GroupRole,
+        RoleDragIcon = ToolBoxModel::DragIconRole
     };
     Q_ENUM(ToolBoxTreeItemRole)
     Q_ENUM(TypeItem)
@@ -43,6 +44,7 @@ public:
     QModelIndex index() const;
     void setAlias(const QString &alias);
     void setIcon(const QIcon &icon);
+    void setDragIcon(const QIcon &icon); // иконка плашки перетаскивания
     void setMimeData(const QString &mimetype, const QByteArray &data);
 
 signals:
@@ -55,6 +57,7 @@ protected:
 
 private:
     QIcon m_Icon;
+    QIcon m_DragIcon;
     QString m_MimeType;
     QByteArray m_MimeData;
     QVector<ToolBoxTreeItem*> m_childItems;

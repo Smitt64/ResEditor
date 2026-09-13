@@ -4,11 +4,17 @@
 #include <QMainWindow>
 #include <QShortcut>
 #include "updatechecker.h"
+#include "SARibbon.h"
+#include <VarLocker.hpp>
+#include <variant>
+
+#define WORKLBR_TITLE "WorkLBR"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
+class ErrorsModel;
 class ResLib;
 class LbrObjectInterface;
 class QMdiArea;
@@ -21,12 +27,17 @@ class QComboBox;
 class QCloseEvent;
 class SubWindowsModel;
 class RecentLbrList;
-class MainWindow : public QMainWindow
+class SARibbonPannel;
+class ProxyAction;
+class UndoActionWidget;
+class ResApplicationWidget;
+class QProgressDialog;
+class MainWindow : public SARibbonMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
     virtual bool eventFilter(QObject *watched, QEvent *event) Q_DECL_OVERRIDE;
@@ -39,7 +50,9 @@ private slots:
     void doubleResClicked(const QString &name, const int &type);
     void subWindowActivated(QMdiSubWindow *window);
     void onNew();
+    void onNewLbr();
     void onOpen();
+    void onSave();
     void onAbout();
     void OnDeleteRequest(const QString &name, const int &type);
     void readySave(bool closeAfterSave);
@@ -54,18 +67,58 @@ private slots:
     void onOpenRes();
     void onOpenRecent();
 
+    void UpdateFilterResTypes(bool state = false);
+    void UpdateFilterActionsVisibility();
+
+    void closeAllSubWindows(bool *canceled = nullptr);
+    void UpdateActions();
+    void OnResListSelectionChanged();
+    void OnCurrentRibbonTabChanged(int index);
+
+    void OnNewResAction();
+    void OnNewResActionEx(QAction *action);
+    void OnImportXmlFile();
+    void OnImportXmlDir();
+
+    void OnExportXml();
+    void OnExportXmlDir();
+
 protected:
     virtual void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
+    virtual void showEvent(QShowEvent *event) Q_DECL_OVERRIDE;
 
 private:
+    void InitQuickAccessBar();
+    void InitButtonBar();
+    void InitLbrPanel(SARibbonCategory *category);
+    void InitLbrResourcePanel(SARibbonCategory *category);
+    void InitNewGallary(SARibbonCategory *category);
+    void InitViewBar(SARibbonCategory *category);
+    void InitContextCategory();
+
+    void setupAction(QAction *act, const QString& text, const QString& iconname);
+
+    template<class T = QAction>
+    T* createAction(const QString& text, const QString& iconname)
+    {
+        T *action = new T(this);
+        setupAction(action, text, iconname);
+        return action;
+    }
+
+    bool processSingleImportXmlFile(const QString& filePath, ErrorsModel* errorsModel,
+                                    QProgressDialog *progress = nullptr);
+    void processImportXmlWithProgress(const QStringList& filePaths, ErrorsModel* errorsModel,
+                                      QWidget* parent, const QString& dialogTitle,
+                                      const QString& dialogLabel);
+
     void SetActiveWindow(QMdiSubWindow *wnd);
-    void CreateWindowsCombo();
-    void CreateWindowFunctional();
     void AddEditorWindow(BaseEditorWindow *editor);
     void SetupEditorTitle(BaseEditorWindow *wnd, const qint16 &Type,
                           const QString &name, const QString &title,
                           bool changed = false);
     void SetupMenus();
+    QMdiSubWindow *IsExistsResWindow(const QString &name, const int &type);
     Ui::MainWindow *ui;
 
     ResListDockWidget *m_ResListDock;
@@ -73,7 +126,7 @@ private:
     ToolBoxDockWidget *m_ToolBoxDock;
     QMdiArea *m_Mdi;
 
-    QComboBox *pWindowsComboBox;
+    SARibbonComboBox *pWindowsComboBox;
     QMdiSubWindow *m_LastActiveWindow;
 
     LbrObjectInterface *m_pLbrObj;
@@ -82,8 +135,30 @@ private:
     UpdateChecker *pUpdateChecker;
     SubWindowsModel *pWindowsModel;
 
-    QShortcut  *m_ResListKey, *m_ToolsListKey;
+    QAction *m_pActionNew, *m_pActionOpen, *m_pActionSave;
+    QAction *m_pImportXmlFolder, *m_ImportXml, *m_pExportXmlFolder, *m_pExportXmlFile;
+    QAction *m_pActionDeleteRes, *m_pActionEditRes;
+
+    // Кнопки создания ресурсов из секций ribbon метаданных
+    // (panels/scrols/menus/...) — для UpdateActions/OnNewResActionEx
+    QList<QAction*> m_NewResActions;
+
+    QMenu *m_pUndoRedoMenu;
+    //QToolButton *m_pRedoButton;
+    UndoActionWidget *m_pUndoActionWidget;
+    ProxyAction *m_pActionUndo, *m_pActionRedo;
+
+    QShortcut *m_ResListKey, *m_ToolsListKey;
+
+    SARibbonPannel *m_pFilterRibbonPanel;
 
     QScopedPointer<RecentLbrList> m_RecentLbrList;
+
+    bool m_FlagMassCloseMode;
+    QList<int> m_WindowsToSaveOnClose;
+
+    VarLocker<QString> m_LastRibbonTabName;
+
+    ResApplicationWidget *m_pAppWidget;
 };
 #endif // MAINWINDOW_H

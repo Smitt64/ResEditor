@@ -10,6 +10,9 @@
 #include <QFile>
 #include <stdexcept>
 #include <QSettings>
+#include <QPixmap>
+#include <QLinearGradient>
+#include <QtMath>
 
 ResStyleOption::ResStyleOption() :
     contrast(false)
@@ -253,7 +256,7 @@ void ResStyle::setGridSize(const int &index)
 QColor ResStyle::color(const StyleColor &type, ResStyleOption *option) const
 {
     if (!option && type == Color_SceneBackground)
-        return QColor(192,192,192);
+        return QColor(248,248,248);
 
     const ColorScheme &sheme = m_ColorScheme[option->panelStyle];
 
@@ -384,11 +387,14 @@ QString ResStyle::controlDefaultText(const ControlType &type)
     case Control_Panel:
     case Control_Button:
         break;
+    case Control_Frame:
+    case Control_ScrolArea:
+        break;
     }
     return text;
 }
 
-QSize ResStyle::getSizeFromItem(const QRectF &rect)
+QSize ResStyle::getSizeFromItem(const QRectF &rect) const
 {
     QSize _gridSize = gridSize();
 
@@ -402,26 +408,87 @@ void ResStyle::drawSceneBackground(QPainter *painter, const QRectF &rect, ResSty
 {
     QSize grs = gridSize();
 
-    painter->save();
-    painter->fillRect(rect, color(Color_SceneBackground, option));
-    QPen pen;
-    painter->setPen(pen);
-
-    qint32 left = qint32(rect.left()) - (int(rect.left()) % grs.width());
-    qint32 top = qint32(rect.top()) - (int(rect.top()) % grs.width());
-    QVector<QPointF> points;
-
-    for (qint32 x = left; x < rect.right(); x += grs.width())
-    {
-        for (qint32 y = top; y < rect.bottom(); y += grs.height())
-            points.append(QPointF(x,y));
+    // Быстрая проверка - если область слишком маленькая, рисуем просто градиент
+    if (rect.width() < 10 || rect.height() < 10) {
+        painter->save();
+        QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
+        gradient.setColorAt(0.0, QColor(240, 240, 240));
+        gradient.setColorAt(1.0, QColor(255, 255, 255));
+        painter->fillRect(rect, gradient);
+        painter->restore();
+        return;
     }
 
-    painter->drawPoints(points.data(), points.size());
+    painter->save();
+
+    QColor baseColor = color(Color_SceneBackground, option);
+    int brightness = baseColor.lightness();
+
+    // Градиент фона
+    QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
+
+    // Оптимизированные цвета градиента
+    if (brightness > 200) {
+        gradient.setColorAt(0.0, QColor(242, 242, 242));
+        gradient.setColorAt(0.5, QColor(248, 248, 248));
+        gradient.setColorAt(1.0, QColor(254, 254, 254));
+    } else if (brightness > 150) {
+        QColor dark = baseColor.darker(108);
+        QColor light = baseColor.lighter(108);
+        gradient.setColorAt(0.0, dark);
+        gradient.setColorAt(1.0, light);
+    } else {
+        QColor light = baseColor.lighter(115);
+        QColor dark = baseColor.darker(115);
+        gradient.setColorAt(0.0, light);
+        gradient.setColorAt(1.0, dark);
+    }
+
+    painter->fillRect(rect, gradient);
+
+    // Автоматический подбор цвета и размера точек
+    QColor gridColor;
+    qreal pointRadius;
+
+    if (brightness > 200) {
+        gridColor = QColor(165, 165, 165); // Оптимальный контраст для светлого фона
+        pointRadius = 1.3;
+    } else if (brightness > 150) {
+        gridColor = baseColor.darker(145);
+        pointRadius = 1.1;
+    } else {
+        gridColor = baseColor.lighter(160);
+        pointRadius = 1.0;
+    }
+
+    // Настройка отрисовки точек
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(gridColor);
+
+    // Вычисление сетки точек
+    qint32 left = qint32(rect.left()) - (int(rect.left()) % grs.width());
+    qint32 top = qint32(rect.top()) - (int(rect.top()) % grs.height());
+
+    qint32 right = qint32(rect.right()) + 1;
+    qint32 bottom = qint32(rect.bottom()) + 1;
+
+    // Оптимизированная отрисовка сетки
+    for (qint32 x = left; x < right; x += grs.width())
+    {
+        for (qint32 y = top; y < bottom; y += grs.height())
+        {
+            // Проверка видимости точки
+            if (x >= rect.left() && x <= rect.right() &&
+                y >= rect.top() && y <= rect.bottom())
+            {
+                painter->drawEllipse(QPointF(x, y), pointRadius, pointRadius);
+            }
+        }
+    }
+
     painter->restore();
 }
-
-void ResStyle::drawBorder(QPainter *painter, const BorderStyle &bs, const QRectF &rect, const QString &text, ResStyleOption *option)
+void ResStyle::drawBorder(QPainter *painter, const BorderStyle &bs, const QRectF &rect, const QString &text, ResStyleOption *option) const
 {
     const BorderChars ch = borderChars(bs);
     QSize sz = getSizeFromItem(rect);
@@ -467,7 +534,7 @@ void ResStyle::drawBorder(QPainter *painter, const BorderStyle &bs, const QRectF
     painter->restore();
 }
 
-void ResStyle::drawText(QPainter *painter, const QRectF &rect, const QString &text, const Qt::Alignment &alignment, const QColor &penColor)
+void ResStyle::drawText(QPainter *painter, const QRectF &rect, const QString &text, const Qt::Alignment &alignment, const QColor &penColor) const
 {
     painter->save();
     painter->setPen(penColor);
@@ -476,7 +543,7 @@ void ResStyle::drawText(QPainter *painter, const QRectF &rect, const QString &te
     painter->restore();
 }
 
-void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleOption *option)
+void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleOption *option) const
 {
     if (type == Control_Panel)
     {
@@ -510,17 +577,17 @@ void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleO
         painter->fillRect(rc, color(Color_Button, option));
 
         QColor shadowColor = color(Color_ButtonShadow, option);
-        QRectF botomShadow(option->rect.topLeft(), option->rect.size());
-        botomShadow.setTop(option->gridSize.height());
-        botomShadow.setLeft(option->gridSize.width());
-        botomShadow.setHeight(option->gridSize.height() / 2);
 
-        QRectF rightShadow(option->rect.topLeft(), option->rect.size());
-        rightShadow.setTop(option->gridSize.height() / 2);
-        rightShadow.setLeft(rc.width());
-        rightShadow.setHeight(option->gridSize.height() / 2);
+        // Нижняя тень - привязываем к нижней границе
+        QRectF bottomShadow;
+        bottomShadow.setRect(option->gridSize.width(), rc.height(), option->rect.width() - option->gridSize.width(), option->gridSize.height() / 2);
 
-        painter->fillRect(botomShadow, shadowColor);
+        // Правая тень - привязываем к правой границе
+        QRectF rightShadow;
+        rightShadow.setRect(rc.width(), option->gridSize.height() / 2, option->gridSize.width(),
+                            qMax<qreal>(rc.height() - option->gridSize.height() / 2, option->gridSize.height() / 2));
+
+        painter->fillRect(bottomShadow, shadowColor);
         painter->fillRect(rightShadow, shadowColor);
         drawText(painter, rc, option->text, option->alignment | Qt::AlignVCenter, color(Color_ButtonText, option));
         painter->restore();
@@ -557,4 +624,108 @@ void ResStyle::drawControl(const ControlType &type, QPainter *painter, ResStyleO
         drawText(painter, option->rect, option->text, option->alignment, color(Color_ControlText, option));
         painter->restore();
     }
+}
+
+QIcon ResStyle::renderBorderIcon(const BorderStyle &border, const PanelStyle &style, CustomRectItem *item) const
+{
+    ResStyleOption opt;
+    opt.init(item);
+
+    GrigSizes sizes = gridSizes();
+    opt.gridSize = sizes.back();
+    opt.rect = QRect(0, 0, 4 * opt.gridSize.width(), 3 * opt.gridSize.height());
+    opt.panelStyle = style;
+    opt.borderStyle = border;
+
+    QPixmap pixmap(opt.rect.width(), opt.rect.height());
+    pixmap.fill(Qt::transparent);
+
+    QPainter painter(&pixmap);
+    drawControl(ResStyle::Control_Panel, &painter, &opt);
+
+    return QIcon(pixmap);
+}
+
+QIcon ResStyle::renderStyleIcon(const BorderStyle &border, const PanelStyle &style, CustomRectItem *item) const
+{
+    ResStyleOption opt;
+    opt.init(item);
+
+    GrigSizes sizes = gridSizes();
+    opt.gridSize = sizes.back();
+    opt.rect = QRect(0, 0, 4 * opt.gridSize.width(), 3 * opt.gridSize.height());
+    opt.panelStyle = style;
+    opt.borderStyle = border;
+    opt.contrast = false;
+    opt.astext = false;
+
+    QPixmap pixmap(opt.rect.width(), opt.rect.height());
+    pixmap.fill(Qt::transparent);
+
+    QPainter painter(&pixmap);
+    drawControl(ResStyle::Control_Panel, &painter, &opt);
+
+    return QIcon(pixmap);
+}
+
+QIcon ResStyle::renderControlStyleIcon(PanelStyle elementStyle, PanelStyle parentStyle, CustomRectItem *item) const
+{
+    ResStyleOption opt;
+    opt.init(item);
+
+    GrigSizes sizes = gridSizes();
+    opt.gridSize = sizes.back();
+    opt.rect = QRect(0, 0, 4 * opt.gridSize.width(), 3 * opt.gridSize.height());
+    opt.astext = false;
+    opt.contrast = false;
+
+    QPixmap pixmap(opt.rect.width(), opt.rect.height());
+    pixmap.fill(Qt::transparent);
+
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
+
+    // Определяем какой стиль рисовать
+    PanelStyle drawStyle = (elementStyle == MainStyle) ? parentStyle : elementStyle;
+    opt.panelStyle = drawStyle;
+    opt.borderStyle = BorderStyle::Border_DoubleLine;
+
+    // Рисуем основной стиль
+    drawControl(ResStyle::Control_Panel, &painter, &opt);
+
+    // Индикация наследования для MainStyle
+    if (elementStyle == MainStyle)
+    {
+        // Получаем цвет фона панели
+        QColor backgroundColor = color(ResStyle::Color_ControlBg, &opt);
+
+        // Инвертируем цвет для максимального контраста
+        QColor contrastColor = QColor::fromRgb(
+            255 - backgroundColor.red(),
+            255 - backgroundColor.green(),
+            255 - backgroundColor.blue()
+            );
+
+        // Увеличиваем насыщенность для лучшей видимости
+        contrastColor = contrastColor.toHsv();
+        contrastColor.setHsv(contrastColor.hue(),
+                             qMin(contrastColor.saturation() + 50, 255),
+                             contrastColor.value() > 128 ? 255 : 0,
+                             255);
+
+        // Увеличиваем размер символа для лучшей видимости
+        QFont font = painter.font();
+        font.setPointSize(22);
+        font.setBold(true);
+        painter.setFont(font);
+
+        QString inheritSymbol = QString::fromUtf8("⧉");
+
+        // Самый простой и надежный способ центрирования
+        painter.setPen(QPen(contrastColor, 3));
+        painter.drawText(opt.rect, Qt::AlignCenter, inheritSymbol);
+    }
+
+    return QIcon(pixmap);
 }

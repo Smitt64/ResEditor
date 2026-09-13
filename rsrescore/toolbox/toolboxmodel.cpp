@@ -15,17 +15,20 @@ ToolBoxModel::~ToolBoxModel()
     delete rootItem;
 }
 
-/*bool ToolBoxModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool ToolBoxModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (role != Qt::EditRole || index.column() != Column_Value)
-        return QAbstractItemModel::setData(index, value, role);
+    if (role == ToolBoxModel::DragIconRole && index.isValid())
+    {
+        ToolBoxTreeItem *item = static_cast<ToolBoxTreeItem*>(index.internalPointer());
+        if (item)
+        {
+            item->setDragIcon(value.value<QIcon>());
+            return true;
+        }
+    }
 
-    ToolBoxTreeItem *item = static_cast<ToolBoxTreeItem*>(index.internalPointer());
-    if (item)
-        item->setData(value);
-
-    return true;
-}*/
+    return QAbstractItemModel::setData(index, value, role);
+}
 
 QVariant ToolBoxModel::data(const QModelIndex &index, int role) const
 {
@@ -36,6 +39,7 @@ QVariant ToolBoxModel::data(const QModelIndex &index, int role) const
     if (role == Qt::DisplayRole || role == Qt::DecorationRole ||
             role == ToolBoxModel::MimeTypeRole ||
             role == ToolBoxModel::MimeDataRole ||
+            role == ToolBoxModel::DragIconRole ||
             role == Qt::SizeHintRole)
     {
         return item->data(role);
@@ -143,6 +147,11 @@ void ToolBoxModel::appendItem(ToolBoxTreeItem *item)
 
 void ToolBoxModel::addCategory(const QString &name)
 {
+    // Пользовательские toolbox-файлы могут ссылаться на уже
+    // существующую группу — дубликат не создаём
+    if (m_Groups.contains(name))
+        return;
+
     ToolBoxTreeItem *item = new ToolBoxTreeItem(ToolBoxTreeItem::TypeItem_Group);
     item->setAlias(name);
     m_Groups[name] = item;
@@ -153,13 +162,22 @@ void ToolBoxModel::addItem(const QStringList &category, const QString &name, QMi
 {
     for (const QString &categ_ : category)
     {
+        // Пользовательский toolbox может сослаться на несуществующую
+        // группу — пропускаем, а не падаем на nullptr
+        ToolBoxTreeItem *group = m_Groups.value(categ_);
+        if (!group)
+        {
+            qWarning("ToolBoxModel: группа \"%s\" не найдена, элемент \"%s\" пропущен",
+                     qPrintable(categ_), qPrintable(name));
+            continue;
+        }
+
         QString mimetype = data->formats().first();
         ToolBoxTreeItem *item = new ToolBoxTreeItem(ToolBoxTreeItem::TypeItem_Data);
         item->setAlias(name);
         item->setIcon(icon);
         item->setMimeData(mimetype, data->data(mimetype));
 
-        ToolBoxTreeItem *group = m_Groups[categ_];
         group->appendChild(item);
     }
 }

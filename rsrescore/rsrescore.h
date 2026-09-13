@@ -5,41 +5,81 @@
 #include "rsrescore_global.h"
 #include <QIcon>
 #include <QMultiHash>
+#include <stdexcept>
 
+#define DIR_SECTION "dir"
+#define USES_SECTION "uses"
+#define LBR_RECENTFOLDERS_CONTEXT "LbrFolders"
+
+class QSettings;
 class ResPanel;
 class LbrObjectInterface;
 class ResourceEditorInterface;
+class SARibbonContextCategory;
+class SARibbonBar;
+class ErrorsModel;
+class QXmlSchema;
+class QAbstractMessageHandler;
+class QPluginLoader;
+class ResXmlReader;
+
 class RSRESCORE_EXPORT RsResCore
 {
 public:
     RsResCore();
+    ~RsResCore();
     static RsResCore *inst();
 
+    static QString iconNameFromResType(const qint16 &Type);
     static QIcon iconFromResType(const qint16 &Type);
     static QString typeNameFromResType(const qint16 &Type);
     static QList<qint16> types();
+    static QList<qint16> stdTypes();
 
     ResourceEditorInterface *pluginForType(const qint16 &Type);
     ResourceEditorInterface *pluginForNewAction(const QString &guid);
     QStringList newItemsMetaList() const;
     void init();
 
-    void loadFromXml(QIODevice *device, ResPanel **panel);
+    QSettings *settings();
+    void setSettings(QSettings *settings);
+
+    void loadFromXml(QIODevice *device, ResPanel **panel, ErrorsModel *model) throw(std::runtime_error, std::logic_error);
+
+    bool getResXmlXsd(QXmlSchema **schema, QAbstractMessageHandler **handler, ErrorsModel *errorMessage = nullptr);
+    bool validateResXmlWithXsd(QIODevice *xmlDevice, ErrorsModel *errorMessage = nullptr);
+
     const char *resTypePrefix(int tp);
 
     QString saveResToXml(const qint16 &Type,
-                      const QString &name,
-                      LbrObjectInterface *lbr,
-                      const QString &dirtemplate,
-                      const QString &encode = QString("UTF-8"));
+                         const QString &name,
+                         LbrObjectInterface *lbr,
+                         const QString &dirtemplate,
+                         const QString &encode = QString("UTF-8"));
+
+    QList<SARibbonContextCategory*> contextCategoryes(SARibbonBar *ribbon);
+
+    QSet<qint16> plugedTypes() const;
+
+    // XML-импортеры всех загруженных плагинов
+    // (ResourceEditorInterface::xmlImporter) — для ResXmlLoaderChain
+    QList<ResXmlReader*> xmlImporters() const;
 
 private:
     void loadPlugins();
+    bool loadPluginFromFile(const QString &filePath);
+    void findPluginsInDirectory(const QString &path, int depth = 2);
+    bool checkPluginMetadata(const QJsonObject &metaData);
+    void cleanupPlugins();
+    QStringList getPluginSearchPaths() const;
 
     static RsResCore *m_Inst;
 
+    QSettings *m_pSettings;
     QList<ResourceEditorInterface*> m_Plugins;
     QMultiHash<qint16,ResourceEditorInterface*> m_PluginTypes;
+    QList<QPluginLoader*> m_PluginLoaders;
+    QStringList m_LoadedPluginIds;
 };
 
 //Q_GLOBAL_STATIC(RsResCore, staticResCore)

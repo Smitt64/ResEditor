@@ -1,0 +1,246 @@
+{
+    "templates": [
+        {
+            "alias": "Int16",
+            "icon": ":/img/TextBoxI16_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{c6a30d34-1ac3-40d7-9ded-b1aa1dcde520}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 0
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Int32",
+            "icon": ":/img/TextBoxI32_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{7228866e-af2f-42dd-9c20-9c5d0c14091c}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 1
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "String",
+            "icon": ":/img/TextBox_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{f35b8253-eadb-4437-89b5-2cd4cb9c1f1c}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 7
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Char",
+            "icon": ":/img/TextBoxChar_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{f35b8253-eadb-4437-89b5-2cd4cb9c1f1c}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [1, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 12
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Date",
+            "icon": ":/img/DatePicker_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{35027c5c-9b28-4ee9-819d-275d13a39f95}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [10, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 9
+                            },
+                            {
+                                "property": "dataLength",
+                                "value": "10"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Time",
+            "icon": ":/img/TimePicker_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{08ba088a-ba3f-4f23-ac5c-b3620d350158}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [8, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 10
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "Money",
+            "icon": ":/img/TextBoxMoney_24x.png",
+            "tooltip": "Редактируемое поле данных с поддержкой clipboard",
+            "mimetype": "application/toolboxitem",
+            "groups": [2],
+            "mimedata": {
+                "items": [
+                    {
+                        "class": "ControlItem",
+                        "parent": "",
+                        "uuid": "{f35b8253-eadb-4437-89b5-2cd4cb9c1f1c}",
+                        "properties": [
+                            {
+                                "property": "point",
+                                "value": [0, 0]
+                            },
+                            {
+                                "property": "size",
+                                "value": [7, 1]
+                            },
+                            {
+                                "property": "fieldType",
+                                "value": 1
+                            },
+                            {
+                                "property": "dataType",
+                                "value": 6
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

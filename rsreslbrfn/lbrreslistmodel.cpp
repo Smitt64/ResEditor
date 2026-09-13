@@ -48,7 +48,7 @@ void LbrResListModel::addDirElement(void *elem)
     beginInsertRows(QModelIndex(), size, size);
     //beginResetModel();
     ModelElement *copy = new ModelElement();
-    memcpy(copy, elem, sizeof(RLibDirElem));
+    memcpy((void*)copy, elem, sizeof(RLibDirElem));
 
     const char *comment = ((char *)(((RLibDirElem*)(elem)) + 1));
     copy->comment = d->m_p866->toUnicode(comment);

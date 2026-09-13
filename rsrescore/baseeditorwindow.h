@@ -9,6 +9,9 @@
 
 class QAction;
 class QMenu;
+class QDir;
+class QPixmap;
+class QModelIndex;
 class QToolBar;
 class QUndoStack;
 class QToolButton;
@@ -18,6 +21,8 @@ class ToolBoxModel;
 class ResBuffer;
 class QAbstractItemModel;
 class LbrObjectInterface;
+class SARibbonContextCategory;
+class SARibbonBar;
 class RSRESCORE_EXPORT BaseEditorWindow : public QMainWindow
 {
     Q_OBJECT
@@ -36,6 +41,7 @@ public:
 
     QAction *undoAction();
     QAction *redoAction();
+    QToolButton *redoActionBtn();
 
     virtual QString name() const;
     virtual QString title() const;
@@ -46,20 +52,48 @@ public:
     void setLbrObject(LbrObjectInterface *obj);
     LbrObjectInterface *lbr();
 
+    void setRibbonBar(SARibbonBar *ribbon);
+    SARibbonBar *ribbon();
+
+    SARibbonContextCategory *findCategoryByName(const QString &name);
+    virtual void updateRibbonTabs();
+    virtual void clearRibbonTabs();
+
+    // Кастомная отрисовка плашки перетаскивания элемента ToolBox.
+    // Плагин рисует сам и возвращает pixmap; пустой QPixmap
+    // (по умолчанию) — стандартная отрисовка ToolBoxTreeView.
+    // Public: вызывается из ToolBoxTreeView
+    virtual QPixmap toolBoxDragPixmap(const QModelIndex &index) const;
+
+    virtual QList<QWidget*> statusBarSections();
+
 signals:
     void propertyModelChanged(QAbstractItemModel *model);
     void readySave(bool closeAfterSave = false);
     void modifyChanged(bool changed);
     void titleChanged(QString);
 
+protected slots:
+    virtual void OnPropertyModelChanged(QAbstractItemModel *model);
+
 protected:
-    void initUndoRedo(QToolBar *toolbar);
+    void initUndoRedo();
     void initpropertyModelSignals(BaseScene *scene);
     virtual void loadToolBox();
+    virtual void initRibbonPanels();
     void loadToolBoxFile(const QString &fname, const GroupsMapType &outergroups = GroupsMapType());
 
+    // Идентификатор toolbox редактора ("menu", "panels", ...): по нему
+    // ищутся пользовательские json-файлы элементов в стандартных
+    // каталогах (ResTemplateRegistry::userToolBoxDir и др.).
+    // Пустая строка (по умолчанию) — пользовательские файлы не ищутся
+    virtual QString toolBoxId() const;
+
+
+    QAction* createAction(const QString& text, const QString& iconname = QString(), const QKeySequence &key = QKeySequence());
+
 private:
-    void loadToolBarElement(GroupsMapType &GroupsMap, const QJsonObject &obj);
+    void loadToolBarElement(GroupsMapType &GroupsMap, const QJsonObject &obj, const QDir &baseDir);
     QUndoStack *m_pUndoStack;
     QAction *m_pUndoAction, *m_pRedoAction;
     QToolButton *m_pRedoActionBtn;
@@ -70,6 +104,8 @@ private:
     int m_UndoIndexUnchanged;
     UndoActionWidget *m_pUndoViewMenuAction;
     LbrObjectInterface *m_pLbr;
+
+    SARibbonBar *m_pRibbon;
 };
 
 #endif // BASEEDITORWINDOW_H

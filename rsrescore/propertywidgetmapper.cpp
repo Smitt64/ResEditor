@@ -1,0 +1,389 @@
+#include "propertywidgetmapper.h"
+#include <QDebug>
+#include <QMetaProperty>
+#include <QAction>
+#include <QObject>
+
+class ObjectMapperPrivate
+{
+    Q_DECLARE_PUBLIC(ObjectMapper)
+public:
+    ObjectMapperPrivate(ObjectMapper *obj) :
+        isActionGroup(false),
+        q_ptr(obj)
+    {
+    }
+
+    QObject *object;
+    QObject *reciever;
+    QByteArray property;
+    bool isActionGroup; // Флаг для определения типа получателя
+
+    ObjectMapper *q_ptr;
+};
+
+ObjectMapper::ObjectMapper(QObject *parent) :
+    QObject(parent),
+    d_ptr(new ObjectMapperPrivate(this))
+{
+
+}
+
+void ObjectMapper::setChecked()
+{
+    Q_D(ObjectMapper);
+    QAction *action = qobject_cast<QAction*>(d->reciever);
+
+    if (!action)
+        return;
+
+    // Получаем имя функции проверки из CLASSINFO
+    QString uniformFuncName = getUniformValueFunctionName(d->object);
+
+    // Ищем метод проверки единообразности
+    int uniformMethodIndex = d->object->metaObject()->indexOfMethod(QMetaObject::normalizedSignature(qPrintable(uniformFuncName + "(const char*)")));
+
+    if (uniformMethodIndex != -1)
+    {
+        QMetaMethod uniformMethod = d->object->metaObject()->method(uniformMethodIndex);
+        bool isUniform = false;
+
+        uniformMethod.invoke(d->object, Q_RETURN_ARG(bool, isUniform),
+                             Q_ARG(const char*, d->property.constData()));
+
+        if (!isUniform)
+        {
+            // Для неединообразных значений устанавливаем действие в частичное состояние
+            action->setChecked(false);
+            return;
+        }
+    }
+
+    QVariant value = d->object->property(d->property);
+    if (action)
+        action->setChecked(value.toBool());
+}
+
+void ObjectMapper::setActionGroupChecked()
+{
+    Q_D(ObjectMapper);
+    QActionGroup *actionGroup = qobject_cast<QActionGroup*>(d->reciever);
+
+    if (!actionGroup)
+        return;
+
+    // Получаем имя функции проверки из CLASSINFO
+    QString uniformFuncName = getUniformValueFunctionName(d->object);
+
+    // Ищем метод проверки единообразности
+    int uniformMethodIndex = d->object->metaObject()->indexOfMethod(QMetaObject::normalizedSignature(qPrintable(uniformFuncName + "(const char*)")));
+
+    if (uniformMethodIndex != -1)
+    {
+        QMetaMethod uniformMethod = d->object->metaObject()->method(uniformMethodIndex);
+        bool isUniform = false;
+
+        // Вызываем функцию проверки
+        uniformMethod.invoke(d->object, Q_RETURN_ARG(bool, isUniform),
+                             Q_ARG(const char*, d->property.constData()));
+
+        if (!isUniform)
+        {
+            // Если значения неединообразны, сбрасываем все действия
+            QList<QAction*> actions = actionGroup->actions();
+            for (QAction* action : qAsConst(actions))
+                action->setChecked(false);
+
+            return;
+        }
+    }
+
+    // Если значения единообразны или проверки нет, устанавливаем как обычно
+    QList<QAction*> actions = actionGroup->actions();
+    QVariant value = d->object->property(d->property);
+
+    for (QAction* action : qAsConst(actions))
+    {
+        if (action->data() == value)
+        {
+            action->setChecked(true);
+            break;
+        }
+    }
+}
+
+// В класс ObjectMapper добавляем метод для получения имени функции проверки
+QString ObjectMapper::getUniformValueFunctionName(QObject* object) const
+{
+    const QMetaObject* meta = object->metaObject();
+    int classInfoIndex = meta->indexOfClassInfo("CLASSINFO_UNIFORMVALUEFUNC");
+
+    if (classInfoIndex != -1)
+    {
+        QMetaClassInfo classInfo = meta->classInfo(classInfoIndex);
+        return QString::fromLatin1(classInfo.value());
+    }
+
+    return "hasUniformValue";
+}
+
+// -----------------------------------------------------------------------
+
+class PropertyWidgetMapperPrivate
+{
+    Q_DECLARE_PUBLIC(PropertyWidgetMapper)
+public:
+    PropertyWidgetMapperPrivate(PropertyWidgetMapper *obj) :
+        q_ptr(obj)
+    {
+    }
+
+    QObject *addMap(const QByteArray &property, QObject *object, QObject *reciever)
+    {
+        Q_Q(PropertyWidgetMapper);
+        ObjectMapper *mapobj = new ObjectMapper(q);
+        mapobj->d_ptr->object = object;
+        mapobj->d_ptr->property = property;
+        mapobj->d_ptr->reciever = reciever;
+        m_Mapper.append(mapobj);
+
+        return mapobj;
+    }
+
+    QList<ObjectMapper*> m_Mapper;
+    PropertyWidgetMapper *q_ptr;
+};
+
+PropertyWidgetMapper::PropertyWidgetMapper(QObject *parent)
+    : QObject{parent},
+    d_ptr(new PropertyWidgetMapperPrivate(this))
+{
+
+}
+
+PropertyWidgetMapper::~PropertyWidgetMapper()
+{
+    delete d_ptr;
+}
+
+bool PropertyWidgetMapper::bind(QObject *source, const char *property, QAction *action)
+{
+    Q_D(PropertyWidgetMapper);
+    if (!source || !property || !action)
+        return false;
+
+    const QMetaObject *meta = source->metaObject();
+    int propIndex = meta->indexOfProperty(property);
+    if (propIndex == -1)
+    {
+        qWarning() << "Property" << property << "not found in" << source;
+        return false;
+    }
+
+    QMetaProperty sourceProp = meta->property(propIndex);
+
+    // Ищем свойство "checked" в QAction
+    QMetaProperty targetProp = findTargetProperty(action, "checked");
+    if (!targetProp.isValid())
+    {
+        qWarning() << "QAction does not have a suitable property (checked or USER flag)";
+        return false;
+    }
+
+    if (sourceProp.type() == QVariant::Bool)
+    {
+        // Устанавливаем начальное значение
+        targetProp.write(action, sourceProp.read(source).toBool());
+
+        // Обновляем action при изменении свойства
+        QString signalmethod = QString("2%1").arg(sourceProp.notifySignal().methodSignature().data());
+        //connect(source, signalmethod.toLocal8Bit().data(), this, SLOT(setChecked()));
+        QObject *mapobj = d->addMap(property, source, action);
+        connect(source, signalmethod.toLocal8Bit().data(), mapobj, SLOT(setChecked()));
+
+        // Обновляем свойство при изменении action
+        connect(action, &QAction::toggled, [=](bool checked)
+        {
+            sourceProp.write(source, checked);
+        });
+
+        return true;
+    }
+    else
+    {
+        qWarning() << "Property type is not bool";
+        return false;
+    }
+}
+
+bool PropertyWidgetMapper::bind(QObject *source, const char *property, QActionGroup *actionGroup)
+{
+    Q_D(PropertyWidgetMapper);
+    if (!source || !property || !actionGroup)
+        return false;
+
+    const QMetaObject *meta = source->metaObject();
+    int propIndex = meta->indexOfProperty(property);
+    if (propIndex == -1)
+    {
+        qWarning() << "Property" << property << "not found in" << source;
+        return false;
+    }
+
+    QMetaProperty sourceProp = meta->property(propIndex);
+
+    // Получаем имя функции проверки из CLASSINFO
+    QString uniformFuncName;
+    int classInfoIndex = meta->indexOfClassInfo("CLASSINFO_UNIFORMVALUEFUNC");
+    if (classInfoIndex != -1)
+    {
+        QMetaClassInfo classInfo = meta->classInfo(classInfoIndex);
+        uniformFuncName = QString::fromLatin1(classInfo.value());
+    }
+    else
+    {
+        uniformFuncName = "hasUniformValue"; // Значение по умолчанию
+    }
+
+    // Проверяем, есть ли функция проверки единообразности
+    bool hasUniformCheck = false;
+    bool isUniform = true;
+    int uniformMethodIndex = meta->indexOfMethod(QMetaObject::normalizedSignature(qPrintable(uniformFuncName + "(const char*)")));
+
+    if (uniformMethodIndex != -1)
+    {
+        hasUniformCheck = true;
+        QMetaMethod uniformMethod = meta->method(uniformMethodIndex);
+        uniformMethod.invoke(source, Q_RETURN_ARG(bool, isUniform),
+                             Q_ARG(const char*, property));
+    }
+
+    // Получаем список действий в группе
+    QList<QAction*> actions = actionGroup->actions();
+
+    if (hasUniformCheck && !isUniform)
+    {
+        // Если значения неединообразны, сбрасываем все действия
+        for (QAction* action : qAsConst(actions))
+        {
+            action->setChecked(false);
+            action->setIcon(QIcon(":/icons/multiple_values.png"));
+        }
+    }
+    else
+    {
+        // Устанавливаем начальное значение из свойства
+        QVariant currentValue = sourceProp.read(source);
+        for (QAction* action : qAsConst(actions))
+        {
+            action->setIcon(QIcon());
+            if (action->data() == currentValue)
+            {
+                action->setChecked(true);
+                break;
+            }
+        }
+    }
+
+    // Обновляем свойство при изменении выбранного действия
+    connect(actionGroup, &QActionGroup::triggered, [=](QAction* action)
+    {
+        if (action->isChecked())
+        {
+            sourceProp.write(source, action->data());
+        }
+    });
+
+    QObject *mapobj = d->addMap(property, source, actionGroup);
+
+    // Подключаемся к сигналу уведомления об изменении свойства
+    if (sourceProp.hasNotifySignal())
+    {
+        QString signalName = QString("2%1").arg(sourceProp.notifySignal().methodSignature().constData());
+        if (!signalName.isEmpty() && signalName != "2")
+            connect(source, signalName.toLocal8Bit().constData(), mapobj, SLOT(setActionGroupChecked()));
+    }
+
+    return true;
+}
+
+/*bool PropertyWidgetMapper::bind(QObject *source, const char *property, QWidget *widget, const char *widgetProperty)
+{
+    if (!source || !property || !widget)
+        return false;
+
+    const QMetaObject *meta = source->metaObject();
+    int propIndex = meta->indexOfProperty(property);
+    if (propIndex == -1)
+    {
+        qWarning() << "Property" << property << "not found in" << source;
+        return false;
+    }
+
+    QMetaProperty sourceProp = meta->property(propIndex);
+
+    // Ищем свойство в виджете (если widgetProperty == nullptr, ищем USER-свойство или с таким же именем)
+    QByteArray preferredName = widgetProperty ? QByteArray(widgetProperty) : QByteArray(property);
+    QMetaProperty targetProp = findTargetProperty(widget, preferredName);
+    if (!targetProp.isValid())
+    {
+        qWarning() << "Widget does not have a suitable property:" << preferredName;
+        return false;
+    }
+
+    // Проверяем совместимость типов
+    if (sourceProp.type() != targetProp.type())
+    {
+        qWarning() << "Property types do not match:" << sourceProp.typeName() << "!=" << targetProp.typeName();
+        return false;
+    }
+
+    // Обновляем виджет при изменении свойства
+    //connect(source, &QObject::destroyed, this, &PropertyWidgetMapper::clearBinding);
+    connect(source, property, [=]() {
+        QVariant value = sourceProp.read(source);
+        targetProp.write(widget, value);
+    });
+    connect(source, sourceProp.notifySignal().methodSignature(), widget, targetProp.);
+
+    // Если виджет может уведомлять об изменении (например, textChanged), обновляем источник
+    QByteArray changedSignal = targetProp.name() + "Changed";
+    if (widget->metaObject()->indexOfSignal(changedSignal + "(QVariant)") != -1)
+    {
+        connect(widget, changedSignal + "(QVariant)", [=](const QVariant &value) {
+            sourceProp.write(source, value);
+        });
+    }
+    else if (widget->metaObject()->indexOfSignal(changedSignal + "()") != -1)
+    {
+        connect(widget, changedSignal + "()", [=]() {
+            QVariant value = targetProp.read(widget);
+            sourceProp.write(source, value);
+        });
+    }
+
+    // Устанавливаем начальное значение
+    targetProp.write(widget, sourceProp.read(source));
+    return true;
+}*/
+
+QMetaProperty PropertyWidgetMapper::findTargetProperty(QObject *target, const QByteArray &preferredName) const
+{
+    const QMetaObject *meta = target->metaObject();
+
+    // Сначала ищем свойство с USER-флагом
+    for (int i = 0; i < meta->propertyCount(); ++i)
+    {
+        QMetaProperty prop = meta->property(i);
+
+        if (prop.isUser())
+            return prop;
+    }
+
+    // Если не нашли, ищем свойство с указанным именем
+    int propIndex = meta->indexOfProperty(preferredName);
+    if (propIndex != -1)
+        return meta->property(propIndex);
+
+    return QMetaProperty(); // Невалидное свойство
+}

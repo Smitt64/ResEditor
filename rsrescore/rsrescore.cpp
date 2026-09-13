@@ -6,24 +6,106 @@
 #include "qapplication.h"
 #include "lbrobject.h"
 #include "controlitem.h"
+#include "qxmlstream.h"
+#include "errorsmodel.h"
 #include "textitem.h"
 #include "panelitem.h"
 #include "scrolitem.h"
 #include "respanel.h"
 #include "propertymodel/ewtextstylepropertytreeitem.h"
 #include "styles/extextstyle.h"
+#include "xmlvalidator.h"
 #include <QPluginLoader>
 #include <QFontDatabase>
 #include <QToolButton>
 #include <QDomDocument>
 #include <QDir>
+#include <stdexcept>
+#include <QXmlSchema>
+#include <QXmlSchemaValidator>
+#include <QXmlStreamReader>
+#include <QAbstractMessageHandler>
+#include <QCoreApplication>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QDebug>
+#include <QFileInfo>
+#include <QSettings>
 
 Q_IMPORT_PLUGIN(BaseResourceEditor)
+
+class XmlValidatorErrorString : public QAbstractMessageHandler
+{
+public:
+    XmlValidatorErrorString() : QAbstractMessageHandler() {}
+
+    ErrorsModel *errors = nullptr;
+
+protected:
+    void handleMessage(QtMsgType type, const QString &description, const QUrl &identifier = QUrl(), const QSourceLocation &sourceLocation = QSourceLocation()) Q_DECL_FINAL
+    {
+        if (!errors)
+            return;
+
+        QString location = tr(" в строке %1, столбец %2,")
+                               .arg(sourceLocation.line()).arg(sourceLocation.column());
+
+        QString msg = tr("XSD message:");
+
+        if (!location.isEmpty())
+            msg += location;
+
+        msg += " " + description;
+
+        switch (type)
+        {
+        case QtDebugMsg:
+        case QtInfoMsg:
+            errors->addMessage(msg);
+            break;
+        case QtWarningMsg:
+            errors->appendError(msg, ErrorsModel::TypeWarning);
+            break;
+        case QtCriticalMsg:
+        case QtFatalMsg:
+            errors->appendError(msg);
+            break;
+        default:
+            break;
+        }
+    }
+};
 
 RsResCore *RsResCore::m_Inst = nullptr;
 
 RsResCore::RsResCore()
 {
+    m_pSettings = nullptr;
+}
+
+RsResCore::~RsResCore()
+{
+    cleanupPlugins();
+}
+
+void RsResCore::cleanupPlugins()
+{
+    // Выгружаем все динамические плагины
+    for (QPluginLoader *loader : m_PluginLoaders)
+    {
+        if (loader)
+        {
+            if (loader->isLoaded())
+                loader->unload();
+            delete loader;
+        }
+    }
+    m_PluginLoaders.clear();
+    m_LoadedPluginIds.clear();
+
+    // Очищаем списки плагинов (они будут удалены при выгрузке)
+    m_Plugins.clear();
+    m_PluginTypes.clear();
 }
 
 void RsResCore::init()
@@ -62,47 +144,79 @@ RsResCore *RsResCore::inst()
     return m_Inst;
 }
 
-QIcon RsResCore::iconFromResType(const qint16 &Type)
+QSettings *RsResCore::settings()
 {
-    QIcon val;
+    return m_pSettings;
+}
+
+void RsResCore::setSettings(QSettings *settings)
+{
+    m_pSettings = settings;
+}
+
+QString RsResCore::iconNameFromResType(const qint16 &Type)
+{
+    QString name;
     switch(Type)
     {
     case LbrObject::RES_PANEL:
-        val = QIcon(":/img/Panel.png");
+        name = "Dialog";
         break;
     case LbrObject::RES_SCROL:
-        val = QIcon(":/img/Scrol.png");
+        name = "GridUniform";
         break;
     case LbrObject::RES_BS:
-        val = QIcon(":/img/BScrol.png");
+        name = "BScrol";
+        break;
+    case LbrObject::RES_MENU:
+    case LbrObject::RES_MENU2:
+        name = "MenuItemGrey";
         break;
     default:
-        val = QIcon(":/img/Unknown.png");
+        name = "Question";
     }
 
-    return val;
+    return name;
+}
+
+QIcon RsResCore::iconFromResType(const qint16 &Type)
+{
+    QString name = iconNameFromResType(Type);
+    return QIcon::fromTheme(name);
+}
+
+QList<qint16> RsResCore::stdTypes()
+{
+    const static QList<qint16> _types(
+        {
+            LbrObject::RES_PANEL,
+            LbrObject::RES_SCROL,
+            LbrObject::RES_BS,
+        });
+
+    return _types;
 }
 
 QList<qint16> RsResCore::types()
 {
     const static QList<qint16> _types(
-        {
-            LbrObject::RES_PANEL,
-            LbrObject::RES_MENU,
-            LbrObject::RES_STAT,
-            LbrObject::RES_DIALOG,
-            LbrObject::RES_HIST,
-            LbrObject::RES_REPORT,
-            LbrObject::RES_BFSTRUCT,
-            LbrObject::RES_DBLINK,
-            LbrObject::RES_SCROL,
-            LbrObject::RES_REP,
-            LbrObject::RES_BS,
-            LbrObject::RES_LS,
-            LbrObject::RES_ACCEL,
-            LbrObject::RES_STRTABLE,
-            LbrObject::RES_MENU2
-        });
+    {
+        LbrObject::RES_PANEL,
+        LbrObject::RES_MENU,
+        LbrObject::RES_STAT,
+        LbrObject::RES_DIALOG,
+        LbrObject::RES_HIST,
+        LbrObject::RES_REPORT,
+        LbrObject::RES_BFSTRUCT,
+        LbrObject::RES_DBLINK,
+        LbrObject::RES_SCROL,
+        LbrObject::RES_REP,
+        LbrObject::RES_BS,
+        LbrObject::RES_LS,
+        LbrObject::RES_ACCEL,
+        LbrObject::RES_STRTABLE,
+        LbrObject::RES_MENU2
+    });
 
     return _types;
 }
@@ -161,8 +275,190 @@ QString RsResCore::typeNameFromResType(const qint16 &Type)
     return val;
 }
 
+QStringList RsResCore::getPluginSearchPaths() const
+{
+    QStringList paths;
+
+    // Основной каталог - reseditor (как platforms у Qt)
+    paths << QCoreApplication::applicationDirPath() + "/reseditor";
+    paths << QDir::currentPath() + "/reseditor";
+
+    // Дополнительные каталоги можно получить из настроек
+    if (m_pSettings)
+    {
+        QStringList settingsPaths = m_pSettings->value("PluginPaths").toStringList();
+        // Фильтруем, чтобы загружались только каталоги, содержащие "reseditor"
+        for (const QString &path : settingsPaths)
+        {
+            if (path.contains("reseditor", Qt::CaseInsensitive))
+                paths << path;
+        }
+    }
+
+    // Переменная окружения для дополнительных каталогов плагинов
+    QString envPlugins = qgetenv("RESEDITOR_PLUGINS_PATH");
+    if (!envPlugins.isEmpty())
+    {
+        QStringList envPaths = envPlugins.split(QDir::listSeparator());
+        for (const QString &path : envPaths)
+        {
+            if (path.contains("reseditor", Qt::CaseInsensitive))
+                paths << path;
+        }
+    }
+
+    // Удаляем дубликаты
+    paths.removeDuplicates();
+    paths.removeAll(QString());
+
+    return paths;
+}
+
+bool RsResCore::checkPluginMetadata(const QJsonObject &metaData)
+{
+    // Проверяем наличие AppIds с "ResEditor"
+    QJsonValue appIdsValue = metaData.value("AppIds");
+    if (!appIdsValue.isArray())
+        return false;
+
+    QJsonArray appIds = appIdsValue.toArray();
+    bool isResEditorPlugin = false;
+    for (const QJsonValue &appId : appIds)
+    {
+        if (appId.toString() == "ResEditor")
+        {
+            isResEditorPlugin = true;
+            break;
+        }
+    }
+
+    if (!isResEditorPlugin)
+        return false;
+
+    // Проверяем наличие PluginID
+    if (!metaData.contains("PluginID"))
+        return false;
+
+    // Проверяем, не загружен ли уже плагин с таким ID
+    QString pluginId = metaData.value("PluginID").toString();
+    if (m_LoadedPluginIds.contains(pluginId))
+    {
+        qDebug() << "Plugin already loaded with ID:" << pluginId;
+        return false;
+    }
+
+    return true;
+}
+
+bool RsResCore::loadPluginFromFile(const QString &filePath)
+{
+    // Проверяем, что файл существует
+    QFileInfo fileInfo(filePath);
+    if (!fileInfo.exists())
+    {
+        qDebug() << "Plugin file does not exist:" << filePath;
+        return false;
+    }
+
+    // Создаем загрузчик в куче
+    QPluginLoader *loader = new QPluginLoader(filePath);
+
+    // Проверяем метаданные плагина до загрузки
+    QJsonObject metaData = loader->metaData().value("MetaData").toObject();
+    if (metaData.isEmpty())
+    {
+        qDebug() << "No metadata in plugin:" << filePath;
+        delete loader;
+        return false;
+    }
+
+    // Проверяем метаданные
+    if (!checkPluginMetadata(metaData))
+    {
+        delete loader;
+        return false;
+    }
+
+    // Загружаем плагин
+    QObject *instance = loader->instance();
+    if (!instance)
+    {
+        qWarning() << "Failed to load plugin:" << filePath << loader->errorString();
+        delete loader;
+        return false;
+    }
+
+    // Проверяем интерфейс
+    ResourceEditorInterface *plugin = qobject_cast<ResourceEditorInterface*>(instance);
+    if (!plugin)
+    {
+        qWarning() << "Plugin does not implement ResourceEditorInterface:" << filePath;
+        loader->unload();
+        delete loader;
+        return false;
+    }
+
+    // Сохраняем загрузчик, чтобы плагин не выгрузился
+    m_PluginLoaders.append(loader);
+
+    // Сохраняем ID плагина
+    QString pluginId = metaData.value("PluginID").toString();
+    m_LoadedPluginIds.append(pluginId);
+
+    // Добавляем плагин
+    m_Plugins.append(plugin);
+
+    QList<qint16> types = plugin->resTypes();
+    for (qint16 type : qAsConst(types))
+        m_PluginTypes.insert(type, plugin);
+
+    qDebug() << "Loaded plugin:" << filePath
+             << "ID:" << pluginId
+             << "Types:" << types;
+
+    return true;
+}
+
+void RsResCore::findPluginsInDirectory(const QString &path, int depth)
+{
+    QDir dir(path);
+    if (!dir.exists() || depth <= 0)
+        return;
+
+    // Определяем фильтры для файлов плагинов
+    QStringList filters;
+#ifdef Q_OS_WIN
+    filters << "*.dll";
+#elif defined(Q_OS_MAC)
+    filters << "*.dylib" << "*.so";
+#else
+    filters << "*.so";
+#endif
+
+    // Загружаем плагины из текущего каталога
+    QStringList pluginFiles = dir.entryList(filters, QDir::Files);
+    for (const QString &fileName : pluginFiles)
+    {
+        QString fullPath = dir.absoluteFilePath(fileName);
+        loadPluginFromFile(fullPath);
+    }
+
+    // Рекурсивно обходим подкаталоги (но только если глубина > 1)
+    if (depth > 1)
+    {
+        QStringList subDirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+        for (const QString &subDir : subDirs)
+        {
+            // Проверяем, что подкаталог не является системным
+            if (!subDir.startsWith('.'))
+                findPluginsInDirectory(dir.absoluteFilePath(subDir), depth - 1);
+        }
+    }
+}
+
 void RsResCore::loadPlugins()
 {
+    // 1. Загрузка статических плагинов (встроенные плагины)
     const auto staticInstances = QPluginLoader::staticInstances();
 
     for (QObject *plug : staticInstances)
@@ -176,8 +472,33 @@ void RsResCore::loadPlugins()
             QList<qint16> types = plugin->resTypes();
             for (qint16 type : qAsConst(types))
                 m_PluginTypes.insert(type, plugin);
+
+            QObject *pluginObj = qobject_cast<QObject*>(plug);
+            qDebug() << "Loaded static plugin:" << pluginObj->metaObject()->className();
         }
     }
+
+    // 2. Загрузка динамических плагинов из каталога reseditor
+    QStringList pluginPaths = getPluginSearchPaths();
+
+    qDebug() << "Looking for plugins in reseditor paths:" << pluginPaths;
+
+    // Проходим по всем каталогам
+    for (const QString &path : pluginPaths)
+    {
+        // Проверяем, что путь содержит "reseditor"
+        if (!path.contains("reseditor", Qt::CaseInsensitive))
+        {
+            qDebug() << "Skipping non-reseditor path:" << path;
+            continue;
+        }
+
+        findPluginsInDirectory(path, 2);
+    }
+
+    qDebug() << "Total plugins loaded:" << m_Plugins.size()
+             << "(static:" << staticInstances.size()
+             << ", dynamic:" << m_PluginLoaders.size() << ")";
 }
 
 ResourceEditorInterface *RsResCore::pluginForType(const qint16 &Type)
@@ -188,6 +509,32 @@ ResourceEditorInterface *RsResCore::pluginForType(const qint16 &Type)
         return values.first();
 
     return nullptr;
+}
+
+QSet<qint16> RsResCore::plugedTypes() const
+{
+    QSet<qint16> result;
+
+    for (ResourceEditorInterface *plugin : qAsConst(m_Plugins))
+    {
+        QList<qint16> list = plugin->resTypes();
+        result.unite(QSet<qint16>(list.begin(), list.end()));
+    }
+
+    return result;
+}
+
+QList<ResXmlReader*> RsResCore::xmlImporters() const
+{
+    QList<ResXmlReader*> result;
+
+    for (ResourceEditorInterface *plugin : qAsConst(m_Plugins))
+    {
+        if (ResXmlReader *importer = plugin->xmlImporter())
+            result.append(importer);
+    }
+
+    return result;
 }
 
 ResourceEditorInterface *RsResCore::pluginForNewAction(const QString &guid)
@@ -236,10 +583,10 @@ const char *RsResCore::resTypePrefix(int tp)
 }
 
 QString RsResCore::saveResToXml(const qint16 &Type,
-                  const QString &name,
-                  LbrObjectInterface *lbr,
-                  const QString &dirtemplate,
-                  const QString &encode)
+                                const QString &name,
+                                LbrObjectInterface *lbr,
+                                const QString &dirtemplate,
+                                const QString &encode)
 {
     QString result;
 
@@ -260,26 +607,38 @@ QString RsResCore::saveResToXml(const qint16 &Type,
         result = resPanel.saveXml(encode);
         stream << result;
 
-        //addCodeWindow(tr("XML"), result);
         f.close();
     }
 
     return result;
 }
 
-void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel)
+bool RsResCore::validateResXmlWithXsd(QIODevice *xmlDevice, ErrorsModel* errorMessage)
+{
+    XmlValidator validator;
+    validator.setSchemaFileName(":/res/reslib.xsd");
+    return validator.validateXmlWithXsd(xmlDevice, errorMessage);
+}
+
+void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel, ErrorsModel *model) throw(std::runtime_error, std::logic_error)
 {
     static const QStringList RootTags =
-    {
-        "panel",
-        "bscrol"
-    };
+        {
+            "panel",
+            "bscrol",
+            "scrol",
+            "lscrol"
+        };
+
+    if (!validateResXmlWithXsd(device, model))
+        throw std::runtime_error("XML validation failed against XSD schema");
+
+    device->seek(0);
 
     QDomDocument doc;
     doc.setContent(device);
 
     QDomElement root = doc.documentElement();
-
     if (root.tagName() == "reslib")
     {
         QDomNode reslibnode = root.firstChild();
@@ -292,6 +651,22 @@ void RsResCore::loadFromXml(QIODevice *device, ResPanel **panel)
             ptr->loadXmlNode(reslib);
         }
     }
+}
+
+QList<SARibbonContextCategory*> RsResCore::contextCategoryes(SARibbonBar *ribbon)
+{
+    using CategoryList = QList<SARibbonContextCategory*>;
+    CategoryList result;
+
+    for (ResourceEditorInterface *item : std::as_const(m_Plugins))
+    {
+        auto lst = item->contextCategoryes(ribbon);
+
+        if (!lst.isEmpty())
+            result.append(lst);
+    }
+
+    return result;
 }
 
 static QString strippedActionText(QString s)
@@ -328,7 +703,7 @@ template<class T>void AddShortcutToToolTip(T *action)
             shortCutTextColorName = shortcutTextColor.lighter(factor).name();
         }
         action->setToolTip(QString("<p style='white-space:pre'>%1&nbsp;&nbsp;<code style='color:%2; font-size:small'>%3</code></p>")
-                           .arg(tooltip, shortCutTextColorName, action->shortcut().toString(QKeySequence::NativeText)));
+                               .arg(tooltip, shortCutTextColorName, action->shortcut().toString(QKeySequence::NativeText)));
     }
 }
 

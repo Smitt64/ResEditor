@@ -1,13 +1,31 @@
 #include "mainwindow.h"
 #include "rsrescore.h"
 #include "resapplication.h"
+#include "IconThemeManager.h"
+#include "styles/mdiofficestyle.h"
 #include <QtPlugin>
 #include <QScopedPointer>
 #include <QCommandLineParser>
+#include <QElapsedTimer>
 #include <QDir>
+#include <QIcon>
+#include <SARibbon.h>
+
+// boxy-svg.com
+
+static void InitIconTheme()
+{
+    IconThemeManager::initialize("vs_theme");
+
+/*#ifdef QT_DEBUG
+    IconThemeManager::addCustomPath("d:\\Work\\ResEditor\\RsResEditor\\res\\icons");
+#endif*/
+}
 
 int main(int argc, char *argv[])
 {
+    SARibbonBar::initHighDpi();
+
     QCommandLineParser parser;
     parser.setApplicationDescription("Work Lbr");
     parser.addHelpOption();
@@ -24,49 +42,47 @@ int main(int argc, char *argv[])
     parser.addOption(lbrFileOption);
     parser.addOption(resUnloadDirOption);
 
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-
-    /*char **argvnew = (char **)malloc((argc + 2) * sizeof(char*));
-    for (int i = 0; i < argc + 2; i++)
-    {
-        if (i < argc)
-        {
-            int len = strlen(argv[i]) + 1;
-            argvnew[i] = (char*)malloc(len * sizeof(char));
-            strncpy_s(argvnew[i], len, argv[i], len);
-        }
-        else
-        {
-            int len = _MAX_PATH * sizeof(char);
-            argvnew[i] = (char*)malloc(len);
-            memset(argvnew[i], 0, len);
-        }
-    }
-
-    strncpy_s(argvnew[argc], 11, "--platform", 11);
-    strncpy_s(argvnew[argc + 1], 23, "windows:dpiawareness=1", 23);*/
+    // Позиционный аргумент - файл, переданный без ключа
+    // (так вызывает проводник по ассоциации *.lbr: WorkRes.exe "%1")
+    parser.addPositionalArgument("file",
+        QCoreApplication::translate("main", "Lbr file to open (e.g. via shell association)"));
 
     ResApplication a(argc, argv);
-    parser.process(a.arguments());
 
+    // Только после создания QApplication: без экземпляра applicationDirPath()
+    // пуст, и тема иконок ищется относительно рабочего каталога (ломается
+    // при запуске через ассоциацию файлов - CWD становится папкой файла)
+    InitIconTheme();
+
+    a.init();
+
+    parser.process(a.arguments());
     RsResCore::inst()->init();
 
     MainWindow w;
-    w.showMaximized();
-    a.applyStyle();
+
+    // Офисный стиль на всё приложение (как FmtRibbonMainWindow::ApplyRibbonProxy
+    // в FmtLib): выпадающие меню ленты - top-level окна, stylesheet главного
+    // окна их не достаёт, а палитру standardPalette() они получают отсюда
+    MdiOfficeStyle::applyToApplication();
+
+    w.show();
 
     if (parser.isSet(lbrFileOption))
         w.open(parser.value(lbrFileOption));
+    else
+    {
+        // Файл из позиционного аргумента (ассоциация *.lbr).
+        // Каждый файл открывается в отдельном экземпляре приложения.
+        const QStringList posArgs = parser.positionalArguments();
+        if (!posArgs.isEmpty())
+            w.open(posArgs.first());
+    }
 
     if (parser.isSet(resUnloadDirOption))
         w.setAutoUnloadDir(parser.value(resUnloadDirOption));
 
     int stat = a.exec();
-
-    // Освобождение памяти
-    /*for (int i = 0; i < argc + 2; i++)
-        free(argvnew[i]);
-    free(argvnew);*/
 
     return stat;
 }

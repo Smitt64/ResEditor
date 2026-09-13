@@ -2,7 +2,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+CONFIG += c++17
 #static_runtime
 
 include(../config.pri)
@@ -19,6 +19,10 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     newitemsdlg.cpp \
+    resapplicationwidget.cpp \
+    reslistcategorycontentwidget.cpp \
+    resxmlloader.cpp \
+    savefilesdlg.cpp \
     selectresourcedlg.cpp \
     subwindowsmodel.cpp \
     windowslistdlg.cpp
@@ -26,6 +30,10 @@ SOURCES += \
 HEADERS += \
     mainwindow.h \
     newitemsdlg.h \
+    resapplicationwidget.h \
+    reslistcategorycontentwidget.h \
+    resxmlloader.h \
+    savefilesdlg.h \
     selectresourcedlg.h \
     subwindowsmodel.h \
     windowslistdlg.h
@@ -33,6 +41,7 @@ HEADERS += \
 FORMS += \
     mainwindow.ui \
     newitemsdlg.ui \
+    savefilesdlg.ui \
     selectresourcedlg.ui \
     windowslistdlg.ui
 
@@ -65,3 +74,14 @@ else:unix: LIBS += -L$$OUT_PWD/../ToolsRuntimeProj/ToolsRuntime/ -lToolsRuntime
 INCLUDEPATH += $$PWD/../ToolsRuntimeProj/ToolsRuntime $$PWD/../ToolsRuntimeProj/ToolsRuntime/optionsdlg $$PWD/../ToolsRuntimeProj/ToolsRuntime/widgets
 DEPENDPATH += $$PWD/../ToolsRuntimeProj/ToolsRuntime
 
+
+#win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../SARibbon-master/bin_qt5.15.2_Release_x86/bin/ -lSARibbonBard
+#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../SARibbon-master/bin_qt5.15.2_Debug_x86/bin/ -lSARibbonBard
+
+#INCLUDEPATH += $$PWD/../../SARibbon-master/src/SARibbonBar
+#DEPENDPATH += $$PWD/../../SARibbon-master/src/SARibbonBar
+
+RESOURCES += \
+    lbrres.qrc
+
+OTHER_FILES += rec/winfmt.rc

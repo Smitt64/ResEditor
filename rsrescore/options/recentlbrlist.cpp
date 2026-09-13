@@ -41,16 +41,39 @@ void RecentLbrList::addFile(const QString &fileName)
     updateRecentFileActions();
 }
 
+QString RecentLbrList::formatName(const QString &absolutePath)
+{
+    QString result;
+    QDir dir(absolutePath);
+    QFileInfo file = QFileInfo(absolutePath);
+
+    if (QFile::exists(dir.absoluteFilePath("startbnk.exe")) || QFile::exists(dir.absoluteFilePath("startbnkd.exe")))
+    {
+        if (dir.cdUp())
+        {
+            result = QString("%1 в %2")
+                         .arg(file.fileName())
+                         .arg(dir.dirName());
+        }
+        else
+            result = file.fileName();
+    }
+    else
+        result = file.fileName();
+
+    return result;
+}
+
 void RecentLbrList::updateRecentFileActions()
 {
     for (int i = 0; i < m_files.size(); i++)
     {
         QFileInfo file = QFileInfo(m_files.at(i));
 
-        QDir dir(file.absolutePath());
+        //QDir dir(file.absolutePath());
         QAction *action = recentFileActs[i];
 
-        if (QFile::exists(dir.absoluteFilePath("startbnk.exe")) || QFile::exists(dir.absoluteFilePath("startbnkd.exe")))
+        /*if (QFile::exists(dir.absoluteFilePath("startbnk.exe")) || QFile::exists(dir.absoluteFilePath("startbnkd.exe")))
         {
             if (dir.cdUp())
             {
@@ -62,8 +85,9 @@ void RecentLbrList::updateRecentFileActions()
                 action->setText(file.fileName());
         }
         else
-            action->setText(file.fileName());
+            action->setText(file.fileName());*/
 
+        action->setText(formatName(file.filePath()));
         action->setData(m_files.at(i));
         action->setToolTip(m_files.at(i));
         action->setStatusTip(m_files.at(i));

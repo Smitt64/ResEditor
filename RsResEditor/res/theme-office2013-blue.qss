@@ -1,0 +1,838 @@
+﻿/*
+Тема, имитирующая Office 2013 в белом стиле
+начало набора ленты
+*/
+
+SARibbonMainWindow {
+    border-left: 2px solid #0072C6;
+    border-right: 2px solid #0072C6;
+    border-bottom: 2px solid #0072C6;
+    border-top: 3px solid #0072C6;
+}
+
+SARibbonMainWindow > QStatusBar {
+	background-color: #0072C6;
+	color: white;
+}
+
+/*SARibbonBar*/
+SARibbonBar {
+  background-color: white;
+  border: solid #707070;
+  color:#b2b2b2;
+}
+
+
+/*SARibbonQuickAccessBar*/
+SARibbonQuickAccessBar {
+  background-color: #cee8fc;
+}
+
+/*SARibbonCtrlContainer*/
+SARibbonCtrlContainer {
+  background-color: transparent;
+}
+
+
+/*SARibbonStackedWidget*/
+SARibbonStackedWidget {
+  border: 1pt solid #c5d2e0;
+  border-top-width: 0px;
+  
+  /*border-right: 2px solid #0072C6;*/
+  border-bottom: 1px solid #0072C6;
+  padding: 0px
+}
+
+SARibbonStackedWidget:focus {
+  outline: none;
+}
+
+
+/*
+SARibbonSeparatorWidget
+Примечание: SARibbonSeparatorWidget использует color для цвета фона
+Для разных стилей разделителей в разных компонентах используйте SARibbonCategory > SARibbonSeparatorWidget
+*/
+SARibbonSeparatorWidget {
+  color: #bec0c2;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+/*SARibbonCategory*/
+SARibbonCategory {
+  background-color: white;
+}
+SARibbonCategory:focus {
+  outline: none;
+}
+
+/*
+SARibbonCategory下的SARibbonSeparatorWidget
+Примечание: SARibbonSeparatorWidget использует color для цвета фона
+*/
+SARibbonCategory > SARibbonSeparatorWidget {
+  color: #bec0c2;
+  margin-top:3px;
+  margin-bottom:3px;
+}
+
+/*SARibbonPannel*/
+
+SARibbonPannel {
+  background-color: white;
+  border: none;
+  color: #666666;
+}
+
+SARibbonPannel > SARibbonButtonGroupWidget {
+  border: 1px solid #DD0E00;
+  /* c2d0df */
+}
+/*SARibbonButtonGroupWidget*/
+SARibbonButtonGroupWidget {
+  background-color: transparent;
+}
+
+/*SARibbonPannelLabel Заголовок панели*/
+
+SARibbonPannelLabel {
+    background-color: transparent;
+    color: #666666;
+}
+
+/*SARibbonPannelOptionButton*/
+
+SARibbonPannelOptionButton {
+  background-color: transparent;
+  color: #333;
+}
+
+SARibbonPannelOptionButton:hover {
+  background-color: #cee8fc;
+  border: 0px;
+}
+
+
+/*SARibbonApplicationButton*/
+SARibbonApplicationButton {
+  color: white;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  background-color: #0072C6;
+}
+
+SARibbonApplicationButton:hover {
+  background-color: #3a8fd9;
+}
+
+SARibbonApplicationButton:pressed {
+  background-color: #005da4;
+}
+
+SARibbonApplicationButton:focus {
+  outline: none;
+}
+
+SARibbonApplicationButton::menu-indicator {
+  width:0px;
+}
+
+/*SARibbonTabBar*/
+SARibbonTabBar {
+  background-color: transparent;
+  /*border-right: 2px solid #0072C6;*/
+}
+
+
+SARibbonTabBar::tab {
+  color: #0072C6;
+  border: 1px solid transparent;
+  background: transparent;
+  margin-top: 0px;
+  margin-right: 0px;
+  margin-left: 5px;
+  margin-bottom: 0px;
+  min-width: 50px;
+}
+
+SARibbonTabBar::tab:selected {
+  color: #0072C6;
+  background: white;
+  border-top:1px solid #c5d2e0;
+  border-right:1px solid #c5d2e0;
+  border-left:1px solid #c5d2e0;
+  border-bottom:1px solid white;
+}
+
+SARibbonTabBar::tab:hover:!selected {
+    color: #0072C6;
+    background: white;
+    border-top:1px solid #c5d2e0;
+    border-right:1px solid #c5d2e0;
+    border-left:1px solid #c5d2e0;
+    border-bottom:1px solid white;
+}
+
+
+/*SARibbonToolButton*/
+/* 
+Фон SARibbonToolButton должен совпадать с цветом панели или категории
+Нельзя устанавливать transparent, иначе кнопки в режиме ActionMenu не отобразятся правильно
+*/
+SARibbonToolButton {
+  border: none;
+  color: #333;
+  background-color: white;
+}
+
+SARibbonToolButton:focus {
+  border: 1px solid #cee8fc;
+  color: #333;
+  background-color: #fcfdfe;
+}
+
+SARibbonToolButton:pressed {
+  color: #000;
+  border: 1px solid #269bf4;
+  background-color: #9ed2f9;
+}
+
+SARibbonToolButton:checked {
+  color: #333;
+  border: 1px solid #cee8fc;
+  background-color: #cee8fc;
+}
+
+SARibbonToolButton:hover {
+  color: #000;
+  border: 1px solid #badffa;
+  background-color: #cee7fc;
+}
+
+/*SARibbonControlButton*/
+
+SARibbonControlButton {
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: #333;
+}
+
+SARibbonControlButton:pressed {
+  border: 1px solid #269bf4;
+  background-color: #9ed2f9;
+}
+
+SARibbonControlButton:checked {
+  border: 1px solid #cee8fc;
+  background-color: #cee8fc;
+}
+
+SARibbonControlButton:hover {
+  border: 1px solid #badffa;
+  background-color: #cee7fc;
+}
+
+SARibbonGalleryButton {
+  border: 1px solid #cee8fc;
+}
+
+/* Кнопка с боковой стрелкой меню (свойство sideMenuArrow):
+   расширяем кнопку padding'ом справа, стрелку рисуем в этой области,
+   чтобы она не перекрывала иконку. Картинка стрелки общая для
+   InstantPopup и MenuButtonPopup - выглядят одинаково */
+SARibbonControlButton[sideMenuArrow="true"] {
+  padding-right: 16px;
+}
+
+SARibbonControlButton[sideMenuArrow="true"]::menu-indicator {
+  image: url(:/SARibbon/image/resource/ArrowDown.png);
+  subcontrol-position: right center;
+  subcontrol-origin: padding;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+}
+
+/*SARibbonMenu*/
+
+SARibbonMenu {
+  color: #333;
+  background-color: #FCFCFC;
+  border: 1px solid #c2d0df;
+}
+
+SARibbonMenu::item {
+  padding: 5px 5px 5px 5px;
+  background-color: transparent;
+}
+
+SARibbonMenu::item:selected {
+  background-color: #cee8fc;
+}
+
+SARibbonMenu::item:hover {
+  color: #000;
+  background-color: #cee7fc;
+  border: 1px solid #badffa;
+}
+
+SARibbonMenu::icon {
+  margin-left: 1px;
+}
+
+/*SARibbonGallery*/
+
+SARibbonGallery {
+  border: 1px solid #c2d0df;
+  background-color: transparent;
+  color: #333;
+}
+
+/*SARibbonGalleryGroup*/
+
+SARibbonGalleryGroup {
+  show-decoration-selected: 1;
+  background-color: transparent;
+  color: #333;
+  border: 1px solid #c2d0df;
+}
+
+SARibbonGalleryGroup::item:selected {
+  background-color: #9ed2f9;
+  color: black;
+}
+
+SARibbonGalleryGroup::item:hover {
+  border: 1px solid #badffa;
+  background-color: #cee7fc;
+}
+
+/*RibbonGalleryViewport*/
+
+SARibbonGalleryViewport {
+  background-color: #ffffff;
+}
+
+/*SARibbonLineEdit*/
+
+SARibbonLineEdit {
+  border: 1px solid #C0C2C4;
+  background: #FFF;
+  selection-background-color: #9BBBF7;
+  selection-color: #000;
+}
+
+/*SARibbonComboBox*/
+
+SARibbonComboBox {
+  border: 1px solid #c2d0df;
+  background-color: white;
+}
+
+SARibbonComboBox:hover {
+  border: 1px solid #269bf4;
+  color: #000;
+}
+
+SARibbonComboBox:editable {
+  color: #000;
+  background: white;
+  selection-background-color: #9BBBF7;
+  selection-color: #000;
+}
+
+SARibbonComboBox::drop-down {
+  subcontrol-origin: padding;
+  subcontrol-position: top right;
+  width: 1em;
+  border: none;
+}
+
+SARibbonComboBox::drop-down:hover {
+  border: 1px solid #FDEEB3;
+  background-color: #9ed2f9;
+}
+
+SARibbonComboBox::down-arrow {
+  image: url(:/SARibbon/image/resource/ArrowDown.png);
+}
+
+/*SARibbonSeparatorWidget*/
+
+SARibbonSeparatorWidget {
+  background-color: white;
+}
+
+SARibbonCategoryScrollButton {
+  border: 1px solid #c5d2e0;
+  color: #333;
+  background-color: white;
+}
+
+SARibbonCategoryScrollButton[arrowType="3"] {
+  border-right-width: 1px;
+}
+
+SARibbonCategoryScrollButton[arrowType="4"] {
+  border-left-width: 1px;
+}
+
+SARibbonCategoryScrollButton:hover {
+  color: #000000;
+  background-color: #cee7fc;
+}
+
+/*SARibbonSystemToolButton*/
+
+SARibbonSystemToolButton {
+  background-color: transparent; 
+  border:none;
+  margin-top: 2px;
+}
+
+SARibbonSystemToolButton:focus {
+  outline: none;
+}
+/*Min*/
+SARibbonSystemToolButton#SAMinimizeWindowButton {
+  background-position:center;
+  background-repeat: no-repeat;
+  background-image: url(:/SARibbon/image/resource/Titlebar_Min.svg);
+}
+SARibbonSystemToolButton#SAMinimizeWindowButton:hover{
+  background-color: #e5e5e5;
+}
+SARibbonSystemToolButton#SAMinimizeWindowButton:pressed{
+  background-color: #cacacb;
+}
+/*Max*/
+SARibbonSystemToolButton#SAMaximizeWindowButton {
+    background-position:center;
+    background-repeat: no-repeat;
+    background-image: url(:/SARibbon/image/resource/Titlebar_Max.svg);
+}
+SARibbonSystemToolButton#SAMaximizeWindowButton:hover {
+    background-color: #e5e5e5;
+}
+SARibbonSystemToolButton#SAMaximizeWindowButton:checked {
+    background-image: url(:/SARibbon/image/resource/Titlebar_Normal.svg) center;
+}
+
+/*Close*/
+SARibbonSystemToolButton#SACloseWindowButton {
+    background-position:center;
+    background-repeat: no-repeat;
+    background-image: url(:/SARibbon/image/resource/Titlebar_Close.svg);
+    margin-right: 2px;
+    /*border-right: 2px solid #0072C6;*/
+}
+
+SARibbonSystemToolButton#SACloseWindowButton:hover {
+  background-color: #e81123;
+}
+SARibbonSystemToolButton#SACloseWindowButton:pressed {
+    background-color: #f1707a;
+}
+
+SARibbonMainWindow {
+    border-left: 2px solid #0072C6;
+    border-right: 2px solid #0072C6;
+    border-bottom: 2px solid #0072C6;
+    border-top: 3px solid #0072C6;
+}
+
+QDockWidget {
+	border: 2px solid #0072C6;
+	background-color: #F8F8F8;
+}
+
+QDockWidget::title {
+    background-color: #f8f8f8;
+    color: #666666;
+    border: 1px solid #c5d2e0;
+    border-bottom: none;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    padding: 6px 12px;
+    text-align: left;
+    font-weight: normal;
+    font-size: 9pt;
+    font-family: 'Segoe UI';
+}
+
+/* Когда док-виджет активен/выделен */
+QDockWidget:focus::title {
+    background-color: white;
+    color: #0072C6;
+    font-weight: bold;
+    border: 1px solid #c5d2e0;
+    border-bottom: 1px solid white;
+    border-top: 2px solid #0072C6;
+}
+
+/* Ховер на заголовок */
+QDockWidget::title:hover {
+    background-color: #e6f2fc;
+    color: #0072C6;
+    border: 1px solid #9ed2f9;
+    border-bottom: none;
+}
+
+QDockWidget::float-button {
+    background-color: transparent;
+    border: 1px solid transparent;
+    icon-size: 12px;
+    margin-right: 2px;
+}
+
+QDockWidget::float-button:hover {
+    background-color: #cee8fc;
+    border: 1px solid #0072C6;
+    border-radius: 2px;
+}
+
+QDockWidget::close-button {
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+QDockWidget::close-button:hover {
+    background-color: #e81123;
+    border: 1px solid #d01020;
+    border-radius: 2px;
+}
+
+QDockWidget > QWidget {
+    border: none;
+}
+
+QDockWidget QTabWidget::pane {
+    /*border: 1px solid #0072C6;*/
+    background-color: white;
+}
+
+SARibbonMainWindow > QTabBar {
+    background-color: #F8F8F8;
+	color: #0072C6
+}
+
+QDockWidget QTabBar::tab {
+    background-color: #f8f8f8;
+    color: #333333;
+    border: 1px solid #c5d2e0;
+    border-bottom: none;
+    padding: 4px 10px;
+    margin-right: 1px;
+    font-size: 8pt;
+}
+
+QDockWidget QTabBar::tab:selected {
+    background-color: white;
+    color: #0072C6;
+    border: 1px solid #0072C6;
+    border-bottom: 1px solid white;
+}
+
+QDockWidget QTabBar::tab:hover:!selected {
+    background-color: #e6f2fc;
+    color: #0072C6;
+}
+
+QMainWindow::separator {
+	background: #F8F8F8;
+	width: 5px;
+	height: 5px;
+}
+
+QMainWindow::separator:hover {
+	background: #e6f2fc;
+}
+
+QStatusBar QLabel {
+	color: white;
+}
+
+/* ================== QMdiArea и его вкладки ================== */
+
+/* Панель вкладок QMdiArea */
+QMdiArea QTabBar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #c5d2e0;
+    font-family: 'Segoe UI';
+    font-size: 9pt;
+}
+
+/* Отдельные вкладки */
+QMdiArea QTabBar::tab {
+    background-color: #f8f8f8;
+    color: #666666;
+    border: 1px solid #c5d2e0;
+    border-bottom: none;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    padding: 6px 12px 6px 12px;
+    margin-right: 1px;
+    margin-top: 2px;
+    min-width: 120px;
+    max-width: 250px;
+}
+
+QMdiArea QTabBar::tab:selected {
+    background-color: white;
+    color: #0072C6;
+    font-weight: bold;
+    border: 1px solid #c5d2e0;
+    border-bottom: 1px solid white;
+    border-top: 2px solid #0072C6;
+    margin-top: 0px;
+    padding: 8px 12px 8px 12px;
+}
+
+/* Кнопка закрытия на вкладке - правильная настройка */
+QMdiArea QTabBar::close-button {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    margin: 0px;
+    padding: 2px;
+    width: 16px;
+    height: 16px;
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+    right: 4px; /* Отступ от правого края вкладки */
+	image: url(:/SARibbon/image/resource/Titlebar_Close.svg);
+}
+
+/* Состояния кнопки закрытия */
+QMdiArea QTabBar::close-button:hover {
+    background-color: #e81123;
+    border: 1px solid #d01020;
+	image: url(:/img/CloseWhite.svg);
+}
+
+QMdiArea QTabBar::close-button:pressed {
+    background-color: #f1707a;
+    border: 1px solid #e81123;
+}
+
+QMdiArea QTabBar::close-button:pressed {
+    image: url(:/img/CloseWhite.svg);
+}
+
+/*
+Выпадающие меню (ленточные попапы, контекстные меню) — синий порт
+блока QMenu из FmtLib theme-office2013-green.qss (#217346 -> #0072C6).
+Стилизация идёт через stylesheet главного окна: меню - top-level окна,
+но parent-цепочка QObject у них ведёт к MainWindow, поэтому QSS до них
+доходит. Правила с image: для indicator (Checkmark.svg/Radio*.svg)
+из FmtLib пропущены - этих ресурсов нет в нашей сборке SARibbon,
+галочки рисует базовый стиль.
+*/
+
+/* Базовый стиль для всех контекстных меню */
+QMenu {
+    background-color: #ffffff;
+    border: 1px solid #c5d2e0;
+    color: #333333;
+    font-family: 'Segoe UI';
+    font-size: 9pt;
+    padding: 1px 0px;
+    margin: 0px;
+}
+
+/* Элементы меню */
+QMenu::item {
+    background-color: transparent;
+    color: #333333;
+    padding: 4px 25px 4px 25px;
+    margin: 0px 1px;
+    border: 1px solid transparent;
+    min-height: 20px;
+    font-weight: normal;
+}
+
+/* Элемент меню с иконкой - специальные отступы */
+QMenu::item:has-icon {
+    padding-left: 28px;
+}
+
+/* Элемент меню по умолчанию - ЖИРНЫЙ ШРИФТ */
+QMenu::item[default="true"] {
+    font-weight: bold;
+    color: #0072C6;
+}
+
+/* Элемент меню при наведении */
+QMenu::item:selected {
+    background-color: #DEEBF7;
+    color: #000000;
+    border: 1px solid #BDD7EE;
+}
+
+/* Элемент меню по умолчанию при наведении */
+QMenu::item[default="true"]:selected {
+    font-weight: bold;
+    color: #005A9E;
+    background-color: #DEEBF7;
+}
+
+/* Элемент меню с включенным состоянием */
+QMenu::item:enabled {
+    color: #333333;
+}
+
+/* Элемент меню с отключенным состоянием */
+QMenu::item:disabled {
+    color: #b2b2b2;
+    background-color: transparent;
+    font-weight: normal;
+}
+
+/* Элемент меню с отключенным состоянием и по умолчанию */
+QMenu::item[default="true"]:disabled {
+    color: #8FA6BC;
+    font-weight: normal;
+}
+
+/* Стиль для иконки в меню */
+QMenu::icon {
+    position: absolute;
+    left: 4px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Элемент меню с галочкой (checked) */
+QMenu::item:checked {
+    background-color: #E5F1FB;
+    border: 1px solid #BDD7EE;
+}
+
+/* Стиль для разделителя в меню */
+QMenu::separator {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 3px 10px;
+}
+
+/* Подменю (меню второго уровня) */
+QMenu::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+/* Стрелка подменю - позиционируем справа
+   (ArrowRight.png из FmtLib у нас нет, ArrowMore.png - в ресурсах SARibbon) */
+QMenu::right-arrow {
+    image: url(:/SARibbon/image/resource/ArrowMore.png);
+    width: 8px;
+    height: 8px;
+    margin-right: 5px;
+}
+
+/* Специальные стили для иконок в меню */
+QMenu::item:has-icon:checked {
+    padding-left: 28px;
+}
+
+/* Стили для подменю */
+QMenu QMenu {
+    background-color: #ffffff;
+    border: 1px solid #c5d2e0;
+    margin-left: 1px;
+}
+
+/* Стиль для заголовка меню (например, в каскадных меню) */
+QMenu::title {
+    background-color: #f0f0f0;
+    color: #666666;
+    padding: 4px 10px;
+    font-weight: bold;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Стиль для акселераторов (горячих клавиш) в меню */
+QMenu::item:selected QLabel {
+    color: #000000;
+}
+
+QMenu::item:!selected QLabel {
+    color: #666666;
+}
+
+/* Элемент меню по умолчанию - акселератор */
+QMenu::item[default="true"] QLabel {
+    color: #0072C6;
+    font-weight: bold;
+}
+
+QMenu::item[default="true"]:selected QLabel {
+    color: #005A9E;
+}
+
+QMenu::item:default {
+    font-weight: bold;
+}
+
+/* Стиль для меню в панелях инструментов */
+QToolBar > QMenu {
+    border: 1px solid #c5d2e0;
+    margin-top: 2px;
+}
+
+/* Стиль для меню в QComboBox */
+QComboBox QMenu {
+    min-width: 180px;
+}
+
+/* Стиль для меню в QPushButton */
+QPushButton::menu-indicator {
+    width: 14px;
+    height: 14px;
+    subcontrol-position: right center;
+}
+
+/* Стиль для меню в QMenuBar (основное меню приложения) */
+QMenuBar {
+    background-color: #f8f8f8;
+    border: none;
+    color: #333333;
+    font-family: 'Segoe UI';
+    font-size: 9pt;
+    padding: 2px 0px;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 4px 15px;
+    margin: 0px 1px;
+    border: 1px solid transparent;
+    min-height: 18px;
+}
+
+QMenuBar::item:selected {
+    background-color: #DEEBF7;
+    border: 1px solid #BDD7EE;
+    color: #000000;
+}
+
+QMenuBar::item:pressed {
+    background-color: #BDD7EE;
+    border: 1px solid #0072C6;
+}
+
+/* Элемент меню в QMenuBar по умолчанию */
+QMenuBar::item[default="true"] {
+    font-weight: bold;
+    color: #0072C6;
+}
+
+/* Стрелка вправо для каскадных меню в QMenuBar */
+QMenuBar::right-arrow {
+    image: url(:/SARibbon/image/resource/ArrowDown.png);
+    width: 8px;
+    height: 8px;
+    margin-left: 5px;
+}

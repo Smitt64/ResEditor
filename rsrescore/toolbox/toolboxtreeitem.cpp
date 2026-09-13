@@ -62,6 +62,8 @@ QVariant ToolBoxTreeItem::data(const int &role) const
         return m_MimeData;
     else if (role == Qt::DecorationRole)
         return m_Icon;
+    else if (role == RoleDragIcon)
+        return m_DragIcon;
     else if (role == RoleTypeItem)
         return m_TypeItem;
     else if (role == Qt::SizeHintRole)
@@ -117,6 +119,11 @@ void ToolBoxTreeItem::setAlias(const QString &alias)
 void ToolBoxTreeItem::setIcon(const QIcon &icon)
 {
     m_Icon = icon;
+}
+
+void ToolBoxTreeItem::setDragIcon(const QIcon &icon)
+{
+    m_DragIcon = icon;
 }
 
 void ToolBoxTreeItem::setMimeData(const QString &mimetype, const QByteArray &data)

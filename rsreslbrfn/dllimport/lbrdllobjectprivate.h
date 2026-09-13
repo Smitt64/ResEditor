@@ -56,7 +56,8 @@ public:
     }
 
     bool loadLib();
-    bool open(const QString &filename);
+    bool open(const QString &filename, const bool &isnew = false);
+    bool close();
     bool initObjectList();
     void getResource(const QString &name, const int &type, ResBuffer **buffer);
     bool deleteResource(const QString &name, const int &type);
@@ -64,6 +65,7 @@ public:
     bool beginSaveRes(const QString &name, const int &type, ResBuffer **buffer);
     bool endSaveRes(ResBuffer **buffer);
     QString resError(int stat);
+    void setLastErrorFromStat(int stat);
     Qt::HANDLE findLibDirElem(const QString &name, const int &type);
 
     QLibrary m_lib;

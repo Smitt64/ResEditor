@@ -1,7 +1,10 @@
 #include "stdpaneleditor.h"
 #include "baseeditorview.h"
+#include "controlitemswrapper.h"
 #include "controlpropertysdlg.h"
 #include "panelitem.h"
+#include "qmetaobject.h"
+#include <QShortcut>
 #include "resapplication.h"
 #include "respanel.h"
 #include "rsrescore.h"
@@ -23,6 +26,9 @@
 #include "widgets/resinfodlg.h"
 #include "spelling/resspellstringsdlg.h"
 #include "spelling/spellchecker.h"
+#include "stdeditorscene.h"
+#include "SARibbon.h"
+#include "propertywidgetmapper.h"
 #include <errorsmodel.h>
 #include <errordlg.h>
 #include <QStatusBar>
@@ -34,11 +40,16 @@
 #include <QFontMetrics>
 #include <QPalette>
 #include <QPainter>
+#include <QPixmap>
+#include <QModelIndex>
+#include <QIcon>
+#include "toolbox/toolboxmodel.h"
 #include <QGraphicsItem>
 #include <QUndoStack>
 #include <QMenuBar>
 #include <QApplication>
 #include <QJsonArray>
+#include <QRegularExpression>
 #include <QClipboard>
 #include <QJsonDocument>
 #include <QTextLayout>
@@ -59,180 +70,13 @@
 #include "propertymodel.h"
 #include <QTextCodec>
 #include <QProgressDialog>
+#include <QActionGroup>
+#include <QGroupBox>
+#include <QButtonGroup>
+#include <QRadioButton>
+#include <QColor>
 
 #define SHADOW_CODE 9617
-
-// ----------------------------------------------------
-
-class StdEditorScene : public BaseScene
-{
-public:
-    StdEditorScene(QObject *parent = nullptr) :
-        BaseScene(parent),
-        m_fShowCursor(false)
-    {
-        m_pCursorTimer = new QTimer(this);
-        m_pCursorTimer->setInterval(500);
-        m_pCursorTimer->setSingleShot(false);
-
-        connect(m_pCursorTimer, &QTimer::timeout, [&]()
-        {
-            m_fShowCursor = !m_fShowCursor;
-        });
-
-        m_pCursorTimer->start();
-    }
-
-    const QPointF &cursorPos() const
-    {
-        return m_CursorPos;
-    }
-
-    virtual ~StdEditorScene()
-    {
-    }
-
-    virtual void sceneItemPosChanged() Q_DECL_OVERRIDE
-    {
-        PanelItem *panel = findFirst<PanelItem>();
-
-        if (panel)
-            panel->updateChildControlsOrder();
-    }
-
-protected:
-    virtual void drawBackground (QPainter* painter, const QRectF &rect) Q_DECL_OVERRIDE
-    {
-        BaseScene::drawBackground(painter, rect);
-
-        QList<QGraphicsItem*> totalItems = items(Qt::AscendingOrder);
-        for (QGraphicsItem *item : qAsConst(totalItems))
-        {
-            PanelItem *panel = dynamic_cast<PanelItem*>(item);
-
-            if (panel)
-            {
-                QSize grSize = getGridSize();
-                QRectF panelRect = panel->mapRectToScene(panel->boundingRect());
-                panelRect.translate(QPointF(grSize.width() * 2, grSize.height()));
-                painter->save();
-                painter->setPen(Qt::NoPen);
-                painter->setBrush(QBrush(Qt::Dense3Pattern));
-                painter->drawRect(panelRect);
-                painter->restore();
-                break;
-            }
-        }
-    }
-
-    virtual void drawForeground(QPainter *painter, const QRectF &rect) Q_DECL_OVERRIDE
-    {
-        if (m_fShowCursor && !m_CursorPos.isNull())
-        {
-            painter->save();
-            painter->setCompositionMode(QPainter::RasterOp_NotDestination);
-
-            QPointF CursorPos = m_CursorPos;
-            painter->fillRect(QRectF(CursorPos, QSizeF(getGridSize().width(), getGridSize().height()/* / 2*/)), Qt::black);
-            painter->restore();
-        }
-
-        update(rect);
-    }
-
-    virtual void keyPressEvent(QKeyEvent *keyEvent) Q_DECL_OVERRIDE
-    {
-        QSize grSize = getGridSize();
-        auto CheckNewPos = [this, &grSize](const QPointF &point)
-        {
-            const CustomRectItem *panel = findTopLevelItem();
-            QRectF bound = panel->mapRectToScene(panel->boundingRect());
-            QRectF caret(point, QSizeF(grSize.width(), grSize.height()));
-
-            return bound.contains(caret);
-        };
-
-        QPointF savepos = m_CursorPos;
-        if (keyEvent->key() == Qt::Key_Down)
-            m_CursorPos.setY(m_CursorPos.y() + grSize.height());
-
-        if (keyEvent->key() == Qt::Key_Up)
-            m_CursorPos.setY(m_CursorPos.y() - grSize.height());
-
-        if (keyEvent->key() == Qt::Key_Right)
-            m_CursorPos.setX(m_CursorPos.x() + grSize.width());
-
-        if (keyEvent->key() == Qt::Key_Left)
-            m_CursorPos.setX(m_CursorPos.x() - grSize.width());
-
-        if (!CheckNewPos(m_CursorPos))
-            m_CursorPos = savepos;
-
-        BaseScene::keyPressEvent(keyEvent);
-    }
-
-    virtual void mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent) Q_DECL_OVERRIDE
-    {
-        BaseScene::mousePressEvent(mouseEvent);
-        if (mouseEvent->button() != Qt::LeftButton)
-            return;
-
-        CustomRectItem *panelItem = findTopLevelItem();
-        if (!panelItem)
-            return;
-
-        QSize gridSize = getGridSize();
-        QPointF scenePos = mouseEvent->scenePos();
-        qreal xV = round(scenePos.x() / gridSize.width()) * gridSize.width();
-        qreal yV = round(scenePos.y() / gridSize.height())* gridSize.height();
-
-        QList<QRectF> mouseRects =
-        {
-            QRectF(QPoint(xV, yV - gridSize.height()), gridSize), // Up rect
-            QRectF(QPoint(xV, yV + gridSize.height()), gridSize), // Bottom rect
-            QRectF(QPoint(xV - gridSize.width(), yV), gridSize),  // Left rect
-            QRectF(QPoint(xV + gridSize.width(), yV), gridSize)   // Right rect
-        };
-
-        QPointF nPos = QPointF(xV, yV);
-        for (QRectF rect : mouseRects)
-        {
-            rect.adjusted(-1, -1, -1, -1);
-            if (rect.contains(scenePos))
-                nPos = rect.topLeft();
-        }
-
-        QRectF panelSceneBound = panelItem->mapRectToScene(panelItem->boundingRect());
-        if (panelSceneBound.contains(mouseEvent->scenePos()))
-        {
-            bool hasBounds = false;
-            QList<QGraphicsItem*> panelItems = items();
-
-            for (QGraphicsItem *tmpItem : qAsConst(panelItems))
-            {
-                ScrolAreaRectItem *area = dynamic_cast<ScrolAreaRectItem*>(tmpItem);
-
-                if (tmpItem == panelItem || area || !tmpItem->isVisible())
-                    continue;
-
-                QRectF itemSceneBound = tmpItem->mapRectToScene(tmpItem->boundingRect());
-                if (itemSceneBound.contains(mouseEvent->scenePos()))
-                {
-                    hasBounds = true;
-                    break;
-                }
-            }
-
-            if (!hasBounds)
-                m_CursorPos = nPos;
-        }
-    }
-
-private:
-    bool m_fShowCursor;
-    QTimer *m_pCursorTimer;
-    QPointF m_CursorPos;
-};
 
 // ----------------------------------------------------
 class StdEditorView : public BaseEditorView
@@ -259,13 +103,67 @@ public:
 
 // ----------------------------------------------------
 
+#define PanStyleIcon(_style) panelItem->style()->renderStyleIcon(panelItem->borderStyle(), _style, panelItem)
+#define CtrlStyleIcon(_ctrlstyle) panelItem->style()->renderControlStyleIcon(_ctrlstyle, panelItem->panelStyle(), panelItem)
+#define BorderIcon(border) panelItem->style()->renderBorderIcon(border, panelItem->panelStyle(), panelItem)
+
 StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     BaseEditorWindow(parent),
+    m_pView(nullptr),
     m_pPanel(nullptr),
     panelItem(nullptr),
-    m_StatusBar(nullptr)
+    m_Type(Type),
+    m_SizeText(nullptr),
+    m_CursorText(nullptr),
+    m_pNameLineEdit(nullptr),
+    m_pDeleteShortcut(nullptr),
+    m_pCutShortcut(nullptr),
+    m_pCopyShortcut(nullptr),
+    m_pPasteShortcut(nullptr),
+    m_pContrst(nullptr),
+    m_pDelete(nullptr),
+    m_pProperty(nullptr),
+    m_pScrolAreaAction(nullptr),
+    m_pCutAction(nullptr),
+    m_pCopyAction(nullptr),
+    m_pPasteAction(nullptr),
+    m_pCheckAction(nullptr),
+    m_EwViewAction(nullptr),
+    m_ViewAction(nullptr),
+    m_Statistic(nullptr),
+    m_SaveToXml(nullptr),
+    m_pCreateControl(nullptr),
+    m_pSpellCheckAction(nullptr),
+    m_pFieldProperty(nullptr),
+    m_pFdmAction(nullptr),
+    m_pAsTextAction(nullptr),
+    m_pNoTabStop(nullptr),
+    m_pListSelect(nullptr),
+    m_pClipboard(nullptr),
+    m_pStructModel(nullptr),
+    m_pPanelCategory(nullptr),
+    m_pControlCategory(nullptr),
+    m_pBorderStyleGallery(nullptr),
+    m_pPanelStyleGallery(nullptr),
+    m_pControlStyleGallery(nullptr),
+    m_pBorderGroup1(nullptr),
+    m_pPanelStyleGroup(nullptr),
+    m_pControlStyleGroup(nullptr),
+    m_pFieledTypeGroup(nullptr),
+    m_pDataTypeGroup(nullptr)
 {
-    m_Type = Type;
+    PropertyModel::setGroupColors
+    (
+        {
+            QColor(222, 235, 247),
+            QColor(235, 244, 231),
+            QColor(255, 242, 204),
+            QColor(249, 231, 231),
+            QColor(242, 237, 250),
+            QColor(231, 244, 249)
+        }
+    );
+
     if (Type == LbrObject::RES_PANEL)
         panelItem = new PanelItem();
     else
@@ -279,107 +177,42 @@ StdPanelEditor::StdPanelEditor(const qint16 &Type, QWidget *parent) :
     }
 
     m_pStructModel = new PanelStructModel(panelItem);
-
-    m_StatusBar = new QStatusBar(this);
-    m_pStatusContainer = new QWidget(this);
     setWindowTitle(tr("Редактирование панели"));
 
     m_SizeText = new StatusBarElement(this);
-    m_SizeText->setPixmap(QPixmap(":/img/Size.png"));
+    m_SizeText->setPixmap(QIcon::fromTheme("MoveGlyphBox").pixmap(16));
     m_SizeText->setText(QString("0 x 0"));
+    m_SizeText->setMaximumWidth(200);
 
     m_CursorText = new StatusBarElement(this);
-    m_CursorText->setPixmap(QPixmap(":/img/CursorPos.png"));
+    m_CursorText->setPixmap(QIcon::fromTheme("DirectSelection").pixmap(16));
     m_CursorText->setText(QString("0 : 0"));
-
-    m_pStatusContainerLayout = new QHBoxLayout();
-    m_pStatusContainerLayout->setMargin(0);
-    m_pStatusContainerLayout->addWidget(m_SizeText);
-    m_pStatusContainerLayout->addWidget(m_CursorText);
-    m_pStatusContainer->setLayout(m_pStatusContainerLayout);
-    m_StatusBar->addPermanentWidget(m_pStatusContainer);
-    setStatusBar(m_StatusBar);
-
+    m_CursorText->setMaximumWidth(200);
     setMouseTracking(true);
 
     m_pClipboard = QApplication::clipboard();
     connect(m_pClipboard, &QClipboard::dataChanged, this, &StdPanelEditor::clipboardChanged);
 }
 
-void StdPanelEditor::setupMenus()
+StdPanelEditor::~StdPanelEditor()
 {
-    m_pEditMenu->addAction(undoAction());
-    m_pEditMenu->addAction(redoAction());
-    m_pEditMenu->addSeparator();
-    m_pEditMenu->addAction(m_pCutAction);
-    m_pEditMenu->addAction(m_pCopyAction);
-    m_pEditMenu->addAction(m_pPasteAction);
-    m_pEditMenu->addSeparator();
-    m_pEditMenu->addAction(m_pDelete);
+    delete m_pPanelCategory;
+    delete m_pControlCategory;
 
-    m_pResMenu->addAction(m_pSave);
-    m_SaveToXml = addAction(m_pResMenu, QIcon(":/img/XMLFileHS.png"), tr("Сохранить в XML"), QKeySequence("Ctrl+ALT+S"));
-    m_pCheckAction = addAction(m_pResMenu, QIcon(":/img/CheckRes.png"), tr("Проверить"), QKeySequence("Ctrl+H"));
-    m_pSpellCheckAction = addAction(m_pResMenu, QIcon(":/img/CheckSpellingHS.png"), tr("Проверить орфографию"), QKeySequence("Alt+H"));
-    m_EwViewAction = addAction(m_pResMenu, QIcon(":/img/Panel2.png"), tr("Просмотр в EW"), QKeySequence("Ctrl+F3"));
-    m_ViewAction = addAction(m_pResMenu, QIcon(":/img/PanelCmd.png"), tr("Просмотр"), QKeySequence("Alt+F3"));
-    m_Statistic = addAction(m_pResMenu, QIcon(":/img/Statistic.png"), tr("Информация"));
+    m_pPanelCategory = nullptr;
+    m_pControlCategory = nullptr;
+}
 
-    m_pCreateControl = addAction(m_pElements, QIcon(":/img/insctrl.png"), tr("Создать поле"), QKeySequence(Qt::Key_Insert));
-
-    connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
-    connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
-    connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
-    connect(m_pCreateControl, &QAction::triggered, this, &StdPanelEditor::onInsertControl);
-    connect(m_pSpellCheckAction, &QAction::triggered, this, &StdPanelEditor::CheckSpelling);
-
-    connect(m_Statistic, &QAction::triggered, [=]()
-    {
-        ResInfoDlg dlg(this);
-        dlg.setTitle(m_pNameLineEdit->text());
-        dlg.setType(QString("%1 (%2)")
-                        .arg(type())
-                        .arg(RsResCore::typeNameFromResType(type())));
-
-        int ctrl = 0, txt = 0;
-        QList<QGraphicsItem*> lst = panelItem->childItems();
-        for (QGraphicsItem *item : qAsConst(lst))
-        {
-            ControlItem *control = dynamic_cast<ControlItem*>(item);
-            TextItem *text = dynamic_cast<TextItem*>(item);
-
-            if (control)
-                ctrl ++;
-
-            if (text)
-                txt ++;
-        }
-
-        dlg.setFields(ctrl);
-        dlg.setLabels(txt);
-        dlg.exec();
-    });
+QList<QWidget*> StdPanelEditor::statusBarSections()
+{
+    return { m_SizeText, m_CursorText };
 }
 
 void StdPanelEditor::setupEditor()
 {
-    m_pMenuBar = new QMenuBar(this);
-    setMenuBar(m_pMenuBar);
-
-    m_pToolBar = addToolBar(tr("Основная"));
-    m_pToolBar->setIconSize(QSize(16, 16));
-
     m_pView = new StdEditorView(this);
     m_pView->setupScene();
-
-    m_TabContainer = new QTabWidget(this);
-    m_TabContainer->addTab(m_pView, tr("Редактор"));
-    m_TabContainer->setTabPosition(QTabWidget::South);
-    m_TabContainer->setTabShape(QTabWidget::Triangular);
-    m_TabContainer->setTabsClosable(true);
-    m_TabContainer->tabBar()->setTabButton(0, QTabBar::RightSide, nullptr);
-
-    setCentralWidget(m_TabContainer);
+    setCentralWidget(m_pView);
 
     panelItem->setBrush(QColor(128, 128, 0));
 
@@ -392,88 +225,61 @@ void StdPanelEditor::setupEditor()
     m_pView->setMouseTracking(true);
 
     setupNameLine();
-    m_pSave = addAction(QIcon(":/img/saveHS.png"), tr("Сохранить"), QKeySequence::Save);
-    m_pToolBar->addSeparator();
-    initUndoRedo(m_pToolBar);
-    setupCopyPaste();
+    initUndoRedo();
 
-    m_pDelete = addAction(QIcon(":/img/Delete.png"), tr("Удалить"), QKeySequence::Delete);
-
-    m_pEditMenu = m_pMenuBar->addMenu(tr("&Правка"));
-    m_pViewMenu = m_pMenuBar->addMenu(tr("&Вид"));
-    m_pResMenu = m_pMenuBar->addMenu(tr("&Ресурс"));
-    m_pElements = m_pMenuBar->addMenu(tr("&Элементы"));
-    setupContrastAction();
-    setupScrolAreaAction();
-    setupPropertyAction();
-
-    BaseScene *baseScene = dynamic_cast<BaseScene*>(m_pView->scene());
+    StdEditorScene *baseScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
     if (baseScene)
         initpropertyModelSignals(baseScene);
 
-    setupMenus();
     loadToolBox();
 
-    connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
-    connect(m_pSave, &QAction::triggered, this, &StdPanelEditor::onSave);
     connect(panelItem, &PanelItem::titleChanged, [=]()
     {
         emit titleChanged(panelItem->title());
     });
 
-    connect(m_TabContainer->tabBar(), &QTabBar::tabCloseRequested, [=](int index)
+    connect(panelItem, &PanelItem::panelStyleChanged, [=]()
     {
-        QWidget *w = m_TabContainer->widget(index);
-        m_TabContainer->removeTab(index);
-        w ->deleteLater();
+        m_pPanelStyleGallery->blockSignals(true);
+        ApplyPanelStyleToGallary();
+        UpdateGallarysIcons();
+        m_pPanelStyleGallery->blockSignals(false);
+    });
+
+    connect(panelItem, &PanelItem::borderStyleChanged, [=]()
+    {
+        m_pBorderStyleGallery->blockSignals(true);
+        ApplyBorderStyleToGallary();
+        UpdateGallarysIcons();
+        m_pBorderStyleGallery->blockSignals(false);
+    });
+
+    ControlItemsWrapper *wrp = baseScene->controlItemsWrapper();
+    connect(wrp, &ControlItemsWrapper::controlStyleChanged, [=]()
+    {
+        m_pControlStyleGallery->blockSignals(true);
+        ApplyControlStyleToGallary();
+        m_pControlStyleGallery->blockSignals(false);
     });
 }
 
-void StdPanelEditor::setupContrastAction()
+QPixmap StdPanelEditor::toolBoxDragPixmap(const QModelIndex &index) const
 {
-    ResApplication *app = (ResApplication*)qApp;
+    // Как было до office-плашки (см. историю toolboxtreeview.cpp):
+    // плашка перетаскивания — просто иконка элемента 24x24
+    QIcon icon = index.data(ToolBoxModel::DragIconRole).value<QIcon>();
+    if (icon.isNull())
+        icon = index.data(Qt::DecorationRole).value<QIcon>();
 
-    m_pToolBar->addSeparator();
+    if (!icon.isNull())
+        return icon.pixmap(QSize(24, 24));
 
-    m_pContrst = addAction(QIcon(":/img/EditBrightContrastHS.png"), tr("Контраст"), QKeySequence("Alt+F9"));
-    m_pContrst->setCheckable(true);
-
-    connect(m_pContrst, &QAction::toggled, [&](bool toogled)
-    {
-        panelItem->setProperty(CONTRAST_PROPERTY, toogled);
-    });
-
-    app->settings()->beginGroup("StdEditor");
-    m_pContrst->setChecked(app->settings()->value("AutoContrast", true).toBool());
-    app->settings()->endGroup();
-    m_pViewMenu->addAction(m_pContrst);
-}
-
-void StdPanelEditor::setupScrolAreaAction()
-{
-    m_pContrst = addAction(QIcon(":/img/EditTableHS.png"), tr("Скролинг"), QKeySequence("Ctrl+F5"));
-    m_pContrst->setCheckable(true);
-
-    connect(m_pContrst, &QAction::toggled, [&](bool toogled)
-    {
-        panelItem->setProperty(SCROLAREA_PROPERTY, toogled);
-        QMetaObject::invokeMethod(panelItem, "showScrolArea", Q_ARG(bool, toogled));
-        //panelItem->metaObject()->invokeMethod()
-    });
-
-    m_pContrst->setChecked(false);
-    m_pViewMenu->addAction(m_pContrst);
-}
-
-void StdPanelEditor::setupPropertyAction()
-{
-    m_pProperty = addAction(QIcon(":/img/Properties.png"), tr("Характеристики элемента"), QKeySequence::InsertParagraphSeparator);
-
-    connect(m_pProperty, &QAction::triggered, [&]()
-    {
-        QKeyEvent event(QEvent::KeyPress, Qt::Key_Return, Qt::NoModifier);
-        QApplication::sendEvent(m_pView, &event);
-    });
+    // Старый вариант без иконки не показывал плашку вовсе
+    // (setPixmap не вызывался) — возвращаем прозрачный 1x1, т.к.
+    // пустой QPixmap здесь означает "отрисовка по умолчанию"
+    QPixmap pm(1, 1);
+    pm.fill(Qt::transparent);
+    return pm;
 }
 
 void StdPanelEditor::setupNameLine()
@@ -481,54 +287,102 @@ void StdPanelEditor::setupNameLine()
     QFont font("TerminalVector", 10);
     font.setFixedPitch(true);
 
-    m_pNameLineEdit = new QLineEdit(this);
+    m_pNameLineEdit = new SARibbonLineEdit(this);
     m_pNameLineEdit->setReadOnly(true);
     m_pNameLineEdit->setFont(font);
-    m_pNameLineEdit->setAlignment(Qt::AlignRight);
+    m_pNameLineEdit->setObjectName("pNameLineEdit");
 
-    m_pMenuBar->setCornerWidget(m_pNameLineEdit);
-}
-
-void StdPanelEditor::setupCopyPaste()
-{
-    m_pToolBar->addSeparator();
-    m_pCutAction = addAction(QIcon(":/img/CutHS.png"), tr("Вырезать"), QKeySequence::Cut);
-    m_pCopyAction = addAction(QIcon(":/img/CopyHS.png"), tr("Копировать"), QKeySequence::Copy);
-    m_pPasteAction = addAction(QIcon(":/img/PasteHS.png"), tr("Вставить"), QKeySequence::Paste);
-
-    clipboardChanged();
-
-    connect(m_pCopyAction, &QAction::triggered, this, &StdPanelEditor::sceneCopyItems);
-    connect(m_pPasteAction, &QAction::triggered, this, &StdPanelEditor::scenePasteItems);
-    connect(m_pCutAction, &QAction::triggered, this, &StdPanelEditor::sceneCutItems);
-}
-
-QAction *StdPanelEditor::addAction(const QIcon &icon, const QString &text, const QKeySequence &key)
-{
-    QAction *action = m_pToolBar->addAction(icon, text);
-    action->setToolTip(text);
-
-    if (!key.isEmpty())
+    QAction *copyAction = m_pNameLineEdit->addAction(QIcon::fromTheme("Copy"), QLineEdit::TrailingPosition);
+    connect(copyAction, &QAction::triggered, [=]()
     {
-        action->setShortcut(key);
-        AddShortcutToToolTip(action);
+        QClipboard *pClipboard = QApplication::clipboard();
+        pClipboard->setText(m_pNameLineEdit->text(), QClipboard::Clipboard);
+    });
+}
+
+void StdPanelEditor::setCursorToFirstFreeCell()
+{
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+    if (!pScene || !panelItem)
+        return;
+
+    QSize gridSize = pScene->getGridSize();
+    QRectF panelRect = panelItem->boundingRect();
+
+    // Определяем доступную область в зависимости от наличия границы
+    QRectF availableRect = panelRect;
+    if (panelItem->borderStyle() != ResStyle::Border_NoLine)
+    {
+        availableRect = panelRect.adjusted(gridSize.width(), gridSize.height(),
+                                           -gridSize.width(), -gridSize.height());
     }
 
-    return action;
-}
+    // Получаем все дочерние элементы панели
+    QList<QGraphicsItem*> childItems = panelItem->childItems();
 
-QAction *StdPanelEditor::addAction(QMenu *menu, const QIcon &icon, const QString &text, const QKeySequence &key)
-{
-    QAction *action = menu->addAction(icon, text);
-    action->setToolTip(text);
+    // Вместо QSet<QRectF> используем QList для хранения занятых ячеек
+    QList<QRectF> occupiedCells;
 
-    if (!key.isEmpty())
+    // Собираем занятые ячейки
+    for (QGraphicsItem* item : childItems)
     {
-        action->setShortcut(key);
-        AddShortcutToToolTip(action);
+        if (dynamic_cast<ScrolAreaRectItem*>(item) || !item->isVisible())
+            continue;
+
+        CustomRectItem* rectItem = dynamic_cast<CustomRectItem*>(item);
+        if (rectItem)
+        {
+            QRectF itemRect = rectItem->boundingRect();
+            itemRect.moveTo(rectItem->pos());
+
+            // Преобразуем в координаты сетки
+            qreal startX = floor(itemRect.x() / gridSize.width()) * gridSize.width();
+            qreal startY = floor(itemRect.y() / gridSize.height()) * gridSize.height();
+            qreal endX = ceil((itemRect.x() + itemRect.width()) / gridSize.width()) * gridSize.width();
+            qreal endY = ceil((itemRect.y() + itemRect.height()) / gridSize.height()) * gridSize.height();
+
+            // Добавляем все занятые ячейки
+            for (qreal y = startY; y < endY; y += gridSize.height())
+            {
+                for (qreal x = startX; x < endX; x += gridSize.width())
+                    occupiedCells.append(QRectF(x, y, gridSize.width(), gridSize.height()));
+            }
+        }
     }
 
-    return action;
+    // Ищем первую свободную ячейку
+    for (qreal y = availableRect.y(); y < availableRect.y() + availableRect.height(); y += gridSize.height())
+    {
+        for (qreal x = availableRect.x(); x < availableRect.x() + availableRect.width(); x += gridSize.width())
+        {
+            QRectF cellRect(x, y, gridSize.width(), gridSize.height());
+
+            // Проверяем, что ячейка полностью внутри доступной области
+            if (!availableRect.contains(cellRect))
+                continue;
+
+            // Проверяем, что ячейка не занята
+            bool isOccupied = false;
+            for (const QRectF& occupiedCell : occupiedCells)
+            {
+                if (occupiedCell.intersects(cellRect))
+                {
+                    isOccupied = true;
+                    break;
+                }
+            }
+
+            if (!isOccupied)
+            {
+                // Нашли свободную ячейку, устанавливаем курсор
+                pScene->setCursorPosition(panelItem->mapToScene(QPointF(x, y)));
+                return;
+            }
+        }
+    }
+
+    // Если не нашли свободную ячейку, устанавливаем курсор в начало доступной области
+    pScene->setCursorPosition(panelItem->mapToScene(availableRect.topLeft()));
 }
 
 void StdPanelEditor::setPanel(ResPanel *panel, const QString &comment)
@@ -540,6 +394,8 @@ void StdPanelEditor::setPanel(ResPanel *panel, const QString &comment)
 
     m_pNameLineEdit->setText(m_pPanel->name());
     m_pStructModel->structChanged();
+
+    setCursorToFirstFreeCell();
 
     emit titleChanged(m_pPanel->title());
 }
@@ -638,7 +494,7 @@ void StdPanelEditor::sceneCutItems()
 
 void StdPanelEditor::sceneDeleteItems()
 {
-    BaseScene *pScene = dynamic_cast<BaseScene*>(m_pView->scene());
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
 
     if (!pScene)
         return;
@@ -722,22 +578,96 @@ void StdPanelEditor::scenePasteItems()
 
         QJsonObject rootObj;
         QJsonArray items;
-        QPointF offset = topItem->mapFromScene(pScene->cursorPos());
+        QPointF offset = pScene->cursorPos();//topItem->mapFromScene(pScene->cursorPos());
         int yOffset = 0;
         while (!stream.atEnd())
         {
-            QString text = stream.readLine();
+            QString text = stream.readLine().trimmed();
 
-            TextItem *pTextItem = new TextItem();
-            pScene->addItem(pTextItem);
-            pTextItem->setText(text);
-            pTextItem->setCoord(QPoint(0, yOffset));
-            QJsonObject itemData;
+            QRegularExpression reStart("^(\\[|\\()\\s*(.)\\s*(\\]|\\))\\s*(.*)$");
+            QRegularExpression reEnd("^(.*?)\\s*(\\[|\\()\\s*(.)\\s*(\\]|\\))$");
+            QRegularExpressionMatch matchStart = reStart.match(text);
+            QRegularExpressionMatch matchEnd = reEnd.match(text);
 
-            pTextItem->serialize(itemData);
-            delete pTextItem;
+            bool hasMarker = false;
+            bool markerAtStart = false;
+            bool isCheck = false;
+            bool checked = false;
+            QString labelText;
 
-            items.append(itemData);
+            if (matchStart.hasMatch())
+            {
+                hasMarker = true;
+                markerAtStart = true;
+                isCheck = matchStart.captured(1) == "[";
+                checked = !matchStart.captured(2).trimmed().isEmpty();
+                labelText = matchStart.captured(4).trimmed();
+            }
+            else if (matchEnd.hasMatch())
+            {
+                hasMarker = true;
+                markerAtStart = false;
+                isCheck = matchEnd.captured(2) == "[";
+                checked = !matchEnd.captured(3).trimmed().isEmpty();
+                labelText = matchEnd.captured(1).trimmed();
+            }
+
+            if (hasMarker)
+            {
+                QString marker = isCheck ? "[ ]" : "( )";
+                QString displayText;
+                int controlX = 0;
+
+                if (markerAtStart)
+                {
+                    displayText = marker + QString(" ") + labelText;
+                    controlX = 1;
+                }
+                else
+                {
+                    displayText = labelText + QString(" ") + marker;
+                    controlX = displayText.length() - 2;
+                }
+
+                TextItem *pTextItem = new TextItem();
+                pScene->addItem(pTextItem);
+                pTextItem->setText(displayText);
+                pTextItem->setCoord(QPoint(0, yOffset));
+
+                ControlItem *pControlItem = new ControlItem();
+                pScene->addItem(pControlItem);
+                pControlItem->setCoord(QPoint(controlX, yOffset));
+                pControlItem->setSize(QSize(1, 1));
+                pControlItem->setFieldType(ControlItem::FBT);
+                pControlItem->setDataType(ControlItem::CHAR);
+                pControlItem->setDataLength(0);
+                if (checked)
+                    pControlItem->setValueTemplate("X");
+
+                QJsonObject textData;
+                pTextItem->serialize(textData);
+                items.append(textData);
+
+                QJsonObject controlData;
+                pControlItem->serialize(controlData);
+                items.append(controlData);
+
+                delete pTextItem;
+                delete pControlItem;
+            }
+            else
+            {
+                TextItem *pTextItem = new TextItem();
+                pScene->addItem(pTextItem);
+                pTextItem->setText(text);
+                pTextItem->setCoord(QPoint(0, yOffset));
+                QJsonObject itemData;
+
+                pTextItem->serialize(itemData);
+                delete pTextItem;
+
+                items.append(itemData);
+            }
 
             yOffset ++;
         }
@@ -754,7 +684,7 @@ void StdPanelEditor::scenePasteItems()
     }
     else if (mimeData->hasFormat(MIMETYPE_TOOLBOX))
     {
-        QPointF offset = topItem->mapFromScene(pScene->cursorPos());
+        QPointF offset = pScene->cursorPos();//topItem->mapFromScene(pScene->cursorPos());
         UndoItemAdd *pUndo = new UndoItemAdd(pScene);
         pUndo->setData(mimeData->data(MIMETYPE_TOOLBOX));
         pUndo->setOffset(topItem->realCoordToEw(offset));
@@ -768,6 +698,9 @@ void StdPanelEditor::scenePasteItems()
 
 void StdPanelEditor::clipboardChanged()
 {
+    if (!m_pPasteAction)
+        return;
+
     const QMimeData *mimeData = m_pClipboard->mimeData();
     if (mimeData->hasText() || mimeData->hasFormat(MIMETYPE_TOOLBOX))
         m_pPasteAction->setEnabled(true);
@@ -809,6 +742,13 @@ void StdPanelEditor::fillResPanel(ResPanel *resPanel)
     {
         QRect rc = item->geometry();
         resPanel->addText(item->text(), rc.x(), rc.y(), item->textStyle().style());
+    }
+
+    if (pPanel->comment().isEmpty())
+    {
+        pPanel->setSkipUndoStack(true);
+        pPanel->setComment(pPanel->title());
+        pPanel->setSkipUndoStack(false);
     }
 
     resPanel->setType(m_Type);
@@ -856,7 +796,7 @@ void StdPanelEditor::addCodeWindow(const QString &title, const QString &text)
     pEdit->setPlainText(text);
 
     ToolApplyHighlighter(pEdit, HighlighterXml);
-    m_TabContainer->addTab(pEdit, title);
+    //m_TabContainer->addTab(pEdit, title);
 }
 
 const char *StdPanelEditor::resTypeStr(int tp)
@@ -877,13 +817,41 @@ const char *StdPanelEditor::resTypeStr(int tp)
 void StdPanelEditor::saveToXml()
 {
     QFileDialog fileDlg(this);
+    QSettings *pSettings = RsResCore::inst()->settings();
+
+    QStringList recentDirs;
+    int size = pSettings->beginReadArray("RecentXmlDirs");
+    for (int i = 0; i < size; i++)
+    {
+        pSettings->setArrayIndex(i);
+        QString dir = pSettings->value("path").toString();
+        if (QDir(dir).exists() && !recentDirs.contains(dir))
+            recentDirs.append(dir);
+    }
+    pSettings->endArray();
+
     fileDlg.setOption(QFileDialog::DontUseNativeDialog);
     fileDlg.setWindowTitle(tr("Сохранение в xml"));
     fileDlg.setAcceptMode(QFileDialog::AcceptOpen);
     fileDlg.setDirectory("/home/jana");
     fileDlg.setFileMode(QFileDialog::DirectoryOnly);
     fileDlg.setViewMode(QFileDialog::List);
-    //fileDlg.setNameFilter(tr("Image Files (*.png *.jpg *.bmp)"));
+
+    QList<QUrl> sidebarUrls;
+    sidebarUrls << QUrl::fromLocalFile(QDir::homePath())
+                << QUrl::fromLocalFile(QDir::currentPath());
+
+    for (const QString &dir : recentDirs)
+    {
+        if (QDir(dir).exists())
+            sidebarUrls.append(QUrl::fromLocalFile(dir));
+    }
+    fileDlg.setSidebarUrls(sidebarUrls);
+
+    if (!recentDirs.isEmpty())
+        fileDlg.setDirectory(recentDirs.first());
+    else
+        fileDlg.setDirectory(QDir::homePath());
 
     QScopedPointer<QHBoxLayout> hbl(new QHBoxLayout(0));
     QScopedPointer<QComboBox> encode(new QComboBox());
@@ -906,7 +874,45 @@ void StdPanelEditor::saveToXml()
     QString result =
         RsResCore::inst()->saveResToXml(type(), name(), lbr(), filename, encodetxt);
 
-    addCodeWindow(tr("XML"), result);
+    if (QDir(filename).exists())
+    {
+        recentDirs.removeAll(filename);
+        recentDirs.prepend(filename);
+
+        pSettings->beginWriteArray("RecentXmlDirs");
+        for (int i = 0; i < recentDirs.size(); i++)
+        {
+            pSettings->setArrayIndex(i);
+            pSettings->setValue("path", recentDirs[i]);
+        }
+        pSettings->endArray();
+        pSettings->sync();
+    }
+
+    /*addCodeWindow(tr("XML"), result);*/
+    bool showMessage = pSettings->value("StdPanelEditor/ShowXmlSuccessMessage", true).toBool();
+    if (showMessage)
+    {
+        QMessageBox msgBox(QMessageBox::Information,
+                           tr("Сохранение XML"),
+                           tr("<b>Ресурс '%1' успешно экспортирован в XML</b><br><br>"
+                              "Каталог: %2<br>"
+                              "Кодировка: %3")
+                               .arg(name())
+                               .arg(QDir::toNativeSeparators(filename))
+                               .arg(encodetxt),
+                           QMessageBox::Ok,
+                           this);
+
+        msgBox.setCheckBox(new QCheckBox(tr("Больше не показывать")));
+        msgBox.exec();
+
+        if (msgBox.checkBox()->isChecked())
+        {
+            pSettings->setValue("StdPanelEditor/ShowXmlSuccessMessage", false);
+            pSettings->sync();
+        }
+    }
 }
 
 void StdPanelEditor::showCheckError(int stat, ErrorsModel *model)
@@ -1066,13 +1072,11 @@ void StdPanelEditor::onInsertControl()
     if (!pPanel)
         return;
 
-    CursorPos = pPanel->mapFromScene(CursorPos);
-
     bool found = false;
     QSize grid = pScene->getGridSize();
     QRectF cursor(CursorPos, QSizeF(grid.width(), grid.height()));
     QList<CustomRectItem*> lst = pScene->findItems<CustomRectItem>();
-    for (CustomRectItem *item : lst)
+    for (CustomRectItem *item : qAsConst(lst))
     {
         if (pPanel == item)
             continue;
@@ -1124,7 +1128,7 @@ void StdPanelEditor::CheckSpelling()
 
     QProgressDialog dialog(tr("Загрузка словаря"), "", 0, 0, this);
     dialog.setWindowTitle("Орфография");
-    dialog.setWindowIcon(QIcon(":/img/CheckSpellingHS.png"));
+    dialog.setWindowIcon(QIcon::fromTheme("SpellingCheck"));
     dialog.setCancelButton(nullptr);
     dialog.setWindowModality(Qt::WindowModal);
     dialog.setAutoClose(true);
@@ -1246,4 +1250,871 @@ void StdPanelEditor::CheckSpellingUpdateTexts(ResSpellStringsDlg *dlg)
         }
     }
     undoStack()->endMacro();
+}
+
+void StdPanelEditor::MakeControlRibbonCategory(SARibbonCategory* category)
+{
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+
+    SARibbonPannel *fieldpanel = category->addPannel(tr("Параметры поля"));
+    SARibbonPannel *fieldtypepanel = category->addPannel(tr("Тип поля"));
+    SARibbonPannel *datatypepanel = category->addPannel(tr("Тип значения"));
+
+    m_pFieldProperty = createAction(tr("Параметры поля"), "FieldProperties");
+    toolAddActionWithTooltip(m_pFieldProperty,
+                         tr("Открывает диалог параметров поля"),
+                         QKeySequence("Enter"));
+    fieldpanel->addLargeAction(m_pFieldProperty);
+
+    m_pFdmAction = createAction(tr("Признак FDM"), "TimeLineLock");
+    m_pFdmAction->setCheckable(true);
+    toolAddActionWithTooltip(m_pFdmAction, tr("Включает/выключает режим FDM"));
+    fieldpanel->addMediumAction(m_pFdmAction);
+
+    m_pAsTextAction = createAction(tr("Признак текста"), "TextBlock");
+    m_pAsTextAction->setCheckable(true);
+    toolAddActionWithTooltip(m_pAsTextAction,
+                         tr("Включает/выключает текстовый режим поля"));
+    fieldpanel->addMediumAction(m_pAsTextAction);
+
+    m_pFieledTypeGroup = new QActionGroup(this);
+    m_pFieledTypeGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
+
+    m_pDataTypeGroup = new QActionGroup(this);
+    m_pDataTypeGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
+
+    QMetaEnum FieldTypeEnum = QMetaEnum::fromType<ControlItem::FieldType>();
+    for (int i = 0; i < FieldTypeEnum.keyCount(); i++)
+    {
+        int value = FieldTypeEnum.value(i);
+        QAction *ftype = createAction(FieldTypeEnum.valueToKey(value));
+        ftype->setCheckable(true);
+        ftype->setData(value);
+
+        QString status;
+        QString description = getFieldTypeDescription(value, status);
+        ftype->setToolTip(description);
+        ftype->setStatusTip(status);
+
+        m_pFieledTypeGroup->addAction(ftype);
+        fieldtypepanel->addMediumAction(ftype);
+    }
+
+    QMetaEnum DataTypeEnum = QMetaEnum::fromType<ControlItem::DataType>();
+    for (int i = 0; i < DataTypeEnum.keyCount(); i++)
+    {
+        int value = DataTypeEnum.value(i);
+        QAction *ftype = createAction(DataTypeEnum.valueToKey(value));
+        ftype->setCheckable(true);
+        ftype->setData(value);
+
+        QString tooltip = getDataTypeDescription(static_cast<ControlItem::DataType>(value));
+        ftype->setToolTip(tooltip);
+
+        m_pDataTypeGroup->addAction(ftype);
+        datatypepanel->addMediumAction(ftype);
+    }
+
+    SARibbonPannel *stylepanel = category->addPannel(tr("Стиль"));
+    m_pControlStyleGallery = stylepanel->addGallery();
+    MakeStyleRaibbonGallary(m_pControlStyleGallery, SLOT(OnControlStyleSelected(QAction*)), &m_pControlStyleGroup, true);
+
+    m_pNoTabStop = createAction(tr("Исключить из обхода"), "ExcludePath");
+    toolAddActionWithTooltip(m_pNoTabStop, tr("Исключает поле из перехода по Tab"));
+    m_pNoTabStop->setCheckable(true);
+    fieldpanel->addMediumAction(m_pNoTabStop);
+
+    m_pListSelect = createAction(tr("Выбор из списка"), "ListBoxSearch");
+    toolAddActionWithTooltip(m_pListSelect, tr("Позволяет пользователю выбирать значения из предопределенного списка"));
+    m_pListSelect->setCheckable(true);
+    fieldpanel->addMediumAction(m_pListSelect);
+
+    ControlItemsWrapper *wrp = pScene->controlItemsWrapper();
+    m_RibbonControlMapper.reset(new PropertyWidgetMapper());
+    m_RibbonMapper->bind(wrp, "fieldType", m_pFieledTypeGroup);
+    m_RibbonMapper->bind(wrp, "dataType", m_pDataTypeGroup);
+
+    m_RibbonMapper->bind(wrp, "fdm", m_pFdmAction);
+    m_RibbonMapper->bind(wrp, "isText", m_pAsTextAction);
+    m_RibbonMapper->bind(wrp, "noTabStop", m_pNoTabStop);
+    m_RibbonMapper->bind(wrp, "listSelect", m_pListSelect);
+
+    connect(m_pFieldProperty, &QAction::triggered, [&]()
+    {
+        StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+        ControlItemsWrapper *controlItemsWrapper = pScene->controlItemsWrapper();
+        controlItemsWrapper->userAction(CustomRectItem::ActionKeyEnter);
+    });
+}
+
+void StdPanelEditor::MakeResRibbonCategory(SARibbonCategory* category)
+{
+    ResApplication *app = (ResApplication*)qApp;
+    SARibbonPannel *respanel = category->addPannel(tr("Панель"));
+
+    QAction *panelPropertyAction = createAction(tr("Параметры панели"), "WindowsService");
+    toolAddActionWithTooltip(panelPropertyAction,
+                         tr("Открывает диалог свойств панели"),
+                         QKeySequence("Enter"));
+    respanel->addLargeAction(panelPropertyAction);
+    respanel->addSeparator();
+
+    m_SaveToXml = createAction(tr("Сохранить в XML"), "XMLFile", QKeySequence("Ctrl+ALT+S"));
+    respanel->addLargeAction(m_SaveToXml);
+    toolAddActionWithTooltip(m_SaveToXml,
+                         tr("Сохраняет панель в XML-формат"),
+                         QKeySequence("Ctrl+ALT+S"));
+
+    connect(m_SaveToXml, &QAction::triggered, this, &StdPanelEditor::saveToXml);
+    respanel->addSeparator();
+
+    connect(panelPropertyAction, &QAction::triggered, [&]()
+    {
+        panelItem->userAction(CustomRectItem::ActionKeyEnter);
+    });
+
+    respanel->addSmallWidget(m_pNameLineEdit);
+    //respanel->setMaximumWidth(48 * 4);
+    SARibbonPannel *editpanel = category->addPannel(tr("Правка"));
+
+    m_pCreateControl = createAction(tr("Создать поле"), "TextBox", QKeySequence(Qt::Key_Insert));
+    toolAddActionWithTooltip(m_pCreateControl,
+                         tr("Создает новое поле в позиции курсора"),
+                         QKeySequence(Qt::Key_Insert));
+    connect(m_pCreateControl, &QAction::triggered, this, &StdPanelEditor::onInsertControl);
+    editpanel->addLargeAction(m_pCreateControl);
+
+    m_pDeleteShortcut = new QShortcut(QKeySequence::Delete, this);
+    m_pDelete = createAction(tr("Удалить элемент"), "DeleteClause");
+    toolAddActionWithTooltip(m_pDelete,
+                         tr("Удаляет выбранные элементы"),
+                         QKeySequence::Delete);
+    connect(m_pDeleteShortcut, &QShortcut::activated, this, &StdPanelEditor::sceneDeleteItems);
+    connect(m_pDelete, &QAction::triggered, this, &StdPanelEditor::sceneDeleteItems);
+    editpanel->addLargeAction(m_pDelete);
+
+    QAction *editSeparator = editpanel->addSeparator();
+    editpanel->setActionRowProportionProperty(editSeparator, SARibbonPannelItem::Small);
+
+    m_pContrst = createAction(tr("Контраст"), "AcrylicBrush", QKeySequence("Alt+F9"));
+    m_pContrst->setCheckable(true);
+    toolAddActionWithTooltip(m_pContrst,
+                         tr("Включает/выключает режим контраста для лучшей видимости"),
+                         QKeySequence("Alt+F9"));
+    connect(m_pContrst, &QAction::toggled, [&](bool toogled)
+    {
+        panelItem->setProperty(CONTRAST_PROPERTY, toogled);
+        UpdateGallarysIcons();
+    });
+
+    m_pScrolAreaAction = createAction(tr("Область скролинга"), "RowUpdating", QKeySequence("Alt+F9"));
+    m_pScrolAreaAction->setCheckable(true);
+    toolAddActionWithTooltip(m_pScrolAreaAction,
+                         tr("Показывает/скрывает область скролинга"),
+                         QKeySequence("Alt+F9"));
+    m_pScrolAreaAction->setVisible(m_Type != LbrObject::RES_PANEL);
+
+    if (m_Type != LbrObject::RES_PANEL)
+        connect(m_pScrolAreaAction, SIGNAL(toggled(bool)), panelItem, SLOT(showScrolArea(bool)));
+
+    app->settings()->beginGroup("StdEditor");
+    m_pContrst->blockSignals(true);
+    m_pContrst->setChecked(app->settings()->value("AutoContrast", true).toBool());
+    panelItem->setProperty(CONTRAST_PROPERTY, m_pContrst->isChecked());
+    m_pContrst->blockSignals(false);
+    app->settings()->endGroup();
+    editpanel->addLargeAction(m_pContrst);
+    editpanel->addLargeAction(m_pScrolAreaAction);
+    editpanel->addSeparator();
+
+    m_pCutAction = createAction(tr("Вырезать"), "Cut");
+    toolAddActionWithTooltip(m_pCutAction,
+                         tr("Вырезает выбранные элементы в буфер обмена"));
+    connect(m_pCutAction, &QAction::triggered, this, &StdPanelEditor::sceneCutItems);
+    m_pCutShortcut = new QShortcut(QKeySequence::Cut, this);
+    connect(m_pCutShortcut, &QShortcut::activated, this, &StdPanelEditor::sceneCutItems);
+    editpanel->addSmallAction(m_pCutAction);
+
+    m_pCopyAction = createAction(tr("Копировать"), "Copy");
+    toolAddActionWithTooltip(m_pCopyAction,
+                         tr("Копирует выбранные элементы в буфер обмена"));
+    connect(m_pCopyAction, &QAction::triggered, this, &StdPanelEditor::sceneCopyItems);
+    m_pCopyShortcut = new QShortcut(QKeySequence::Copy, this);
+    connect(m_pCopyShortcut, &QShortcut::activated, this, &StdPanelEditor::sceneCopyItems);
+    editpanel->addSmallAction(m_pCopyAction);
+
+    m_pPasteAction = createAction(tr("Вставить"), "Paste");
+    toolAddActionWithTooltip(m_pPasteAction,
+                         tr("Вставляет элементы из буфера обмена"));
+    connect(m_pPasteAction, &QAction::triggered, this, &StdPanelEditor::scenePasteItems);
+    m_pPasteShortcut = new QShortcut(QKeySequence::Paste, this);
+    connect(m_pPasteShortcut, &QShortcut::activated, this, &StdPanelEditor::scenePasteItems);
+    editpanel->addSmallAction(m_pPasteAction);
+
+    QAction *centerAction = createAction(tr("Выводить панель по центру"), "AlignCenter");
+    toolAddActionWithTooltip(centerAction, tr("Выводит панель по центру экрана при отображении"));
+
+    QAction *alignRightAction = createAction(tr("Выравнивание текста справа"), "AlignRight");
+    toolAddActionWithTooltip(alignRightAction, tr("Выравнивает текст панели по правому краю"));
+    centerAction->setCheckable(true);
+    alignRightAction->setCheckable(true);
+    respanel->addSmallAction(centerAction);
+    respanel->addSmallAction(alignRightAction);
+
+    SARibbonPannel *checkpanel = category->addPannel(tr("Рецензирование"));
+    m_pSpellCheckAction = createAction(tr("Проверить орфографию"), "SpellingCheck", QKeySequence("Alt+H"));
+    toolAddActionWithTooltip(m_pSpellCheckAction,
+                         tr("Запускает проверку орфографии текстов панели"),
+                         QKeySequence("Alt+H"));
+    connect(m_pSpellCheckAction, &QAction::triggered, this, &StdPanelEditor::CheckSpelling);
+    checkpanel->addLargeAction(m_pSpellCheckAction);
+
+    m_pCheckAction = createAction(tr("Проверить на ошибки"), "ValidateDocument", QKeySequence("Ctrl+H"));
+    toolAddActionWithTooltip(m_pCheckAction,
+                         tr("Проверяет панель на наличие ошибок"),
+                         QKeySequence("Ctrl+H"));
+    connect(m_pCheckAction, &QAction::triggered, this, &StdPanelEditor::onCheckRes);
+    checkpanel->addSmallAction(m_pCheckAction);
+
+    m_EwViewAction = createAction(tr("Просмотр в EW"), "FormInstance", QKeySequence("Ctrl+F3"));
+    toolAddActionWithTooltip(m_EwViewAction,
+                         tr("Запускает просмотр панели в EasyWin"),
+                         QKeySequence("Ctrl+F3"));
+    connect(m_EwViewAction, &QAction::triggered, this, &StdPanelEditor::onViewEasyWin);
+    checkpanel->addSmallAction(m_EwViewAction);
+
+    m_Statistic = createAction(tr("Информация"), "InformationSymbol");
+    toolAddActionWithTooltip(m_Statistic,
+                         tr("Показывает статистическую информацию о панели"));
+    checkpanel->addSmallAction(m_Statistic);
+
+    SARibbonPannel *borderpanel = category->addPannel(tr("Рамка"));
+    m_pBorderStyleGallery = borderpanel->addGallery();
+    MakeBorderRaibbonGallary(m_pBorderStyleGallery);
+
+    SARibbonPannel *stylepanel = category->addPannel(tr("Стиль"));
+    m_pPanelStyleGallery = stylepanel->addGallery();
+    MakeStyleRaibbonGallary(m_pPanelStyleGallery, SLOT(OnPanelStyleSelected(QAction*)), &m_pPanelStyleGroup);
+    ApplyPanelStyleToGallary();
+
+    SARibbonPannel *excludepanel = category->addPannel(tr("Исключить"));
+
+    QAction *excludeAutoStep = createAction(tr("Автоматический обход"), "Step");
+    toolAddActionWithTooltip(excludeAutoStep, tr("Исключает автоматический обход полей по Tab"));
+    excludeAutoStep->setCheckable(true);
+    excludepanel->addSmallAction(excludeAutoStep);
+
+    QAction *excludeAutoNum = createAction(tr("Автоматическую нумерацию полей"), "NumericListBox");
+    toolAddActionWithTooltip(excludeAutoNum, tr("Исключает автоматическую нумерацию полей панели"));
+    excludeAutoNum->setCheckable(true);
+    excludepanel->addSmallAction(excludeAutoNum);
+
+    QAction *excludeShadow = createAction(tr("Отображение тени"), "Shader_exp");
+    toolAddActionWithTooltip(excludeShadow, tr("Исключает отображение тени у элементов панели"));
+    excludeShadow->setCheckable(true);
+    excludepanel->addSmallAction(excludeShadow);
+
+    connect(m_Statistic, &QAction::triggered, [=]()
+    {
+        ResInfoDlg dlg(this);
+        dlg.setTitle(m_pNameLineEdit->text());
+        dlg.setType(QString("%1 (%2)")
+                        .arg(type())
+                        .arg(RsResCore::typeNameFromResType(type())));
+
+        int ctrl = 0, txt = 0;
+        QList<QGraphicsItem*> lst = panelItem->childItems();
+        for (QGraphicsItem *item : qAsConst(lst))
+        {
+            ControlItem *control = dynamic_cast<ControlItem*>(item);
+            TextItem *text = dynamic_cast<TextItem*>(item);
+
+            if (control)
+                ctrl ++;
+
+            if (text)
+                txt ++;
+        }
+
+        dlg.setFields(ctrl);
+        dlg.setLabels(txt);
+        dlg.exec();
+    });
+
+    m_RibbonMapper.reset(new PropertyWidgetMapper());
+    m_RibbonMapper->bind(panelItem, "isCentered", centerAction);
+    m_RibbonMapper->bind(panelItem, "isRightText", alignRightAction);
+
+    m_RibbonMapper->bind(panelItem, "isExcludeNavigation", excludeAutoStep);
+    m_RibbonMapper->bind(panelItem, "isExcludeAutoNum", excludeAutoNum);
+    m_RibbonMapper->bind(panelItem, "isExcludeShadow", excludeShadow);
+}
+
+#define StyleIcon(_style_) (inheritable ? CtrlStyleIcon(_style_) : PanStyleIcon(_style_))
+void StdPanelEditor::MakeStyleRaibbonGallary(SARibbonGallery* gallery, const char *slotName, SARibbonGalleryGroup **pGroup, bool inheritable)
+{
+    QList<QAction*> galleryActions;
+
+    if (inheritable)
+    {
+        QAction *inheritStyle = createAction("Наследуемый", "");
+        inheritStyle->setIcon(StyleIcon(ResStyle::MainStyle));
+        inheritStyle->setData(ResStyle::MainStyle);
+        galleryActions.append(inheritStyle);
+    }
+
+    QAction *scomStyle = createAction("SCOM Основной стиль", "");
+    scomStyle->setIcon(StyleIcon(ResStyle::SCOM));
+    scomStyle->setData(ResStyle::SCOM);
+    galleryActions.append(scomStyle);
+
+    QAction *smesStyle = createAction("SMES Стиль сообщений", "");
+    smesStyle->setIcon(StyleIcon(ResStyle::SMES));
+    smesStyle->setData(ResStyle::SMES);
+    galleryActions.append(smesStyle);
+
+    QAction *rmesStyle = createAction("RMES Стиль аварийных сообщений", "");
+    rmesStyle->setIcon(StyleIcon(ResStyle::RMES));
+    rmesStyle->setData(ResStyle::RMES);
+    galleryActions.append(rmesStyle);
+
+    QAction *shlpStyle = createAction("SHLP Стиль помощи", "");
+    shlpStyle->setIcon(StyleIcon(ResStyle::SHLP));
+    shlpStyle->setData(ResStyle::SHLP);
+    galleryActions.append(shlpStyle);
+
+    QAction *smenStyle = createAction("SMEN Стиль меню", "");
+    smenStyle->setIcon(StyleIcon(ResStyle::SMEN));
+    smenStyle->setData(ResStyle::SMEN);
+    galleryActions.append(smenStyle);
+
+    QAction *sbcmStyle = createAction("SBCM Стиль с яркой рамкой", "");
+    sbcmStyle->setIcon(StyleIcon(ResStyle::SBCM));
+    sbcmStyle->setData(ResStyle::SBCM);
+    galleryActions.append(sbcmStyle);
+
+    QAction *scrlStyle = createAction("SCRL Стиль справочных скролингов", "");
+    scrlStyle->setIcon(StyleIcon(ResStyle::SCRL));
+    scrlStyle->setData(ResStyle::SCRL);
+    galleryActions.append(scrlStyle);
+
+    *pGroup = gallery->addCategoryActions(tr("Стиль"), galleryActions);
+    (*pGroup)->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
+    (*pGroup)->setGridMinimumWidth(80);
+
+    if (slotName)
+        connect(*pGroup, SIGNAL(triggered(QAction*)), this, slotName);
+}
+
+void StdPanelEditor::MakeBorderRaibbonGallary(SARibbonGallery* gallery)
+{
+    QList<QAction*> galleryActions;
+
+    QAction *emptyBorder = createAction("Отсутствует", "");
+    emptyBorder->setIcon(BorderIcon(ResStyle::Border_NoLine));
+    emptyBorder->setData(ResStyle::Border_NoLine);
+    galleryActions.append(emptyBorder);
+
+    QAction *singleBorder = createAction("Одинарная", "");
+    singleBorder->setIcon(BorderIcon(ResStyle::Border_SingleLine));
+    singleBorder->setData(ResStyle::Border_SingleLine);
+    galleryActions.append(singleBorder);
+
+    QAction *doubleBorder = createAction("Двойная", "");
+    doubleBorder->setIcon(BorderIcon(ResStyle::Border_DoubleLine));
+    doubleBorder->setData(ResStyle::Border_DoubleLine);
+    galleryActions.append(doubleBorder);
+
+    QAction *combine1Border = createAction("Комбинированная 1", "");
+    combine1Border->setIcon(BorderIcon(ResStyle::Border_Combine1));
+    combine1Border->setData(ResStyle::Border_Combine1);
+    galleryActions.append(combine1Border);
+
+    QAction *combine2Border = createAction("Комбинированная 2", "");
+    combine2Border->setIcon(BorderIcon(ResStyle::Border_Combine2));
+    combine2Border->setData(ResStyle::Border_Combine2);
+    galleryActions.append(combine2Border);
+
+    QAction *solidBorder = createAction("Сплошная", "");
+    solidBorder->setIcon(BorderIcon(ResStyle::Border_Solid));
+    solidBorder->setData(ResStyle::Border_Solid);
+    galleryActions.append(solidBorder);
+
+    m_pBorderGroup1 = gallery->addCategoryActions(tr("Рамки"), galleryActions);
+    m_pBorderGroup1->setGalleryGroupStyle(SARibbonGalleryGroup::IconWithWordWrapText);
+    m_pBorderGroup1->setGridMinimumWidth(80);
+
+    ApplyBorderStyleToGallary();
+
+    connect(m_pBorderGroup1, &SARibbonGalleryGroup::triggered, this, &StdPanelEditor::OnBorderStyleSelected);
+}
+
+void StdPanelEditor::OnBorderStyleSelected(QAction *pAction)
+{
+    int borderStyle = pAction->data().toInt();
+    panelItem->setBorderStyle((ResStyle::BorderStyle)borderStyle);
+
+    UpdateGallarysIcons();
+}
+
+void StdPanelEditor::OnPanelStyleSelected(QAction *pAction)
+{
+    int panelStyle = pAction->data().toInt();
+    panelItem->setPanelStyle((ResStyle::PanelStyle)panelStyle);
+
+    UpdateGallarysIcons();
+}
+
+void StdPanelEditor::OnControlStyleSelected(QAction *pAction)
+{
+    StdEditorScene *pScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+    ControlItemsWrapper *wrp = pScene->controlItemsWrapper();
+
+    int controlStyle = pAction->data().toInt();
+    wrp->setControlStyle((ResStyle::PanelStyle)controlStyle);
+}
+
+void StdPanelEditor::initRibbonPanels()
+{
+    m_pPanelCategory = new SARibbonCategory(tr("Панель"), ribbon());
+    m_pPanelCategory->setObjectName(name());
+    MakeResRibbonCategory(m_pPanelCategory);
+
+    m_pControlCategory = new SARibbonCategory(tr("Поле"), ribbon());
+    m_pControlCategory->setObjectName(name() + "_control");
+    MakeControlRibbonCategory(m_pControlCategory);
+}
+
+void StdPanelEditor::ApplyBorderStyleToGallary()
+{
+    int select = -1;
+    int borderStyle = panelItem->borderStyle();
+
+    SARibbonGalleryGroupModel *model = m_pBorderGroup1->groupModel();
+    for (int i = 0; i < model->rowCount(QModelIndex()); i++)
+    {
+        SARibbonGalleryItem *item = model->at(i);
+
+        if (item->action()->data().toInt() == borderStyle)
+        {
+            select = i;
+            break;
+        }
+    }
+
+    m_pBorderGroup1->setCurrentIndex(m_pBorderGroup1->model()->index(select, 0));
+    m_pBorderStyleGallery->currentViewGroup()->setCurrentIndex(m_pBorderStyleGallery->currentViewGroup()->model()->index(select, 0));
+}
+
+void StdPanelEditor::ApplyPanelStyleToGallary()
+{
+    int select = -1;
+    ResStyle::PanelStyle panelStyle = panelItem->panelStyle();
+
+    SARibbonGalleryGroupModel *model = m_pPanelStyleGroup->groupModel();
+    for (int i = 0; i < model->rowCount(QModelIndex()); i++)
+    {
+        SARibbonGalleryItem *item = model->at(i);
+        ResStyle::PanelStyle modelStyle = (ResStyle::PanelStyle)item->action()->data().toInt();
+
+        if (modelStyle == panelStyle)
+        {
+            select = i;
+            break;
+        }
+    }
+
+    m_pPanelStyleGroup->setCurrentIndex(m_pPanelStyleGroup->model()->index(select, 0));
+    m_pPanelStyleGallery->currentViewGroup()->setCurrentIndex(m_pPanelStyleGallery->currentViewGroup()->model()->index(select, 0));
+}
+
+void StdPanelEditor::ApplyControlStyleToGallary()
+{
+    int select = -1;
+    StdEditorScene *baseScene = dynamic_cast<StdEditorScene*>(m_pView->scene());
+    ControlItemsWrapper *wrp = baseScene->controlItemsWrapper();
+    ResStyle::PanelStyle controlStyle = wrp->controlStyle();
+
+    if (wrp->hasUniformValue("controlStyle"))
+    {
+        SARibbonGalleryGroupModel *model = m_pControlStyleGroup->groupModel();
+        for (int i = 0; i < model->rowCount(QModelIndex()); i++)
+        {
+            SARibbonGalleryItem *item = model->at(i);
+            ResStyle::PanelStyle modelStyle = (ResStyle::PanelStyle)item->action()->data().toInt();
+
+            if (modelStyle == controlStyle)
+            {
+                select = i;
+                break;
+            }
+        }
+
+        m_pControlStyleGroup->setCurrentIndex(m_pPanelStyleGroup->model()->index(select, 0));
+        m_pControlStyleGallery->currentViewGroup()->setCurrentIndex(m_pControlStyleGallery->currentViewGroup()->model()->index(select, 0));
+    }
+    else
+    {
+        m_pControlStyleGroup->clearSelection();
+        m_pControlStyleGallery->currentViewGroup()->clearSelection();
+    }
+}
+
+void StdPanelEditor::UpdateGallarysIcons()
+{
+    QList<QAction*> StyleGroup1 = m_pPanelStyleGroup->actionGroup()->actions();
+    QList<QAction*> BorderGroup = m_pBorderGroup1->actionGroup()->actions();
+    QList<QAction*> ControlStyleGroup = m_pControlStyleGroup->actionGroup()->actions();
+
+    for (auto StyleAction : qAsConst(StyleGroup1))
+        StyleAction->setIcon(PanStyleIcon((ResStyle::PanelStyle)StyleAction->data().toInt()));
+
+    for (auto BorderAction : qAsConst(BorderGroup))
+        BorderAction->setIcon(BorderIcon((ResStyle::BorderStyle)BorderAction->data().toInt()));
+
+    for (auto ControlStyle : qAsConst(ControlStyleGroup))
+        ControlStyle->setIcon(CtrlStyleIcon((ResStyle::PanelStyle)ControlStyle->data().toInt()));
+
+    m_pBorderStyleGallery->update();
+    m_pPanelStyleGallery->update();
+    m_pControlStyleGroup->update();
+}
+
+void StdPanelEditor::updateRibbonTabs()
+{
+    SARibbonContextCategory *context = findCategoryByName(tr("Ресурс"));
+
+    if (!context)
+        return;
+
+    QList<SARibbonCategory*> oldCategories = context->categoryList();
+    for (SARibbonCategory *cat : qAsConst(oldCategories))
+        context->takeCategory(cat);
+
+    if (m_pPanelCategory)
+    {
+        if (!context->isHaveCategory(m_pPanelCategory))
+            context->addCategoryPage(m_pPanelCategory);
+    }
+
+    bool HasControls = false;
+    QList<QGraphicsItem*> sel = m_pView->scene()->selectedItems();
+    for (QGraphicsItem *item : qAsConst(sel))
+    {
+        ControlItem *control = dynamic_cast<ControlItem*>(item);
+
+        if (control)
+            HasControls = true;
+    }
+
+    if (HasControls && m_pControlCategory)
+    {
+        if (!context->isHaveCategory(m_pControlCategory))
+            context->addCategoryPage(m_pControlCategory);
+    }
+
+    ribbon()->showContextCategory(context);
+    ribbon()->showCategory(m_pPanelCategory);
+
+    if (HasControls && m_pControlCategory)
+        ribbon()->showCategory(m_pControlCategory);
+}
+
+void StdPanelEditor::clearRibbonTabs()
+{
+    SARibbonContextCategory *context = findCategoryByName(tr("Ресурс"));
+
+    if (!context)
+        return;
+
+    if (m_pPanelCategory)
+    {
+        ribbon()->removeCategory(m_pPanelCategory);
+        ribbon()->hideCategory(m_pPanelCategory);
+    }
+
+    if (m_pControlCategory)
+    {
+        ribbon()->removeCategory(m_pControlCategory);
+        ribbon()->hideCategory(m_pControlCategory);
+    }
+
+    bool hasVisible = false;
+    QList<SARibbonCategory*> oldCategories = context->categoryList();
+    for (SARibbonCategory *cat : qAsConst(oldCategories))
+    {
+        if (ribbon()->isCategoryVisible(cat))
+        {
+            hasVisible = true;
+            break;
+        }
+    }
+
+    if (!hasVisible)
+        ribbon()->hideContextCategory(context);
+}
+
+QString StdPanelEditor::getFieldTypeDescription(const qint16 &fieldType, QString &description) const
+{
+    QString title;
+
+    switch(fieldType)
+    {
+    case ControlItem::FET:
+        title = tr("FET - Редактируемое поле");
+        description = tr("Редактирование данных, clipboard, выбор из списка");
+        break;
+    case ControlItem::FBT:
+        title = tr("FBT - Нередактируемое поле");
+        description = tr("Отображение данных, кнопка без редактирования");
+        break;
+    case ControlItem::FBS:
+        title = tr("FBS - Кнопка с тенью");
+        description = tr("Визуальная кнопка с 3D-эффектом тени");
+        break;
+    case ControlItem::FWR:
+        title = tr("FWR - Многострочное редактируемое поле");
+        description = tr("Многострочный редактор, перенос текста");
+        break;
+    case ControlItem::FVT:
+        title = tr("FVT - Поле просмотра");
+        description = tr("Только для отображения, без редактирования");
+        break;
+    case ControlItem::FSP:
+        title = tr("FSP - Subpanel");
+        description = tr("Контейнер для группировки элементов");
+        break;
+    case ControlItem::FCL:
+        title = tr("FCL - Cluster");
+        description = tr("Check box или Radio button для выбора");
+        break;
+    case ControlItem::FVW:
+        title = tr("FVW - Многострочное нередактируемое поле");
+        description = tr("Многострочное отображение без редактирования");
+        break;
+    default:
+        title = tr("Тип поля");
+        description = tr("Неизвестный тип поля");
+        break;
+    }
+
+    return QString("<b>%1</b><br>%2").arg(title, description);
+}
+
+QString StdPanelEditor::getDataTypeDescription(const qint16 &dataType) const
+{
+    QString title;
+    QString description;
+    QString ftType;
+    QString size;
+    QString cppType;
+
+    switch(dataType)
+    {
+    case ControlItem::INT16:
+        title = tr("INT16 - 16-битное целое число");
+        description = tr("Целое число от -32,768 до 32,767");
+        ftType = tr("FT_INT / FT_INT_NATIVE");
+        size = tr("2 байта");
+        cppType = tr("int16_t, short");
+        break;
+
+    case ControlItem::INT32:
+        title = tr("INT32 - 32-битное целое число");
+        description = tr("Целое число от -2,147,483,648 до 2,147,483,647");
+        ftType = tr("FT_LONG / FT_LONG_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("int32_t, long");
+        break;
+
+    case ControlItem::INT64:
+        title = tr("INT64 - 64-битное целое число");
+        description = tr("Целое число от -9,223,372,036,854,775,808 до 9,223,372,036,854,775,807");
+        ftType = tr("FT_BIGINT / FT_BIGINT_NATIVE");
+        size = tr("8 байт");
+        cppType = tr("int64_t, long long");
+        break;
+
+    case ControlItem::FLOAT:
+        title = tr("FLOAT - Число с плавающей точкой");
+        description = tr("Число одинарной точности, ~7 значащих цифр");
+        ftType = tr("FT_FLOAT / FT_FLOAT_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("float, db_float");
+        break;
+
+    case ControlItem::FLOATG:
+        title = tr("FLOATG - Число с плавающей точкой");
+        description = tr("Аналогично FLOAT с группировкой разрядов");
+        ftType = tr("FT_FLOATG / FT_FLOATG_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("float, db_float");
+        break;
+
+    case ControlItem::DOUBLE:
+        title = tr("DOUBLE - Число двойной точности");
+        description = tr("Число двойной точности, ~15 значащих цифр");
+        ftType = tr("FT_DOUBLE / FT_DOUBLE_NATIVE");
+        size = tr("8 байт");
+        cppType = tr("double, db_double");
+        break;
+
+    case ControlItem::DOUBLEG:
+        title = tr("DOUBLEG - Число двойной точности");
+        description = tr("Аналогично DOUBLE с группировкой разрядов");
+        ftType = tr("FT_DOUBLEG / FT_DOUBLEG_NATIVE");
+        size = tr("8 байт");
+        cppType = tr("double, db_double");
+        break;
+
+    case ControlItem::LDOUBLE:
+        title = tr("LDOUBLE - Длинное вещественное число");
+        description = tr("Число расширенной точности, ~19 значащих цифр");
+        ftType = tr("FT_LDOUBLE10 / FT_LDOUBLE10_NATIVE");
+        size = tr("10 байт");
+        cppType = tr("long double, db_double10");
+        break;
+
+    case ControlItem::MONEY:
+        title = tr("MONEY - Денежный тип");
+        description = tr("Денежная сумма");
+        ftType = tr("FT_MONEY / FT_MONEY_NATIVE");
+        size = tr("8 байт");
+        cppType = tr("dmoney (Numeric), db_dmoney (DBNumeric)");
+        break;
+
+    case ControlItem::MONEYR:
+        title = tr("MONEYR - Денежный тип");
+        description = tr("Денежная сумма");
+        ftType = tr("FT_MONEYR / FT_MONEYR_NATIVE");
+        size = tr("8 байт");
+        cppType = tr("dmoney (Numeric), db_dmoney (DBNumeric)");
+        break;
+
+    case ControlItem::LMONEY:
+        title = tr("LMONEY - Длинная денежная сумма");
+        description = tr("Денежная сумма расширенной точности");
+        ftType = tr("FT_LMONEY / FT_LMONEY_NATIVE");
+        size = tr("10 байт");
+        cppType = tr("lmoney (Numeric), db_lmoney (DBNumeric)");
+        break;
+
+    case ControlItem::LMONEYR:
+        title = tr("LMONEYR - Длинная денежная сумма ");
+        description = tr("Денежная сумма");
+        ftType = tr("FT_LMONEYR / FT_LMONEYR_NATIVE");
+        size = tr("10 байт");
+        cppType = tr("lmoney (Numeric), db_lmoney (DBNumeric)");
+        break;
+
+    case ControlItem::DECIMAL:
+        title = tr("DECIMAL - Точное десятичное число");
+        description = tr("Точное десятичное число с фиксированной точкой");
+        ftType = tr("FT_DECIMAL / FT_DECIMAL_NATIVE");
+        size = tr("16 байт");
+        cppType = tr("decimal (Numeric), db_decimal (DBNumeric)");
+        break;
+
+    case ControlItem::NUMERIC:
+        title = tr("NUMERIC - Числовой тип SQL");
+        description = tr("SQL NUMERIC с заданной точностью и масштабом");
+        ftType = tr("FT_NUMERIC / FT_NUMERIC_NATIVE");
+        size = tr("20 байт");
+        cppType = tr("DBNumeric, Numeric");
+        break;
+
+    case ControlItem::STRING:
+        title = tr("STRING - Строковый тип");
+        description = tr("Строка переменной длины");
+        ftType = tr("FT_STRING");
+        size = tr("Переменная длина");
+        cppType = tr("char*");
+        break;
+
+    case ControlItem::SNR:
+        title = tr("SNR - Строка");
+        description = tr("Аналогично STRING, с форматом отображения");
+        ftType = tr("FT_SNR");
+        size = tr("Переменная длина");
+        cppType = tr("char*");
+        break;
+
+    case ControlItem::NUMSTR:
+        title = tr("NUMSTR - Числовая строка");
+        description = tr("Строка, содержащая только цифры");
+        ftType = tr("FT_NUMSTR");
+        size = tr("Переменная длина");
+        cppType = tr("char*");
+        break;
+
+    case ControlItem::DATE:
+        title = tr("DATE - Дата");
+        description = tr("Дата в формате базы данных");
+        ftType = tr("FT_DATE / FT_DATE_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("bdate, db_bdate");
+        break;
+
+    case ControlItem::TIME:
+        title = tr("TIME - Время");
+        description = tr("Время в формате базы данных");
+        ftType = tr("FT_TIME / FT_TIME_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("btime, db_btime");
+        break;
+
+    case ControlItem::SHTM:
+        title = tr("SHTM - Короткое время");
+        description = tr("Время без секунд в формате базы данных");
+        ftType = tr("FT_SHTM / FT_SHTM_NATIVE");
+        size = tr("4 байта");
+        cppType = tr("btime, db_btime");
+        break;
+
+    case ControlItem::CHAR:
+        title = tr("CHAR - Символ");
+        description = tr("Один символ (байт)");
+        ftType = tr("FT_CHR");
+        size = tr("1 байт");
+        cppType = tr("char, uchar");
+        break;
+
+    case ControlItem::UCHAR:
+        title = tr("UCHAR - Беззнаковый символ");
+        description = tr("Беззнаковый символ (0-255)");
+        ftType = tr("FT_UCHR");
+        size = tr("1 байт");
+        cppType = tr("unsigned char, uint8_t");
+        break;
+
+    case ControlItem::PICTURE:
+        title = tr("PICTURE - Изображение");
+        description = tr("Двоичные данные изображения");
+        ftType = tr("FT_PICTURE");
+        size = tr("Переменная длина");
+        cppType = tr("CRSImageBase, CRSImage");
+        break;
+
+    default:
+        title = tr("Неизвестный тип данных");
+        description = tr("Тип не определен");
+        ftType = tr("?");
+        size = tr("?");
+        cppType = tr("?");
+        break;
+    }
+
+    return QString("<html><div style='width: 500px;'>"
+                   "<b>%1</b>"
+                   "<div>%2</div>"
+                   "<div>"
+                   "<b>Внутренний тип:</b> %3<br>"
+                   "<b>Размер:</b> %4<br>"
+                   "<b>C++ тип:</b> %5"
+                   "</div></div></html>")
+        .arg(title)
+        .arg(description)
+        .arg(ftType)
+        .arg(size)
+        .arg(cppType);
 }

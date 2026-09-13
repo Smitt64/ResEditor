@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<reslib xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.softlab.ru reslib.xsd"
+    xmlns="http://www.softlab.ru">
+ <menu name="TEMPLATE" dt="2026-08-21T00:00:00" comment="Стандартное меню для скролингов">
+  <popup label="~Д~ействия" help="0" comment="">
+   <item label="~П~оиск    ~F4~" cmd="318" help="0" comment=""/>
+   <item label="~У~даление    ~F8~" cmd="322" help="0" cmdEx="0" iconID="0" flags="4" comment=""/>
+   <item label="~В~вод    ~F9~" cmd="323" help="0" comment=""/>
+   <item label="~К~орректировка    ~Return~" cmd="13" help="0" cmdEx="0" iconID="0" flags="4" comment=""/>
+  </popup>
+ </menu>
+</reslib>

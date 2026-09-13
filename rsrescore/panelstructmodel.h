@@ -32,6 +32,9 @@ public:
 public slots:
     void structChanged();
 
+private slots:
+    void onItemDestroyed(QObject *obj = nullptr);
+
 private:
     std::unique_ptr<TreeItem> rootItem;
 };

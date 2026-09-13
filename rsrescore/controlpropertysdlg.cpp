@@ -103,7 +103,41 @@ QString ControlPropertysDlg::toolTip() const
     return getWidgetData<QString>(ui->toolTip);
 }
 
-void ControlPropertysDlg::setControlItem(ControlItem *item)
+bool ControlPropertysDlg::hasUniformValue(QObject* obj, const char* propertyName) const
+{
+    if (!obj)
+        return true;
+
+    if (!propertyName)
+        return true;
+
+    const QMetaObject* metaObject = obj->metaObject();
+
+    int methodIndex = metaObject->indexOfMethod("hasUniformValue(const char*)");
+    if (methodIndex == -1)
+        methodIndex = metaObject->indexOfMethod("hasUniformValue(QString)");
+
+    if (methodIndex == -1)
+        return true;
+
+    QMetaMethod method = metaObject->method(methodIndex);
+
+    bool result = true;
+    QGenericReturnArgument returnArg = Q_RETURN_ARG(bool, result);
+    QGenericArgument inputArg = Q_ARG(const char*, propertyName);
+
+    bool invokeSuccess = method.invoke(obj,
+                                       Qt::DirectConnection,
+                                       returnArg,
+                                       inputArg);
+
+    if (!invokeSuccess)
+        return true;
+
+    return result;
+}
+
+void ControlPropertysDlg::setControlItem(CustomRectItem *item)
 {
     m_pItem = item;
 
@@ -135,11 +169,22 @@ void ControlPropertysDlg::setControlItem(ControlItem *item)
     QVariant dataType = m_pItem->property("dataType");
     QVariant controlStyle = m_pItem->property("controlStyle");
 
-    ui->fieldTypeBox->setCurrentIndex(m_pFieldType->indexFromValue(fieldType.toInt()));
-    ui->dataTypeBox->setCurrentIndex(m_DataType->indexFromValue(dataType.toInt()));
-    ui->controlStyle->setCurrentIndex(m_pStyle->indexFromValue(controlStyle.toInt()));
+    if (hasUniformValue(m_pItem, "fieldType"))
+        ui->fieldTypeBox->setCurrentIndex(m_pFieldType->indexFromValue(fieldType));
+    else
+        ui->fieldTypeBox->setCurrentIndex(-1);
 
-    ControlItem::ControlFlags controlFlags = (ControlItem::ControlFlags)m_pItem->controlFlags();
+    if (hasUniformValue(m_pItem, "dataType"))
+        ui->dataTypeBox->setCurrentIndex(m_DataType->indexFromValue(dataType));
+    else
+        ui->dataTypeBox->setCurrentIndex(-1);
+
+    if (hasUniformValue(m_pItem, "controlStyle"))
+        ui->controlStyle->setCurrentIndex(m_pStyle->indexFromValue(controlStyle));
+    else
+        ui->controlStyle->setCurrentIndex(-1);
+
+    ControlItem::ControlFlags controlFlags = (ControlItem::ControlFlags)m_pItem->property("controlFlags").toInt();//m_pItem->controlFlags();
     ui->flagText->setChecked(controlFlags.testFlag(ControlItem::RF_ASTEXT));
     ui->flagGroup->setChecked(controlFlags.testFlag(ControlItem::RF_GROUP) ||
                               controlFlags.testFlag(ControlItem::RF_GROUPING));
@@ -147,22 +192,39 @@ void ControlPropertysDlg::setControlItem(ControlItem *item)
     ui->flagExcludeTab->setChecked(controlFlags.testFlag(ControlItem::RF_NOTABSTOP));
     ui->flagSelectList->setChecked(controlFlags.testFlag(ControlItem::RF_DOWNBTN));
 
-    ControTabOrder tabOrder = m_pItem->tabOrder();
-    ui->tabOrderWidget->setValue(&tabOrder);
+    if (hasUniformValue(m_pItem, "tabOrder"))
+    {
+        QVariant tabOrderVar = m_pItem->property("tabOrder");
+        ControTabOrder tabOrder = tabOrderVar.value<ControTabOrder>();
+        ui->tabOrderWidget->setValue(&tabOrder);
+        ui->tabOrderWidget->setEnabled(true);
+    }
+    else
+        ui->tabOrderWidget->setEnabled(false);
+
+    saveInitialUIState();
 }
 
 qint32 ControlPropertysDlg::fieldType() const
 {
+    if (ui->fieldTypeBox->currentIndex() < 0)
+        return -1;
     return m_pFieldType->valueFromIndex(ui->fieldTypeBox->currentIndex());
 }
 
 qint32 ControlPropertysDlg::dataType() const
 {
+    if (ui->dataTypeBox->currentIndex() < 0)
+        return -1;
+
     return m_DataType->valueFromIndex(ui->dataTypeBox->currentIndex());
 }
 
 qint32 ControlPropertysDlg::style() const
 {
+    if (ui->controlStyle->currentIndex() < 0)
+        return -1;
+
     return m_pStyle->valueFromIndex(ui->controlStyle->currentIndex());
 }
 
@@ -188,5 +250,95 @@ void ControlPropertysDlg::setIntWidgetLimit(QWidget *widget)
 void ControlPropertysDlg::setWidgetData(QWidget *widget, const QString &propertyName)
 {
     const char *widgetProperty = widget->metaObject()->userProperty().name();
-    widget->setProperty(widgetProperty, m_pItem->property(propertyName.toLocal8Bit().data()));
+
+    QCheckBox *check = qobject_cast<QCheckBox*>(widget);
+    QVariant var = m_pItem->property(propertyName.toLocal8Bit().data());
+
+    if (var.type() == QVariant::Bool && check)
+    {
+        if (hasUniformValue(m_pItem, propertyName.toLocal8Bit().data()))
+            widget->setProperty(widgetProperty, var);
+        else
+            check->setCheckState(Qt::PartiallyChecked);
+    }
+    else
+        widget->setProperty(widgetProperty, var);
+}
+
+void ControlPropertysDlg::saveInitialUIState()
+{
+    m_initialUIState.clear();
+
+    // Сохраняем начальные значения из UI
+    m_initialUIState["dataLength"] = dataLength();
+    m_initialUIState["length"] = length();
+    m_initialUIState["lines"] = lines();
+    m_initialUIState["signs"] = point();
+    m_initialUIState["controlGroup"] = controlGroup();
+    m_initialUIState["helpPage"] = helpPage();
+    m_initialUIState["fdm"] = fdm();
+    m_initialUIState["isText"] = isText();
+    m_initialUIState["controlName2"] = nameText();
+    m_initialUIState["valueTemplate"] = valueTemplate();
+    m_initialUIState["controlName"] = controlName();
+    m_initialUIState["toolTip"] = toolTip();
+    m_initialUIState["fieldType"] = fieldType();
+    m_initialUIState["dataType"] = dataType();
+    m_initialUIState["controlStyle"] = style();
+    m_initialUIState["controlFlags"] = controlFlags();
+}
+
+QMap<QString, QVariant> ControlPropertysDlg::getChangedProperties() const
+{
+    QMap<QString, QVariant> changedProps;
+
+    // Сравниваем текущие значения UI с начальными
+    auto checkChange = [&](const QString& propName) {
+        QVariant currentValue = getUIPropertyValue(propName);
+        QVariant initialValue = m_initialUIState.value(propName);
+
+        if (currentValue != initialValue) {
+            changedProps[propName] = currentValue;
+        }
+    };
+
+    // Проверяем все свойства
+    checkChange("dataLength");
+    checkChange("signs");
+    checkChange("helpPage");
+    checkChange("controlGroup");
+    checkChange("controlName");
+    checkChange("controlName2");
+    checkChange("valueTemplate");
+    checkChange("toolTip");
+    checkChange("fdm");
+    checkChange("fieldType");
+    checkChange("dataType");
+    checkChange("controlStyle");
+    checkChange("controlFlags");
+
+    return changedProps;
+}
+
+QVariant ControlPropertysDlg::getUIPropertyValue(const QString &propertyName) const
+{
+    // Маппинг имен свойств на геттеры
+    if (propertyName == "dataLength") return dataLength();
+    if (propertyName == "length") return length();
+    if (propertyName == "lines") return lines();
+    if (propertyName == "signs") return point();
+    if (propertyName == "controlGroup") return controlGroup();
+    if (propertyName == "helpPage") return helpPage();
+    if (propertyName == "fdm") return fdm();
+    if (propertyName == "isText") return isText();
+    if (propertyName == "controlName2") return nameText();
+    if (propertyName == "valueTemplate") return valueTemplate();
+    if (propertyName == "controlName") return controlName();
+    if (propertyName == "toolTip") return toolTip();
+    if (propertyName == "fieldType") return fieldType();
+    if (propertyName == "dataType") return dataType();
+    if (propertyName == "controlStyle") return style();
+    if (propertyName == "controlFlags") return controlFlags();
+
+    return QVariant();
 }

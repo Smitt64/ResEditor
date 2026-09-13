@@ -8,6 +8,7 @@
 #include <QDataStream>
 #include <QDomElement>
 #include <QDomDocument>
+#include <QXmlStreamWriter>
 #include <QFile>
 
 #define  RFP_REJREQ        0x00000004
@@ -428,18 +429,23 @@ int ResPanel::readItems(struct PanelR *pp, ResBuffer *data, bool readName2)
         TextR tt;
         err = data->read((char*)&tt, sizeof(TextR));
 
-        if(!(err = (err != sizeof(TextR))) && tt.lens)
+        if(!(err = (err != sizeof(TextR))))
         {
-            char *s = (char*)malloc(sizeof(char)*(tt.lens + 1));
-            memset(s, 0, tt.lens + 1);
-            readString(data, &s, tt.vfl, tt.lens);
-
             TextStruct text;
             text._text = new TextR();
             memcpy(text._text, &tt, sizeof(TextR));
-            text.value = data->decodeString(s);
+
+            if (tt.lens)
+            {
+                char *s = (char*)malloc(sizeof(char)*(tt.lens + 1));
+                memset(s, 0, tt.lens + 1);
+                readString(data, &s, tt.vfl, tt.lens);
+
+                text.value = data->decodeString(s);
+                free(s);
+            }
+
             m_Texts.append(text);
-            free(s);
         }
     }
 
@@ -579,6 +585,11 @@ QString ResPanel::name() const
     return m_Name;
 }
 
+QString ResPanel::comment() const
+{
+    return m_Comment;
+}
+
 qint16 ResPanel::type() const
 {
     return m_Type;
@@ -621,9 +632,162 @@ FieldStructList::iterator ResPanel::fieldEnd()
     return m_Fields.end();
 }
 
+qint16 ResPanel::getResourceTypeFromName(const QString& resTypeName)
+{
+    static const QHash<QString, qint16> typeMap =
+    {
+        {"panel", LbrObject::RES_PANEL},
+        {"scrol", LbrObject::RES_SCROL},
+        {"lscrol", LbrObject::RES_LS},
+        {"bscrol", LbrObject::RES_BS}
+    };
+
+    QString key = resTypeName.toLower();
+    if (typeMap.contains(key))
+        return typeMap.value(key);
+
+    return -1;
+}
+
+int ResPanel::loadXmlStream(QXmlStreamReader &reader)
+{
+    static const QStringList RootTags =
+    {
+        "panel",
+        "bscrol",
+        "scrol",
+        "lscrol"
+    };
+
+    QXmlStreamAttributes attributes = reader.attributes();
+
+    m_Name = attributes.value("name").toString();
+    m_Type = getResourceTypeFromName(reader.name().toString());
+    m_pPanel->St = attributes.value("St").toInt();
+    m_pPanel->x1 = attributes.value("x1").toInt();
+    m_pPanel->x2 = attributes.value("x2").toInt();
+    m_pPanel->y1 = attributes.value("y1").toInt();
+    m_pPanel->y2 = attributes.value("y2").toInt();
+
+    m_pPanel->PHelp = attributes.value("PHelp").toInt();
+    m_pPanel->Pff = attributes.value("Pff").toInt();
+    m_pPanel->flags = attributes.value("flags").toInt();
+
+    if (reader.name() != "panel")
+    {
+        m_pPanel->x = attributes.value("x").toInt();
+        m_pPanel->y = attributes.value("y").toInt();
+        m_pPanel->l = attributes.value("l").toInt();
+        m_pPanel->h = attributes.value("h").toInt();
+        m_pPanel->Mn = attributes.value("Mn").toInt();
+    }
+
+    while (!reader.atEnd() && !reader.hasError())
+    {
+        QXmlStreamReader::TokenType token = reader.readNext();
+
+        if (token == QXmlStreamReader::EndElement && RootTags.contains(reader.name().toString()))
+            break;
+
+        if (token == QXmlStreamReader::StartElement)
+        {
+            if (reader.name() == "stline")
+                m_Status = reader.readElementText();
+            else if (reader.name() == "stlineRd")
+                m_StatusRD = reader.readElementText();
+            else if (reader.name() == "comment")
+                m_Comment = reader.readElementText();
+            else if (reader.name() == "headLine")
+                m_Title = reader.readElementText();
+            else if (reader.name() == "bord")
+            {
+                BordR bord;
+                QXmlStreamAttributes bordAttrs = reader.attributes();
+
+                bord.St = bordAttrs.value("St").toInt();
+                bord.x  = bordAttrs.value("x").toInt();
+                bord.y  = bordAttrs.value("y").toInt();
+                bord.l  = bordAttrs.value("l").toInt();
+                bord.h  = bordAttrs.value("h").toInt();
+                bord.fl = bordAttrs.value("fl").toInt();
+
+                reader.skipCurrentElement();
+                m_BordR.append(bord);
+            }
+            else if (reader.name() == "text")
+            {
+                TextStruct text;
+                text._text = new TextR();
+                QXmlStreamAttributes textAttrs = reader.attributes();
+
+                text._text->St = textAttrs.value("St").toInt();
+                text._text->x = textAttrs.value("x").toInt();
+                text._text->y = textAttrs.value("y").toInt();
+                text.value = reader.readElementText();
+
+                m_Texts.append(text);
+            }
+            else if (reader.name() == "field")
+            {
+                FieldStruct element;
+                element._field = new FieldR();
+                QXmlStreamAttributes fieldAttrs = reader.attributes();
+
+                element._field->Ftype = fieldAttrs.value("Ftype").toInt();
+                element._field->St = fieldAttrs.value("St").toInt();
+                element._field->FVt = fieldAttrs.value("FVt").toInt();
+                element._field->FVp = fieldAttrs.value("FVp").toInt();
+                element._field->x = fieldAttrs.value("x").toInt() + m_pPanel->x;
+                element._field->y = fieldAttrs.value("y").toInt() + m_pPanel->y;
+                element._field->l = fieldAttrs.value("l").toInt();
+                element._field->h = fieldAttrs.value("h").toInt();
+                element._field->kl = fieldAttrs.value("kl").toInt();
+                element._field->kr = fieldAttrs.value("kr").toInt();
+                element._field->ku = fieldAttrs.value("ku").toInt();
+                element._field->kd = fieldAttrs.value("kd").toInt();
+                element._field->FHelp = fieldAttrs.value("FHelp").toInt();
+                element._field->vfl = fieldAttrs.value("vfl").toInt();
+                element._field->flags = fieldAttrs.value("flags").toInt();
+                element._field->group = fieldAttrs.value("group").toInt();
+
+                // Вложенные элементы поля (label/name/fmtname/tooltip),
+                // writeFields пишет их при непустых значениях
+                while (!reader.atEnd() && !reader.hasError())
+                {
+                    QXmlStreamReader::TokenType fieldToken = reader.readNext();
+
+                    if (fieldToken == QXmlStreamReader::EndElement && reader.name() == "field")
+                        break;
+
+                    if (fieldToken == QXmlStreamReader::StartElement)
+                    {
+                        if (reader.name() == "label")
+                            element.name2 = reader.readElementText();
+                        else if (reader.name() == "name")
+                            element.name = reader.readElementText();
+                        else if (reader.name() == "fmtname")
+                            element.formatStr = reader.readElementText();
+                        else if (reader.name() == "tooltip")
+                            element.toolTip = reader.readElementText();
+                        else
+                            reader.skipCurrentElement();
+                    }
+                }
+
+                m_Fields.append(element);
+            }
+            else
+                reader.skipCurrentElement();
+        }
+    }
+
+    return 0;
+}
+
 int ResPanel::loadXmlNode(const QDomElement &reslib)
 {
     m_Name = reslib.attribute("name", "0");
+    m_Type = getResourceTypeFromName(reslib.tagName());
     m_pPanel->St = reslib.attribute("St", "0").toInt();
     m_pPanel->x1 = reslib.attribute("x1", "0").toInt();
     m_pPanel->x2 = reslib.attribute("x2", "0").toInt();
@@ -651,8 +815,23 @@ int ResPanel::loadXmlNode(const QDomElement &reslib)
 
         if (e.tagName() == "stline")
             m_Status = e.text();
+        else if (e.tagName() == "stlineRd")
+            m_StatusRD = e.text();
+        else if (e.tagName() == "comment")
+            m_Comment = e.text();
         else if (e.tagName() == "headLine")
             m_Title = e.text();
+        else if (e.tagName() == "bord")
+        {
+            BordR bord;
+            bord.St = e.attribute("St", "0").toInt();
+            bord.x  = e.attribute("x", "0").toInt();
+            bord.y  = e.attribute("y", "0").toInt();
+            bord.l  = e.attribute("l", "0").toInt();
+            bord.h  = e.attribute("h", "0").toInt();
+            bord.fl = e.attribute("fl", "0").toInt();
+            m_BordR.append(bord);
+        }
         else if (e.tagName() == "text")
         {
             TextStruct text;
@@ -671,8 +850,8 @@ int ResPanel::loadXmlNode(const QDomElement &reslib)
             element._field->St = e.attribute("St", "0").toInt();
             element._field->FVt = e.attribute("FVt", "0").toInt();
             element._field->FVp = e.attribute("FVp", "0").toInt();
-            element._field->x = e.attribute("x", "0").toInt();
-            element._field->y = e.attribute("y", "0").toInt();
+            element._field->x = e.attribute("x", "0").toInt() + m_pPanel->x;
+            element._field->y = e.attribute("y", "0").toInt() + m_pPanel->y;
             element._field->l = e.attribute("l", "0").toInt();
             element._field->h = e.attribute("h", "0").toInt();
             element._field->kl = e.attribute("kl", "0").toInt();
@@ -683,6 +862,25 @@ int ResPanel::loadXmlNode(const QDomElement &reslib)
             element._field->vfl = e.attribute("vfl", "0").toInt();
             element._field->flags = e.attribute("flags", "0").toInt();
             element._field->group = e.attribute("group", "0").toInt();
+
+            // Вложенные элементы поля (label/name/fmtname/tooltip),
+            // writeFields пишет их при непустых значениях
+            QDomNode fieldChild = e.firstChild();
+            while (!fieldChild.isNull())
+            {
+                QDomElement fe = fieldChild.toElement();
+
+                if (fe.tagName() == "label")
+                    element.name2 = fe.text();
+                else if (fe.tagName() == "name")
+                    element.name = fe.text();
+                else if (fe.tagName() == "fmtname")
+                    element.formatStr = fe.text();
+                else if (fe.tagName() == "tooltip")
+                    element.toolTip = fe.text();
+
+                fieldChild = fieldChild.nextSibling();
+            }
 
             m_Fields.append(element);
         }
@@ -1734,6 +1932,186 @@ int ResPanel::checkScrolRect(int sx, int sy, int sh, int sl, ErrorsModel *errors
     }
 
     return stat;
+}
+
+QString ResPanel::getResType() const
+{
+    QString resType;
+    switch(type())
+    {
+    case LbrObject::RES_PANEL:
+        resType = "panel";
+        break;
+    case LbrObject::RES_SCROL:
+        resType = "scrol";
+        break;
+    case LbrObject::RES_LS:
+        resType = "lscrol";
+        break;
+    case LbrObject::RES_BS:
+        resType = "bscrol";
+        break;
+    }
+
+    return resType;
+}
+
+void ResPanel::writePanelAttributes(QXmlStreamWriter &writer) const
+{
+    writer.writeAttribute("name", name());
+    writer.writeAttribute("dt", m_ResTime.toString("yyyy-MM-ddTHH:mm:ss"));
+    writer.writeAttribute("St", QString::number(m_pPanel->St));
+    writer.writeAttribute("x1", QString::number(m_pPanel->x1));
+    writer.writeAttribute("y1", QString::number(m_pPanel->y1));
+    writer.writeAttribute("x2", QString::number(m_pPanel->x2));
+    writer.writeAttribute("y2", QString::number(m_pPanel->y2));
+    writer.writeAttribute("PHelp", QString::number(m_pPanel->PHelp));
+    writer.writeAttribute("Pff", QString::number(m_pPanel->Pff));
+    writer.writeAttribute("flags", QString::number(m_pPanel->flags));
+}
+
+void ResPanel::writeBorders(QXmlStreamWriter &writer) const
+{
+    for(int i = 0; i < m_pPanel->Nb; ++i)
+    {
+        writer.writeEmptyElement("bord");
+        writer.writeAttribute("St", QString::number(m_BordR[i].St));
+        writer.writeAttribute("x", QString::number(m_BordR[i].x));
+        writer.writeAttribute("y", QString::number(m_BordR[i].y));
+        writer.writeAttribute("l", QString::number(m_BordR[i].l));
+        writer.writeAttribute("h", QString::number(m_BordR[i].h));
+        writer.writeAttribute("fl", QString::number(m_BordR[i].fl));
+    }
+}
+
+void ResPanel::writeTexts(QXmlStreamWriter &writer) const
+{
+    for(int i = 0; i < m_pPanel->Nt; ++i)
+    {
+        writer.writeStartElement("text");
+        writer.writeAttribute("St", QString::number(m_Texts[i]._text->St));
+        writer.writeAttribute("x", QString::number(m_Texts[i]._text->x));
+        writer.writeAttribute("y", QString::number(m_Texts[i]._text->y));
+        writer.writeCharacters(escapeXml(m_Texts[i].value));
+        writer.writeEndElement();
+    }
+}
+
+void ResPanel::writeFields(QXmlStreamWriter &writer) const
+{
+    for(int i = 0; i < m_pPanel->Pnumf; ++i)
+    {
+        writer.writeStartElement("field");
+
+        // Атрибуты поля
+        writer.writeAttribute("Ftype", QString::number(m_Fields[i]._field->Ftype));
+        writer.writeAttribute("St", QString::number(m_Fields[i]._field->St));
+        writer.writeAttribute("FVt", QString::number(m_Fields[i]._field->FVt));
+        writer.writeAttribute("FVp", QString::number(m_Fields[i]._field->FVp));
+        writer.writeAttribute("x", QString::number(m_Fields[i]._field->x - m_pPanel->x));
+        writer.writeAttribute("y", QString::number(m_Fields[i]._field->y - m_pPanel->y));
+        writer.writeAttribute("l", QString::number(m_Fields[i]._field->l));
+        writer.writeAttribute("h", QString::number(m_Fields[i]._field->h));
+        writer.writeAttribute("kl", QString::number(m_Fields[i]._field->kl));
+        writer.writeAttribute("kr", QString::number(m_Fields[i]._field->kr));
+        writer.writeAttribute("ku", QString::number(m_Fields[i]._field->ku));
+        writer.writeAttribute("kd", QString::number(m_Fields[i]._field->kd));
+        writer.writeAttribute("FHelp", QString::number(m_Fields[i]._field->FHelp));
+        writer.writeAttribute("vfl", QString::number(m_Fields[i]._field->vfl));
+        writer.writeAttribute("flags", QString::number(m_Fields[i]._field->flags));
+        writer.writeAttribute("group", QString::number(m_Fields[i]._field->group));
+
+        // Дополнительные элементы поля
+        if (!m_Fields[i].name2.isEmpty()) {
+            writer.writeTextElement("label", escapeXml(m_Fields[i].name2));
+        }
+
+        if (!m_Fields[i].name.isEmpty()) {
+            writer.writeTextElement("name", escapeXml(m_Fields[i].name));
+        }
+
+        if (!m_Fields[i].formatStr.isEmpty()) {
+            writer.writeTextElement("fmtname", escapeXml(m_Fields[i].formatStr));
+        }
+
+        if (!m_Fields[i].toolTip.isEmpty()) {
+            writer.writeTextElement("tooltip", escapeXml(m_Fields[i].toolTip));
+        }
+
+        writer.writeEndElement(); // field
+    }
+}
+
+QString ResPanel::escapeXml(const QString &text) const
+{
+    QString escaped = text;
+    escaped.replace("&", "&amp;");
+    escaped.replace("<", "&lt;");
+    escaped.replace(">", "&gt;");
+    escaped.replace("\"", "&quot;");
+    escaped.replace("'", "&apos;");
+    return escaped;
+}
+
+bool ResPanel::saveToXml(QXmlStreamWriter &writer) const
+{
+    try
+    {
+        // Начало элемента ресурса
+        writer.writeStartElement(getResType());
+
+        // Атрибуты панели
+        writePanelAttributes(writer);
+
+        // Дополнительные атрибуты для не-panel ресурсов
+        if(type() != LbrObject::RES_PANEL)
+        {
+            writer.writeAttribute("Mn", QString::number(m_pPanel->Mn));
+            writer.writeAttribute("x", QString::number(m_pPanel->x));
+            writer.writeAttribute("y", QString::number(m_pPanel->y));
+            writer.writeAttribute("l", QString::number(m_pPanel->l));
+            writer.writeAttribute("h", QString::number(m_pPanel->h));
+        }
+
+        // Комментарий
+        if (!m_Comment.isEmpty()) {
+            writer.writeTextElement("comment", escapeXml(m_Comment));
+        }
+
+        // Статусная строка
+        if (!m_Status.isEmpty()) {
+            writer.writeTextElement("stline", escapeXml(m_Status));
+        }
+
+        // Статусная строка RD
+        if (!m_StatusRD.isEmpty()) {
+            writer.writeTextElement("stlineRd", escapeXml(m_StatusRD));
+        }
+
+        // Заголовок
+        if (!m_Title.isEmpty()) {
+            writer.writeTextElement("headLine", escapeXml(m_Title));
+        }
+
+        // Границы
+        writeBorders(writer);
+
+        // Тексты
+        writeTexts(writer);
+
+        // Поля
+        writeFields(writer);
+
+        // Конец элемента ресурса
+        writer.writeEndElement();
+
+        return true;
+
+    } catch (...) {
+        return false;
+    }
+
+    return false;
 }
 
 QString ResPanel::saveXml(const QString &encode)

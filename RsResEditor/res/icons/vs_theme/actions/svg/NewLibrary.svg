@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <defs>
+    <style>.icon-canvas-transparent,.icon-vs-out{fill:#f6f6f6;}.icon-canvas-transparent{opacity:0;}.icon-vs-bg{fill:#424242;}</style>
+  </defs>
+  <title>Library_16x</title>
+  <g id="canvas">
+    <path class="icon-canvas-transparent" d="M16,0V16H0V0Z"/>
+  </g>
+  <g id="outline">
+    <path class="icon-vs-out" d="M16,2V15H0V2H5V1h6V2Z"/>
+  </g>
+  <g id="iconBg">
+    <path class="icon-vs-bg" d="M11,3V14h4V3Zm3,10H12V12h2Zm0-2H12V10h2Zm0-5H12V4h2ZM6,14h4V2H6ZM7,3H9V4H7Zm0,7H9v1H7Zm0,2H9v1H7ZM1,14H5V3H1ZM2,4H4V6H2Zm0,6H4v1H2Zm0,2H4v1H2Z"/>
+  </g>
+  <g>
+    <g transform="matrix(1, 0, 0, 1, -16.123571, 0.035058)">
+      <path class="icon-vs-out" d="M 25.117 5.78 L 23.711 5.722 L 24.61 6.488 L 22.722 8.804 L 22.076 8.115 L 22.114 8.944 L 20.105 8.972 L 19.605 8.972 L 19.105 8.972 L 19.105 8.532 L 19.105 8.093 L 18.794 8.403 L 18.484 8.714 L 17.423 7.653 L 16.362 6.593 L 16.672 6.282 L 16.983 5.972 L 16.544 5.972 L 16.105 5.972 L 16.105 4.472 L 16.105 2.972 L 16.544 2.972 L 16.983 2.972 L 16.672 2.661 L 16.362 2.351 L 17.423 1.29 L 18.484 0.229 L 18.794 0.539 L 19.105 0.85 L 19.105 0.411 L 19.105 -0.028 L 20.605 -0.028 L 22.105 -0.028 L 22.105 0.411 L 22.105 0.85 L 22.415 0.539 L 22.726 0.228 L 23.787 1.289 L 24.847 2.35 L 24.537 2.661 L 24.226 2.972 L 24.665 2.972 L 25.105 2.972 L 25.105 3.472 L 25.105 3.972 L 25.116 4.479 L 25.116 5.621" id="path-2" style="stroke-width: 1;"/>
+    </g>
+  </g>
+  <g transform="matrix(1, 0, 0, 1, -16.303764, -0.099901)">
+    <path class="icon-vs-action-orange" d="M 24.105 3.972 L 21.812 3.972 L 23.433 2.351 L 22.726 1.643 L 21.105 3.264 L 21.105 0.972 L 20.105 0.972 L 20.105 3.264 L 18.484 1.643 L 17.776 2.351 L 19.397 3.972 L 17.105 3.972 L 17.105 4.972 L 19.397 4.972 L 17.776 6.593 L 18.484 7.3 L 20.105 5.679 L 20.105 7.972 L 21.105 7.972 L 21.105 5.679 L 22.726 7.3 L 23.433 6.593 L 21.812 4.972 L 24.105 4.972 L 24.105 3.972 Z M 21.105 4.972 L 20.105 4.972 L 20.105 3.972 L 21.105 3.972 L 21.105 4.972 Z" id="colorAction" style="fill: rgb(194, 125, 26); stroke-width: 1;"/>
+  </g>
+</svg>

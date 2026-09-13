@@ -24,6 +24,11 @@ LbrDllObjectPrivate::~LbrDllObjectPrivate()
 {
     if (m_LibDir)
         _FreeDirectory(m_LibDir);
+
+    // Файл библиотеки должен быть закрыт вместе с объектом — иначе хэндл
+    // остаётся занятым до конца процесса и повторное открытие этого же
+    // файла падает с "Ошибка разделения файла на запись" (sharing violation)
+    close();
 }
 
 bool LbrDllObjectPrivate::loadLib()
@@ -76,19 +81,47 @@ bool LbrDllObjectPrivate::loadLib()
     }
     catch(QString &e)
     {
-        qDebug() << e;
+        //qDebug() << e;
+        m_LastError = e;
         return false;
     }
 
     return true;
 }
 
-bool LbrDllObjectPrivate::open(const QString &filename)
+bool LbrDllObjectPrivate::close()
+{
+    if (!m_ResFile)
+        return true;
+
+    bool hr = true;
+    int stat = _ResClose(m_ResFile);
+    if (stat)
+    {
+        setLastErrorFromStat(stat);
+        hr = false;
+    }
+
+    // Структура ResFile выделена нами в open() — освобождаем здесь,
+    // чтобы повторный close() (из деструктора) был безопасен
+    free(m_ResFile);
+    m_ResFile = nullptr;
+
+    return hr;
+}
+
+bool LbrDllObjectPrivate::open(const QString &filename, const bool &isnew)
 {
     bool hr = true;
     m_ResFile = (void*)malloc(sizeof(ResFile));
 
-    int stat = _OpenLib(m_ResFile, filename.toLocal8Bit().data(), RO_MODIFY | RO_TRN);
+    int flags = RO_TRN;
+    if (!isnew)
+        flags |= RO_MODIFY;
+    else
+        flags |= RO_CREATE;
+
+    int stat = _OpenLib(m_ResFile, filename.toLocal8Bit().data(), flags);
     if (!stat)
     {
         m_pDirModel.reset(new LbrResListModel());
@@ -98,13 +131,17 @@ bool LbrDllObjectPrivate::open(const QString &filename)
         if (!hr)
         {
             _ResClose(m_ResFile);
-            m_ResFile = nullptr;
             free(m_ResFile);
+            m_ResFile = nullptr;
         }
     }
     else
     {
-        qDebug() << _ResError(stat);
+        setLastErrorFromStat(stat);
+        // файл не открыт — структура не нужна, иначе деструктор
+        // попытается закрыть невалидный хэндл
+        free(m_ResFile);
+        m_ResFile = nullptr;
         hr = false;
     }
     return hr;
@@ -113,11 +150,12 @@ bool LbrDllObjectPrivate::open(const QString &filename)
 static int RLibDirElemFiltrFunc(RLibDirElem *rc)
 {
     static QList<int> ResTypes =
-        {
-            LbrObjectInterface::RES_PANEL,
-            LbrObjectInterface::RES_SCROL,
-            LbrObjectInterface::RES_BS
-        };
+    {
+        LbrObjectInterface::RES_PANEL,
+        LbrObjectInterface::RES_SCROL,
+        LbrObjectInterface::RES_BS,
+        LbrObjectInterface::RES_MENU2,
+    };
 
     if (ResTypes.contains(rc->type))
         return 0;
@@ -252,7 +290,7 @@ bool LbrDllObjectPrivate::beginSaveRes(const QString &name, const int &type, Res
 
     if (stat)
     {
-        qDebug() << "beginSaveRes: " << resError(stat);
+        setLastErrorFromStat(stat);
         free(strm1);
         return false;
     }
@@ -283,7 +321,7 @@ bool LbrDllObjectPrivate::endSaveRes(ResBuffer **buffer)
 
         if (stat)
         {
-            qDebug() << "endSaveRes error: " << resError(stat);
+            setLastErrorFromStat(stat);
             abort = true;
         }
     }
@@ -291,9 +329,7 @@ bool LbrDllObjectPrivate::endSaveRes(ResBuffer **buffer)
     stat = _LibCloseStream(strm1, abort);
 
     if (stat)
-    {
-        qDebug() << "_LibCloseStream error: " << resError(stat);
-    }
+        setLastErrorFromStat(stat);
     else
     {
         ModeleDirlement elem;
@@ -321,4 +357,9 @@ QString LbrDllObjectPrivate::resError(int stat)
 {
     char *err = _ResError(stat);
     return m_OemCodec->toUnicode(err);
+}
+
+void LbrDllObjectPrivate::setLastErrorFromStat(int stat)
+{
+    m_LastError = resError(stat);
 }

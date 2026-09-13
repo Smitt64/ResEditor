@@ -43,6 +43,12 @@ CustomRectItem::CustomRectItem(const QRect& rect, QGraphicsItem* parent):
     init();
 }
 
+CustomRectItem::~CustomRectItem()
+{
+    if (pRubberBand)
+        delete pRubberBand;
+}
+
 void CustomRectItem::init()
 {
     m_ItemId = QUuid::createUuid();
@@ -50,6 +56,7 @@ void CustomRectItem::init()
     m_MousePressed = false;
     m_IsResizing = false;
     m_IsSelection = false;
+    m_RightButtonDragged = false;
     m_HasRubberBand = false;
     pRubberBand = nullptr;
     m_pUndoStack = nullptr;
@@ -68,6 +75,8 @@ void CustomRectItem::init()
              QGraphicsItem::ItemIsFocusable);
     setInputMethodHints(Qt::ImhHiddenText);
     setAcceptDrops(false);
+    setAcceptHoverEvents(true);
+    setCursor(Qt::ArrowCursor);
 
     m_AvailableCorners.setFlag(TOP_LEFT);
     m_AvailableCorners.setFlag(TOP);
@@ -283,6 +292,8 @@ void CustomRectItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
     }
     else if (event->button() == Qt::RightButton)
     {
+        m_RightButtonDragged = false;
+
         if (rubberBand())
         {
             QPointF mapped = scene()->views()[0]->mapFromScene(event->scenePos());
@@ -436,6 +447,10 @@ void CustomRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         {
             QPointF mapped = scene()->views()[0]->mapFromScene(event->scenePos());
             QPoint p(mapped.x(), mapped.y());
+
+            if (!m_RightButtonDragged)
+                m_RightButtonDragged = (p - startDrag).manhattanLength() > QApplication::startDragDistance();
+
             rubberBand()->setGeometry(QRect(startDrag, p).normalized());
 
             QRectF rc = mapRectFromScene(rubberBand()->geometry()).normalized();
@@ -643,6 +658,10 @@ bool CustomRectItem::mousePosOnHandles(QPointF pos)
 {
     bool resizable = false;
     int rem4Index = 8;// +(qRound(this->rotation()) / 45);
+
+    // Сохраняем предыдущее значение m_ResizeCorner
+    ResizeCorners previousCorner = m_ResizeCorner;
+
     if (mapToScene(m_ResizeHandles[(0 + rem4Index) % 8]).containsPoint(pos, Qt::WindingFill))
     {
         m_ResizeCorner = TOP_LEFT;
@@ -683,6 +702,16 @@ bool CustomRectItem::mousePosOnHandles(QPointF pos)
         m_ResizeCorner = LEFT;
         resizable = true;
     }
+    else
+    {
+        m_ResizeCorner = ALL_NO_ROTATE; // Сбрасываем, если не на метке
+        resizable = false;
+    }
+
+    // Если угол изменился и мы на метке, обновляем курсор
+    if (resizable && previousCorner != m_ResizeCorner)
+        updateCursor();
+
     return resizable;
 }
 
@@ -743,8 +772,12 @@ bool CustomRectItem::canResize(const QRectF &newRect, const ResizeCorners &corne
 {
     BaseScene* customScene = qobject_cast<BaseScene*> (scene());
     QSize gridSize = customScene->getGridSize();
+    int newWidth = round(newRect.width() / gridSize.width());
 
     if (newRect.width() < gridSize.width() || newRect.height() < gridSize.height())
+        return false;
+
+    if (newWidth > MAX_RES_SIZE)
         return false;
 
     if (corner != TOP_LEFT && corner != TOP && corner != TOP_RIGHT)
@@ -1395,6 +1428,8 @@ void CustomRectItem::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Return)
         userAction(ActionKeyEnter);
+    else
+        QGraphicsObject::keyPressEvent(event);
 }
 
 const bool &CustomRectItem::isCanIntersects() const
@@ -1405,6 +1440,11 @@ const bool &CustomRectItem::isCanIntersects() const
 const bool &CustomRectItem::isMousePressed() const
 {
     return m_MousePressed;
+}
+
+const bool &CustomRectItem::wasRightButtonDragged() const
+{
+    return m_RightButtonDragged;
 }
 
 void CustomRectItem::setCanIntersects(const bool &flag)
@@ -1432,11 +1472,80 @@ void CustomRectItem::recalcByGridChanges()
     setSize(sz);
 
     QList<QGraphicsItem*> childs = childItems();
-    for (QGraphicsItem *item : childs)
+    for (QGraphicsItem *item : qAsConst(childs))
     {
         CustomRectItem *rectItem = dynamic_cast<CustomRectItem*>(item);
 
         if (rectItem)
             rectItem->recalcByGridChanges();
     }
+}
+
+void CustomRectItem::updateCursor()
+{
+    switch (m_ResizeCorner)
+    {
+    case TOP_LEFT:
+    case BOTTOM_RIGHT:
+        setCursor(Qt::SizeFDiagCursor);
+        break;
+    case TOP_RIGHT:
+    case BOTTOM_LEFT:
+        setCursor(Qt::SizeBDiagCursor);
+        break;
+    case TOP:
+    case BOTTOM:
+        setCursor(Qt::SizeVerCursor);
+        break;
+    case LEFT:
+    case RIGHT:
+        setCursor(Qt::SizeHorCursor);
+        break;
+    default:
+        setCursor(Qt::ArrowCursor);
+        break;
+    }
+}
+
+void CustomRectItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
+{
+    QPointF scenePos = mapToScene(event->pos());
+    bool onHandle = mousePosOnHandles(scenePos);
+
+    if (onHandle)
+    {
+        switch (m_ResizeCorner)
+        {
+        case TOP_LEFT:
+        case BOTTOM_RIGHT:
+            setCursor(Qt::SizeFDiagCursor);
+            break;
+        case TOP_RIGHT:
+        case BOTTOM_LEFT:
+            setCursor(Qt::SizeBDiagCursor);
+            break;
+        case TOP:
+        case BOTTOM:
+            setCursor(Qt::SizeVerCursor);
+            break;
+        case LEFT:
+        case RIGHT:
+            setCursor(Qt::SizeHorCursor);
+            break;
+        default:
+            setCursor(Qt::ArrowCursor);
+            break;
+        }
+    }
+    else
+        setCursor(Qt::ArrowCursor);
+
+    QGraphicsItem::hoverMoveEvent(event);
+}
+
+void CustomRectItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+{
+    // При уходе курсора с элемента восстанавливаем стандартный курсор
+    setCursor(Qt::ArrowCursor);
+    QGraphicsItem::hoverLeaveEvent(event);
 }

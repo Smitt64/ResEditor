@@ -5,11 +5,11 @@
 #include <QUuid>
 #include <QPointer>
 
-class BaseScene;
+class StdEditorScene;
 class UndoItemDelete : public QUndoCommand
 {
 public:
-    UndoItemDelete(BaseScene *scene, const QUuid &uuid, QUndoCommand *parent = nullptr);
+    UndoItemDelete(StdEditorScene *scene, const QUuid &uuid, QUndoCommand *parent = nullptr);
     virtual ~UndoItemDelete();
 
     virtual void redo() Q_DECL_OVERRIDE;
@@ -18,7 +18,7 @@ public:
 private:
     QByteArray m_Data;
 
-    BaseScene *m_pScene;
+    StdEditorScene *m_pScene;
     QUuid m_ItemId, m_ParentItemId;
 
     int m_TypeId;

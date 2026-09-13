@@ -2,14 +2,19 @@
 #include <QVariant>
 #include <QList>
 #include <memory>
+#include <QPointer>
+#include <QTimer>
 #include <QGraphicsItem>
 #include <QMetaObject>
 #include <QMetaClassInfo>
 #include "customrectitem.h"
+#include "scrolitem.h"
 #include "textitem.h"
 #include "panelitem.h"
 #include "basescene.h"
 #include "controlitem.h"
+#include "rsrescore.h"
+#include "lbrobject.h"
 #include <QIcon>
 
 class TreeItem
@@ -47,6 +52,9 @@ public:
     }
     QVariant data(int column, int role) const
     {
+        if (!m_pItem)
+            return QVariant();
+
         if (role == Qt::DisplayRole)
         {
             const QMetaObject *obj = m_pItem->metaObject();
@@ -95,13 +103,16 @@ public:
         else if (role == Qt::DecorationRole && column == fld_Element)
         {
             PanelItem *panelItem = qobject_cast<PanelItem*>(m_pItem);
+            ScrolItem *scrolItem = qobject_cast<ScrolItem*>(m_pItem);
             TextItem *textItem = qobject_cast<TextItem*>(m_pItem);
             ControlItem *controlItem = qobject_cast<ControlItem*>(m_pItem);
 
             if (textItem)
                 return QIcon(":/img/Label_24x.png");
+            else if (scrolItem)
+                return RsResCore::inst()->iconFromResType(scrolItem->scrolType());
             else if(panelItem)
-                return QIcon(":/img/Panel.png");
+                return RsResCore::inst()->iconFromResType(LbrObject::RES_PANEL);
             else if (controlItem)
                 return IconForDataType(controlItem->dataType());
         }
@@ -131,7 +142,7 @@ public:
     }
 
     std::vector<std::unique_ptr<TreeItem>> m_childItems;
-    CustomRectItem *m_pItem;
+    QPointer<CustomRectItem> m_pItem;
     TreeItem *m_parentItem;
 };
 
@@ -145,6 +156,7 @@ PanelStructModel::PanelStructModel(CustomRectItem *item, QObject *parent) :
     rootItem->appendChild(std::make_unique<TreeItem>(item, rootItem.get()));
 
     connect(item, SIGNAL(structChanged()), this, SLOT(structChanged()));
+    connect(item, &QObject::destroyed, this, &PanelStructModel::onItemDestroyed, Qt::UniqueConnection);
 }
 
 PanelStructModel::~PanelStructModel() = default;
@@ -152,6 +164,9 @@ PanelStructModel::~PanelStructModel() = default;
 void PanelStructModel::structChanged()
 {
     TreeItem *panel = rootItem->child(0);
+
+    if (!panel || !panel->m_pItem)
+        return;
 
     QModelIndex root = createIndex(0, 0, panel);
 
@@ -173,9 +188,21 @@ void PanelStructModel::structChanged()
 
     for (auto element : qAsConst(rects))
     {
-        panel->appendChild(std::make_unique<TreeItem>(element, panel));
+        ScrolAreaRectItem *scrolArea = dynamic_cast<ScrolAreaRectItem*>(element);
+
+        if (!scrolArea)
+        {
+            connect(element, &QObject::destroyed, this, &PanelStructModel::onItemDestroyed, Qt::UniqueConnection);
+            panel->appendChild(std::make_unique<TreeItem>(element, panel));
+        }
     }
     endResetModel();
+}
+
+void PanelStructModel::onItemDestroyed(QObject *obj)
+{
+    Q_UNUSED(obj)
+    QTimer::singleShot(0, this, &PanelStructModel::structChanged);
 }
 
 int PanelStructModel::columnCount(const QModelIndex &parent) const
@@ -194,7 +221,11 @@ QVariant PanelStructModel::data(const QModelIndex &index, int role) const
     const auto *item = static_cast<const TreeItem*>(index.internalPointer());
 
     if (role == CustomRectItemRole)
+    {
+        if (!item->m_pItem)
+            return {};
         return QVariant::fromValue<CustomRectItem*>(item->m_pItem);
+    }
 
     return item->data(index.column(), role);
 }

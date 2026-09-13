@@ -23,6 +23,8 @@ WindowsListDlg::WindowsListDlg(SubWindowsModel *Model, QMdiArea *mdi, QWidget *p
     ui->treeView->setModel(pModel);
     ui->treeView->expandAll();
 
+    setWindowIcon(QIcon::fromTheme("FormInstance"));
+
     connect(pSelect, SIGNAL(clicked(bool)), SLOT(ActivateWindow()));
     connect(pClose, SIGNAL(clicked(bool)), SLOT(CloseWindow()));
 }

@@ -23,10 +23,14 @@ public:
     bool writeString(const QString &str);
 
     const QString &name() const;
-    const QString &comment() const;
-    const qint16 &type() const;
+    void setName(const QString &value);
 
+    const QString &comment() const;
     void setComment(const QString &comment);
+
+    const qint16 &type() const;
+    void setType(const qint16 &value);
+
     void setResHeader(void *ptr);
     QDateTime getResDateTime() const;
 

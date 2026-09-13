@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<reslib xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.softlab.ru reslib.xsd"
+    xmlns="http://www.softlab.ru">
+ <menu name="EXAMPLE" dt="2026-08-26T12:00:00" comment="Пример пользовательского шаблона меню">
+  <popup label="~Файл~" help="0" comment="">
+   <item label="~Открыть" cmd="101" help="0" comment=""/>
+   <item label="~Сохранить" cmd="102" help="0" comment=""/>
+   <delim/>
+   <item label="~Выход" cmd="199" help="0" comment=""/>
+  </popup>
+  <popup label="~Справка~" help="0" comment="">
+   <item label="~О программе" cmd="900" help="0" comment=""/>
+  </popup>
+ </menu>
+</reslib>

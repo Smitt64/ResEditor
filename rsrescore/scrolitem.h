@@ -43,8 +43,20 @@ protected:
     virtual bool isIntersects(const QRectF &thisBound, QGraphicsItem *item, const QRectF &itemBound) const Q_DECL_OVERRIDE;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) Q_DECL_OVERRIDE;
 
+    virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+
+    virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *event) Q_DECL_OVERRIDE;
+    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) Q_DECL_OVERRIDE;
+
 private:
     ScrolItem *m_Scrol;
+
+    bool m_IsResizingRowHeight, m_RowHeightChanged, m_HoverOverIndicator;
+    qreal m_StartRowHeight;
+    QPointF m_StartMousePos;
+    QPointF m_StartTopLeft;
 };
 
 class ScrolAreaRectItem;
@@ -120,6 +132,10 @@ protected:
     virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
     virtual void dragEnterEvent(QGraphicsSceneDragDropEvent *event) Q_DECL_OVERRIDE;
 
+    virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+
 signals:
     void rowNumChanged();
     void rowLengthChanged();
@@ -129,6 +145,7 @@ signals:
     void scrolTypeChanged();
 
 private:
+    void updateScrolAreaDuringResize(const QSizeF &delta);
     ScrolType m_Type;
     quint16 m_RowNum, m_RowLength, m_RowHeight;
     QPoint m_ScrolPos;
@@ -136,6 +153,11 @@ private:
 
     ScrolFlags m_ScrolFlags;
     ScrolAreaRectItem *m_ScrolArea;
+
+    bool m_IsResizing;
+    QSizeF m_StartSize;
+
+    bool m_SaveScrollAreaVisible;
 };
 
 Q_DECLARE_OPAQUE_POINTER(ScrolItem)
